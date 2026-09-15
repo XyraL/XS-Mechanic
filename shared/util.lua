@@ -75,6 +75,23 @@ function Util.InList(list, value)
     return false
 end
 
+local idCounter = 0
+
+-- `os` does not exist in the client Lua runtime, and this file is shared, so
+-- the clock has to come from whichever side is asking. The counter is what
+-- actually keeps two ids made in the same millisecond apart; the clock and the
+-- random tail are there so ids from separate sessions do not collide with ones
+-- already saved.
 function Util.Id(prefix)
-    return ('%s_%s%s'):format(prefix or 'x', os.time(), math.random(1000, 9999))
+    idCounter = idCounter + 1
+
+    local stamp
+
+    if IsDuplicityVersion() then
+        stamp = os.time()
+    else
+        stamp = math.floor(GetGameTimer())
+    end
+
+    return ('%s_%d_%d_%d'):format(prefix or 'x', stamp, idCounter, math.random(1000, 9999))
 end

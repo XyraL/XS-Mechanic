@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.2.3
+
+- Placing anything in the builder threw `attempt to index a nil value
+  (global os)`. The client has no `os` library; point ids were asking it
+  for the time.
+
 ## 0.2.2
 
 Console spam.
