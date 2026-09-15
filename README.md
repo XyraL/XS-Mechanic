@@ -82,20 +82,106 @@ the detection guesses wrong.
 
 ## Setup
 
-1. Drop the folder into your resources.
-2. `ensure XS-Mechanic` after `ox_lib` and `oxmysql`.
-3. Add the items from `items/` to your inventory.
-4. Give yourself the `xs.mechanic` ace, or put your admin group in
-   `Config.Admin.groups`.
-5. Create a job in your framework for each shop you are going to build.
-6. Run `/mechanic` in game and build one.
+### 1. Install it
+
+Drop the folder into your resources, then in `server.cfg`, after `ox_lib` and
+`oxmysql`:
+
+```cfg
+ensure XS-Mechanic
+```
 
 The database sets itself up on first start. `sql/xs_mechanic.sql` is there if
-you would rather import it yourself.
+you would rather import it by hand.
 
-**ox_inventory users:** paste the block from `items/ox_inventory.lua`. Those
-`client = { export = ... }` lines are not optional — without them the tablet
-and the repair kits do nothing at all when used, silently.
+### 2. Add the items
+
+28 items. Copy the whole block for your inventory:
+
+| Inventory | Paste `items/…` | Into |
+|---|---|---|
+| ox_inventory | `ox_inventory.lua` | `ox_inventory/data/items.lua` |
+| qb-inventory, ps-inventory, qs-inventory, others | `qb_core.lua` | `qb-core/shared/items.lua` |
+
+Paste the entries **inside** the existing table, before its closing `}`.
+
+**ox_inventory: the `client = { export = ... }` lines are not optional.** ox
+ignores `CreateUseableItem` entirely and only calls an export named in its own
+item definition, so without those lines the tablet, the repair kits, the duct
+tape, the nitrous and the lighting remote do nothing at all when used —
+silently, with no error. Six items carry one:
+
+```
+mechanic_tablet   repair_kit   advanced_repair_kit
+duct_tape         nitrous      lighting_remote
+```
+
+No item images ship with this. The qb block names a `.png` per item; drop your
+own into your inventory's images folder, or the slots show blank.
+
+### 3. Give yourself admin
+
+Any **one** of these is enough — it is checked in this order.
+
+An ace in `server.cfg`:
+
+```cfg
+add_ace group.admin xs.mechanic allow
+```
+
+Or your framework's permission group, if you already use one. `Config.Admin`
+accepts `admin` and `god` out of the box:
+
+```lua
+Config.Admin = {
+    acePermission = 'xs.mechanic',
+    groups        = { 'admin', 'god' },
+    licenses      = {},
+}
+```
+
+Or a specific licence, when you want one person and nothing else:
+
+```lua
+licenses = { '1a2b3c4d5e6f7890abcdef1234567890abcdef12' },
+```
+
+That is the part after `license:` in your identifiers. The server console prints
+them when you connect, and txAdmin lists them on the player.
+
+### 4. Make a job for each shop
+
+Ownership **is** the job: you build a shop, point it at a job, and give that job
+to whoever owns the interior. So each shop needs a job to exist first, in your
+framework, not here.
+
+QBox — `qbx_core/shared/jobs.lua`. QBCore — `qb-core/shared/jobs.lua`:
+
+```lua
+mechanic = {
+    label = 'Hayes Autoworks',
+    defaultDuty = true,
+    grades = {
+        [0] = { name = 'Trainee' },
+        [1] = { name = 'Apprentice' },
+        [2] = { name = 'Mechanic' },
+        [3] = { name = 'Foreman' },
+        [4] = { name = 'Owner', isboss = true },
+    },
+},
+```
+
+The builder warns you if a shop names a job your framework does not have. Grade
+3 and up gets the Team app and the shop's money by default — change that per
+shop in the builder, or `Config.Jobs.defaultBossGrade` for new ones.
+
+### 5. Build a shop
+
+Restart, run `/mechanic`, and place your points. It needs at least one point
+before it will save. Give the job to whoever owns the place and you are done.
+
+The console prints what it detected on start — framework, inventory, banking —
+so if a bridge guessed wrong, that line is where it shows.
 
 ## Commands
 
