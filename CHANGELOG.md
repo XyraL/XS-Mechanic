@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.2.4
+
+- The mechanic tablet item still would not open. The export is registered on
+  both sides now, so it does not matter which one your inventory asks.
+- The client prints how many item exports it registered a few seconds after
+  you join. If you do not see that line, the folder on your server is
+  missing `client/items.lua`.
+
 ## 0.2.3
 
 - Placing anything in the builder threw `attempt to index a nil value

@@ -48,12 +48,25 @@ function walk(dir) {
     return out;
 }
 
+const scripts = new Set([
+    ...block('shared_scripts'),
+    ...block('client_scripts'),
+    ...block('server_scripts'),
+]);
+
 for (const dir of ['bridge', 'shared', 'client', 'server']) {
     if (!existsSync(path.join(ROOT, dir))) continue;
 
     for (const file of walk(dir)) {
         if (!file.endsWith('.lua')) continue;
-        if (!listed.has(file)) problems.push(`on disk but not in the manifest: ${file}`);
+
+        if (!listed.has(file)) {
+            problems.push(`on disk but not in the manifest: ${file}`);
+        } else if (!scripts.has(file)) {
+            // Listed in files{} only. It ships to the client and never runs,
+            // which reads exactly like a file that is simply missing.
+            problems.push(`${file} is in the manifest but not in a script block, so it never loads`);
+        }
     }
 }
 

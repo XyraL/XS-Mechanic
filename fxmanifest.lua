@@ -5,7 +5,7 @@ lua54 'yes'
 name 'XS-Mechanic'
 author 'XyraL'
 description 'Mechanic shops for QBox/QBCore. Build them in game, tune off the vehicle itself, bill the customer.'
-version '0.2.3'
+version '0.2.4'
 
 -- Works on QBox (qbx_core) OR QBCore (qb-core). The bridge auto-detects.
 -- Inventory, target, vehicle keys, banking and phone are all auto-detected too
@@ -68,6 +68,7 @@ server_scripts {
     'server/orders.lua',
     'server/team.lua',
     'server/net.lua',
+    'server/items.lua',
     'server/commands.lua',
     'server/main.lua',
 }
