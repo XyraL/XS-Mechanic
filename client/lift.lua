@@ -17,6 +17,13 @@ local function anchorOf(point)
     return vector3(point.coords.x, point.coords.y, point.coords.z)
 end
 
+-- A handle held across a Wait can go stale: the car gets stored, deleted, or
+-- simply streams out. Every native after that throws "Tried to access invalid
+-- entity", once per call, for the rest of the loop.
+local function alive(entity)
+    return entity and entity ~= 0 and DoesEntityExist(entity)
+end
+
 function Lift.Spawn(shop, point)
     if not Config.Lift.spawnProp then return end
 
@@ -94,9 +101,23 @@ function Lift.Raise(pointId, vehicle)
     local steps = math.floor(SECONDS * 20)
 
     for i = 1, steps do
+        if not alive(vehicle) then
+            lift.up = false
+            lift.vehicle = nil
+            lift.busy = false
+            return
+        end
+
         local z = start.z + (HEIGHT * (i / steps))
         SetEntityCoordsNoOffset(vehicle, start.x, start.y, z, false, false, false)
         Wait(50)
+    end
+
+    if not alive(vehicle) then
+        lift.up = false
+        lift.vehicle = nil
+        lift.busy = false
+        return
     end
 
     SetEntityCoordsNoOffset(vehicle, start.x, start.y, target, false, false, false)
@@ -128,14 +149,19 @@ function Lift.Lower(pointId)
     local steps = math.floor(SECONDS * 20)
 
     for i = 1, steps do
+        if not alive(vehicle) then break end
+
         local z = start.z - (HEIGHT * (i / steps))
         SetEntityCoordsNoOffset(vehicle, start.x, start.y, z, false, false, false)
         Wait(50)
     end
 
-    FreezeEntityPosition(vehicle, false)
-    SetEntityCollision(vehicle, true, true)
-    SetVehicleOnGroundProperly(vehicle)
+    -- Whatever happened on the way down, the lift itself has to end up free.
+    if alive(vehicle) then
+        FreezeEntityPosition(vehicle, false)
+        SetEntityCollision(vehicle, true, true)
+        SetVehicleOnGroundProperly(vehicle)
+    end
 
     lift.up = false
     lift.vehicle = nil

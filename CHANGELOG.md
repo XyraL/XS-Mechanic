@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.2.5
+
+- `Tried to access invalid entity`. The lift and the dyno held onto a
+  vehicle across the whole animation — thirty seconds, for a dyno run — and
+  kept using it after the car was stored, deleted or driven out of range.
+  Both re-check now, and the lighting remote checks after its dialog.
+
 ## 0.2.4
 
 - The mechanic tablet item still would not open. The export is registered on

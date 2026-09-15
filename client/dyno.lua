@@ -79,6 +79,16 @@ function Dyno.Run()
     for i = 1, SAMPLES do
         if not Dyno.running then break end
 
+        -- A run holds this handle for thirty seconds. Plenty of time for the
+        -- car to be stored, deleted or streamed out, after which every native
+        -- below throws "Tried to access invalid entity" once per sample.
+        if not DoesEntityExist(vehicle) then
+            Dyno.running = false
+            XSM.Send('dyno', { state = 'idle', points = {}, peak = 0 })
+            XSM.Toast('The vehicle left the bay.', 'error')
+            return
+        end
+
         shown[#shown + 1] = { hp = points[i], torque = torqueCurve[i], rpm = math.floor(1000 + (i / SAMPLES) * 7000) }
 
         SetVehicleCurrentRpm(vehicle, 0.2 + (i / SAMPLES) * 0.8)
@@ -93,8 +103,10 @@ function Dyno.Run()
         Wait((Config.Dyno.seconds * 1000) / SAMPLES)
     end
 
-    SetVehicleCurrentRpm(vehicle, 0.2)
-    FreezeEntityPosition(vehicle, false)
+    if DoesEntityExist(vehicle) then
+        SetVehicleCurrentRpm(vehicle, 0.2)
+        FreezeEntityPosition(vehicle, false)
+    end
 
     Dyno.running = false
 

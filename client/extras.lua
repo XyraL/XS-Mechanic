@@ -123,7 +123,9 @@ end
 local running = {}
 
 function Lighting.Set(vehicle, mode, rgb, underglow, xenons)
-    if not vehicle or vehicle == 0 then return end
+    -- Reached after an input dialog, which the player can sit in for as long
+    -- as they like. The car may well be gone by the time they press save.
+    if not vehicle or vehicle == 0 or not DoesEntityExist(vehicle) then return end
 
     local netId = VehToNet(vehicle)
     running[netId] = { mode = mode, rgb = rgb, underglow = underglow, xenons = xenons }
