@@ -204,6 +204,8 @@ end
 -- the framework's own player_vehicles.mods column, which every QB/QBox garage
 -- already re-applies on spawn — there is nothing further to integrate.
 RegisterNetEvent('XS-Mechanic:client:readMods', function(netId)
+    if not NetworkDoesNetworkIdExist(netId) then return end
+
     local vehicle = NetToVeh(netId)
     if not vehicle or vehicle == 0 or not DoesEntityExist(vehicle) then return end
 

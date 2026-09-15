@@ -156,6 +156,15 @@ CreateThread(function()
         local any = false
 
         for netId, entry in pairs(running) do
+            -- Ask whether the id resolves before asking for the entity. NetToVeh
+            -- logs a warning for an id this client cannot see, and this loop
+            -- runs several times a second — a vehicle that streams out would
+            -- otherwise warn forever.
+            if not NetworkDoesNetworkIdExist(netId) then
+                running[netId] = nil
+                goto continue
+            end
+
             local vehicle = NetToVeh(netId)
 
             if not vehicle or vehicle == 0 or not DoesEntityExist(vehicle) then

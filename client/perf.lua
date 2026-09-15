@@ -126,25 +126,37 @@ function Perf.Forget(vehicle)
     end
 end
 
+--[[ GetEntityFromStateBagName, not NetworkGetEntityFromNetworkId.
+
+     The net-id native logs `GetNetworkObject: no object by ID n` every single
+     call for an entity this client has not streamed in — which is most of the
+     map — so polling it turned every parked car into a repeating burst of
+     console warnings. The state-bag native answers 0 quietly instead.
+
+     A bag that arrives before its entity does is normal and needs no waiting:
+     the handler fires again when the vehicle streams in. The short retry below
+     is only for the tick-level race where the bag lands a frame early. ]]
 AddStateBagChangeHandler('xsmech', nil, function(bagName, _, value)
-    -- gsub returns the string AND the number of replacements, and passing that
-    -- straight into tonumber makes the count its BASE — which is 1, and out of
-    -- range. The parentheses throw the second value away.
-    local netId = tonumber((bagName:gsub('entity:', '')))
-    if not netId then return end
+    if type(value) ~= 'table' then return end
+
+    local entity = GetEntityFromStateBagName(bagName)
+
+    if entity ~= 0 then
+        Perf.Apply(entity, value)
+        return
+    end
 
     CreateThread(function()
-        -- lib.waitFor ERRORS on timeout when given a message, it does not
-        -- return nil. A state bag for a vehicle this client cannot see is
-        -- normal and must not spam the console, so the timeout is swallowed.
-        local ok, vehicle = pcall(lib.waitFor, function()
-            local entity = NetworkGetEntityFromNetworkId(netId)
-            if entity and entity ~= 0 and DoesEntityExist(entity) then return entity end
-        end, 'no entity for the state bag', 5000)
+        for _ = 1, 8 do
+            Wait(150)
 
-        if not ok or not vehicle then return end
+            local found = GetEntityFromStateBagName(bagName)
 
-        Perf.Apply(vehicle, value)
+            if found ~= 0 then
+                Perf.Apply(found, value)
+                return
+            end
+        end
     end)
 end)
 

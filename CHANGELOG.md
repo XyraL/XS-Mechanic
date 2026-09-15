@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.2.2
+
+Console spam.
+
+- Every parked car you could not see was logging
+  `GetNetworkObject: no object by ID n`, over and over. The state bag
+  handler now asks the quiet native instead, and the lighting loop checks
+  the id resolves before using it.
+
 ## 0.2.1
 
 First in-game pass. Three fixes.
