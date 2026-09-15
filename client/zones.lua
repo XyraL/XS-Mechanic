@@ -12,7 +12,6 @@ local KIND_COLOUR = {
     laptop  = { 255, 196, 107 },
     desk    = { 138, 148, 162 },
     duty    = { 47, 224, 189 },
-    lift    = { 255, 122, 89 },
     dyno    = { 109, 224, 255 },
 }
 
@@ -184,8 +183,6 @@ function Zones.Rebuild()
         for _, point in ipairs(shop.points or {}) do
             if point.kind == 'laptop' then
                 spawnLaptop(shop, point)
-            elseif point.kind == 'lift' then
-                Lift.Spawn(shop, point)
             else
                 local options = optionsFor(shop, point)
 
@@ -253,10 +250,6 @@ CreateThread(function()
         Wait(wait)
     end
 end)
-
-function XSM.NearLift()
-    return Lift.NearAny()
-end
 
 AddEventHandler('onResourceStop', function(resource)
     if resource ~= GetCurrentResourceName() then return end

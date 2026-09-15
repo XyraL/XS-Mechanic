@@ -440,20 +440,30 @@
                     class: 'go', text: 'Add to the order',
                     onclick: () => XS.post('addPick'),
                 })
-                : XS.el('button', {
-                    class: 'go', text: 'Send it to the shop',
-                    disabled: !basket.length,
-                    onclick: () => XS.post('submitOrder'),
-                }),
+                : XS.state.takesOrders
+                    ? XS.el('button', {
+                        class: 'go', text: 'Send it to the shop',
+                        disabled: !basket.length,
+                        onclick: () => XS.post('submitOrder'),
+                    })
+                    : XS.el('button', {
+                        class: 'go', text: XS.state.selfService ? 'Pay and fit it yourself' : 'Nobody is in',
+                        disabled: !basket.length || !XS.state.selfService,
+                        onclick: () => XS.post('checkout'),
+                    }),
 
+            // No second pay button: with staff in you send an order, and with
+            // the shop empty the primary button already is the pay one.
             preview
                 ? XS.el('button', { class: 'sub', text: 'Not that one', onclick: () => XS.post('cancelPreview') })
-                : XS.state.selfService && basket.length
-                    ? XS.el('button', {
-                        class: 'sub', text: `Pay and fit now · ${XS.money(total)}`,
-                        onclick: () => XS.post('checkout'),
-                    })
-                    : null,
+                : null,
+
+            !preview && !XS.state.takesOrders && !XS.state.selfService
+                ? XS.el('div', {
+                    style: 'font-size:11px;color:var(--faint);line-height:1.5;margin-top:10px;text-align:center',
+                    text: 'Nobody is working and this shop does not allow self service. Come back later.',
+                })
+                : null,
         ]));
 
         return side;

@@ -151,10 +151,6 @@
 
         if (XS.mode === 'tablet') {
             strip.append(XS.el('div', { class: 'stripact' }, [
-                XS.state.canLift ? XS.el('button', {
-                    class: 'mini', text: XS.state.lifted ? 'Lower' : 'Lift',
-                    onclick: () => XS.post('lift', { up: !XS.state.lifted }),
-                }) : null,
                 XS.el('button', {
                     class: 'mini hot', text: 'Disconnect',
                     onclick: () => XS.post('disconnect'),

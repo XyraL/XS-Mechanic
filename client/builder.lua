@@ -9,13 +9,13 @@ Builder = { draft = nil, dirty = false }
 local LIMITS = {
     tuning = 'bays', repair = 'bays', counter = 'shops',
     storage = 'storage', laptop = 'shops', desk = 'desks', duty = 'duty',
-    lift = 'lifts', dyno = 'dynos',
+    dyno = 'dynos',
 }
 
 local LABELS = {
     tuning = 'Tuning bay', repair = 'Repair bay', counter = 'Parts counter',
     storage = 'Storage', laptop = 'Office laptop', desk = 'Customer desk', duty = 'Duty point',
-    lift = 'Car lift', dyno = 'Dyno bay',
+    dyno = 'Dyno bay',
 }
 
 local preview = {}
@@ -82,6 +82,7 @@ local function push()
 
     local copy = Util.Plain(Builder.draft)
     copy.jobMissing = jobMissing
+    copy.jobs = Builder.Jobs()
     copy.dirty = Builder.dirty
 
     XSM.Send('draft', { draft = copy })
@@ -93,6 +94,13 @@ Builder.Push = push
 local function touch()
     Builder.dirty = true
     push()
+end
+
+function Builder.Jobs()
+    if Builder.jobs then return Builder.jobs end
+
+    Builder.jobs = lib.callback.await('XS-Mechanic:jobs', false) or {}
+    return Builder.jobs
 end
 
 function Builder.New()

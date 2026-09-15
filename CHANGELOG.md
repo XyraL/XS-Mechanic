@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.3.1
+
+- Orders can only be sent while somebody is actually working. With the shop
+  empty a customer either does it themselves or comes back later — no more
+  orders piling up with nobody to read them.
+- Car lifts are gone. A tuning bay is somewhere you drive into.
+- The builder picks a job from a dropdown of the ones your framework has,
+  instead of you typing the name and hoping.
+- You hold a tablet while the tablet is open. Switch it off with
+  `Config.Tablet.animation`.
+
 ## 0.3.0
 
 - The tablet crashed the moment it read a vehicle: two natives were spelled

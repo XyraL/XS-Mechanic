@@ -107,12 +107,6 @@ RegisterNUICallback('openWash', function(_, cb)
     cb({ ok = true })
 end)
 
-RegisterNUICallback('lift', function(data, cb)
-    XSM.lifted = data.up and true or false
-    XSM.Send('state', { state = { lifted = XSM.lifted } })
-    cb({ ok = true })
-end)
-
 local function serverCall(name)
     return function(data, cb)
         local result = lib.callback.await(('XS-Mechanic:%s'):format(name), false, data or {})

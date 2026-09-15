@@ -40,6 +40,17 @@ function Orders.Leave(src, data)
     local shop = Store.Get(data.shop)
     if not shop or not shop.enabled then return { ok = false, error = 'That shop is closed.' } end
 
+    -- An order with nobody to receive it is a queue nobody empties. With the
+    -- shop unstaffed a customer's only route is doing it themselves, which is
+    -- exactly what the self service fallback is for.
+    if shop.kind ~= 'owned' then
+        return { ok = false, error = 'This one is self service. Nobody takes orders here.' }
+    end
+
+    if Team.OnDuty(shop) == 0 then
+        return { ok = false, error = 'Nobody is in. Come back when somebody is working, or do it yourself.' }
+    end
+
     local citizenid = Framework.GetCitizenId(src)
     if not citizenid then return { ok = false, error = 'You are not loaded.' } end
 

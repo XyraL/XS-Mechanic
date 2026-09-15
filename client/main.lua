@@ -7,7 +7,6 @@ XSM = {
     catalogue = nil,
     state = {},
     preview = nil,
-    lifted = false,
 }
 
 function XSM.Notify(message, kind)
@@ -31,6 +30,7 @@ function XSM.Close()
     SetNuiFocus(false, false)
     XSM.Send('close')
     XSM.StopPreview(true)
+    Anim.Stop()
 end
 
 -- mode is 'tablet', 'desk', 'bay' or 'builder'.
@@ -51,6 +51,8 @@ function XSM.Open(mode, shopId)
 
     SetNuiFocus(true, true)
     XSM.Send('open', { mode = mode, state = payload.state })
+
+    if mode == 'tablet' then Anim.Start() end
 
     if XSM.vehicle then XSM.PushVehicle() end
 end
@@ -119,7 +121,6 @@ function XSM.PushVehicle()
     }
 
     XSM.Send('vehicle', { vehicle = vehicle, catalogue = catalogue })
-    XSM.Send('state', { state = { canLift = XSM.NearLift and XSM.NearLift() or false, lifted = XSM.lifted } })
 
     Hud.Update()
 end

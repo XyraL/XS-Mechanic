@@ -11,7 +11,7 @@ Config.Bridges = {
     fuel      = 'auto',   -- auto | LegacyFuel | ox_fuel | cdn-fuel | ps-fuel | none
 }
 
--- No coordinates live in this file. Every shop, bay, lift, parts counter and
+-- No coordinates live in this file. Every shop, bay, parts counter and
 -- storage point is placed in-game with /mechanic and stored in the database.
 -- This file is the rules those places play by.
 --
@@ -47,7 +47,6 @@ Config.Builder = {
 
     limits = {
         bays    = 8,
-        lifts   = 6,
         shops   = 4,
         storage = 4,
         desks   = 2,
@@ -93,6 +92,10 @@ Config.Tablet = {
 
     -- Metres. How close the tablet has to be to connect to a vehicle.
     connectDistance = 6.0,
+
+    -- Hold a tablet prop and stand like you are reading it while the panel is
+    -- open. Cosmetic only; the interface works either way.
+    animation = true,
 }
 
 -- ── The office laptop ────────────────────────────────────────────────────────
@@ -245,20 +248,6 @@ Config.CustomTuning = {
 Config.Dyno = {
     enabled = true,
     seconds = 30,
-}
-
--- ── Car lifts ────────────────────────────────────────────────────────────────
--- A prop you place in the shop that actually lifts the car on it. Job locked.
-Config.Lift = {
-    enabled = true,
-
-    prop = 'prop_carjack',
-
-    -- Off leaves the point working with no prop, for MLOs that model their own.
-    spawnProp = true,
-
-    -- Metres. How close a vehicle has to be to count as on the lift.
-    catchRadius = 3.2,
 }
 
 -- ── Nitrous ──────────────────────────────────────────────────────────────────

@@ -31,17 +31,13 @@ optional('Perf', 'client/perf.lua', { Apply = function() end, Profile = function
 optional('Odometer', 'client/service.lua', { Report = function() end })
 optional('ServiceUI', 'client/service.lua', { Replace = function() end })
 optional('Dyno', 'client/dyno.lua', { running = false, Run = function() end, Stop = function() end, Share = function() end })
-optional('Lift', 'client/lift.lua', { Spawn = function() end, Toggle = function() end, ClearAll = function() end, NearAny = function() return false end })
 optional('Nitrous', 'client/extras.lua', { active = false, Toggle = function() end, Level = function() return 0 end })
 optional('Lighting', 'client/extras.lua', { Open = function() end, Set = function() end })
+optional('Anim', 'client/anim.lua', { holding = false, Start = function() end, Stop = function() end })
 optional('Catalogue', 'client/catalogue.lua', { Build = function() return nil end, SupportsChameleon = function() return false end, IsElectric = function() return false end })
 
 if XSM and not XSM.StopPreview then
     XSM.StopPreview = function() end
-end
-
-if XSM and not XSM.NearLift then
-    XSM.NearLift = function() return false end
 end
 
 if #missing > 0 then

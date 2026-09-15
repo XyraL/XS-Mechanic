@@ -45,7 +45,6 @@
         { kind: 'storage', label: 'Storage', note: 'A stash for employees' },
         { kind: 'laptop', label: 'Office laptop', note: 'Billing, orders, staff and money' },
         { kind: 'desk', label: 'Customer desk', note: 'Where work orders get left' },
-        { kind: 'lift', label: 'Car lift', note: 'Actually raises the car on it' },
         { kind: 'dyno', label: 'Dyno bay', note: 'Where a run is done' },
         { kind: 'duty', label: 'Duty point', note: 'Toggles on and off duty' },
     ];
@@ -74,11 +73,8 @@
                 ]),
             ]),
             draft.kind === 'owned' ? XS.el('div', { class: 'field' }, [
-                XS.el('label', { text: 'Job name' }),
-                XS.el('input', {
-                    type: 'text', value: draft.job || '',
-                    onchange: (ev) => set('job', ev.target.value.trim()),
-                }),
+                XS.el('label', { text: 'Job' }),
+                jobPicker(draft, set),
                 draft.jobMissing
                     ? XS.el('div', { class: 'hint', style: 'color:var(--warn)', text: 'Your framework does not have a job by that name. Create it first, or the shop will have no staff.' })
                     : XS.el('div', { class: 'hint', text: 'Whoever holds this job works here. Give it to the person who owns the interior.' }),
@@ -180,6 +176,51 @@
                 }),
             }) : null,
         ]));
+    }
+
+    // A dropdown of the framework's real jobs, so nobody has to remember how a
+    // job name was spelled. A framework that exposes no list falls back to the
+    // text box rather than leaving you with nothing to pick.
+    function jobPicker(draft, set) {
+        const jobs = draft.jobs || [];
+
+        if (!jobs.length) {
+            return XS.el('input', {
+                type: 'text', value: draft.job || '',
+                placeholder: 'mechanic',
+                onchange: (ev) => set('job', ev.target.value.trim()),
+            });
+        }
+
+        const select = XS.el('select', {
+            onchange: (ev) => set('job', ev.target.value),
+        });
+
+        select.append(XS.el('option', {
+            value: '', selected: !draft.job, text: 'Pick a job…',
+        }));
+
+        let known = false;
+
+        for (const job of jobs) {
+            if (job.name === draft.job) known = true;
+
+            select.append(XS.el('option', {
+                value: job.name,
+                selected: job.name === draft.job,
+                text: `${job.label} — ${job.name}`,
+            }));
+        }
+
+        // A shop saved against a job that has since been removed still has to
+        // show what it points at, rather than silently reading as unset.
+        if (draft.job && !known) {
+            select.append(XS.el('option', {
+                value: draft.job, selected: true, text: `${draft.job} — missing`,
+            }));
+        }
+
+        return select;
     }
 
     function fmt(coords) {

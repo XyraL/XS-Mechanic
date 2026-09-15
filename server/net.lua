@@ -129,6 +129,8 @@ local function stateFor(src, mode, shopId)
     -- The bay only offers "pay and fit now" where self service is genuinely
     -- allowed; otherwise the customer's only route is an order to the shop.
     state.selfService = selfServiceAllowed(shop)
+    state.staffOnline = Team.OnDuty(shop)
+    state.takesOrders = shop.kind == 'owned' and Team.OnDuty(shop) > 0
 
     state.ledger = Banking.Recent(shop, 25)
     state.counters = {}
@@ -707,4 +709,9 @@ lib.callback.register('XS-Mechanic:checkout', function(src, data)
         Discord.Colour.info)
 
     return { ok = true, message = ('Paid %s.'):format(Util.Money(total)) }
+end)
+
+lib.callback.register('XS-Mechanic:jobs', function(src)
+    if not Framework.IsAdmin(src) then return {} end
+    return Framework.JobList()
 end)

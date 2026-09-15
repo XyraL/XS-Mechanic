@@ -156,7 +156,9 @@
         commission: 10,
         unpaid: 2,
         openOrders: 3,
-        selfService: true,
+        selfService: false,
+        staffOnline: 2,
+        takesOrders: true,
         basket: [
             { category: 'cosmetics', categoryLabel: 'Cosmetics', label: 'Carbon Lip — Front Bumper', price: 2150 },
             { category: 'wheels', categoryLabel: 'Wheels', label: 'Endo v1', price: 750 },
@@ -166,8 +168,6 @@
         tuningEnabled: true,
         dynoEnabled: true,
         stanceLimits: { height: 0.30, camber: 0.35, track: 0.25 },
-        canLift: true,
-        lifted: false,
         settings: { accent: 'amber', hud: true, sounds: true, autoDraft: true },
         colours: COLOURS,
 

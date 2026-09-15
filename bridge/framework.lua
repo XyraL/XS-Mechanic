@@ -291,3 +291,32 @@ else
         })
     end
 end
+
+if IsDuplicityVersion() then
+    -- Every job the framework knows, so the builder can offer a list instead of
+    -- asking an admin to type a name and hope. A framework that exposes no list
+    -- simply gets an empty one, and the builder falls back to a text box.
+    function Framework.JobList()
+        local out = {}
+
+        pcall(function()
+            local jobs
+
+            if Framework.name == 'qbox' then
+                jobs = exports.qbx_core:GetJobs()
+            elseif Framework.core and Framework.core.Shared then
+                jobs = Framework.core.Shared.Jobs
+            end
+
+            for name, job in pairs(jobs or {}) do
+                out[#out + 1] = {
+                    name = name,
+                    label = type(job) == 'table' and (job.label or job.name) or name,
+                }
+            end
+        end)
+
+        table.sort(out, function(a, b) return (a.label or '') < (b.label or '') end)
+        return out
+    end
+end
