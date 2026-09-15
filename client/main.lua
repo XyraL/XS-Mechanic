@@ -74,8 +74,9 @@ local function className(class)
     return names[class] or 'Vehicle'
 end
 
-local function driveOf(model)
-    local bias = GetVehicleHandlingFloat(model, 'CHandlingData', 'fDriveBiasFront')
+-- The handling natives take the ENTITY, not the model name.
+local function driveOf(vehicle)
+    local bias = GetVehicleHandlingFloat(vehicle, 'CHandlingData', 'fDriveBiasFront')
     if not bias then return nil end
     if bias >= 0.99 then return 'FWD' end
     if bias <= 0.01 then return 'RWD' end
@@ -104,7 +105,7 @@ function XSM.PushVehicle()
         name = catalogue.name,
         class = catalogue.class,
         className = className(catalogue.class),
-        drive = driveOf(catalogue.model),
+        drive = driveOf(XSM.vehicle),
         electric = catalogue.electric,
         owner = profile.owner,
         odometer = profile.odometer or 0,
@@ -112,6 +113,9 @@ function XSM.PushVehicle()
         outputPercent = profile.outputPercent,
         health = catalogue.health,
         service = profile.service or { due = 0 },
+        tuning = profile.tuning or {},
+        stance = profile.stance,
+        performance = profile.performance or {},
     }
 
     XSM.Send('vehicle', { vehicle = vehicle, catalogue = catalogue })

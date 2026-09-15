@@ -14,7 +14,7 @@ const manifest = readFileSync(path.join(ROOT, 'fxmanifest.lua'), 'utf8');
 
 // Globals the resource genuinely cannot run without, so stubbing them would
 // hide a fatal problem rather than soften it.
-const CORE = new Set(['Config', 'Util', 'Mods', 'Framework', 'Inventory', 'Target', 'XSM']);
+const CORE = new Set(['Config', 'Util', 'Mods', 'Tuning', 'Service', 'Framework', 'Inventory', 'Target', 'XSM']);
 
 function block(name) {
     const found = manifest.match(new RegExp(`${name}\\s*\\{([\\s\\S]*?)\\n\\}`, 'm'));

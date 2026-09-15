@@ -12,6 +12,9 @@
             { id: 'vehicle', label: 'Vehicle' },
             { id: 'tuning', label: 'Tuning' },
             { id: 'repairs', label: 'Repairs' },
+            { id: 'service', label: 'Service', when: () => XS.state.serviceEnabled !== false, badge: () => XS.state.vehicle?.service?.due },
+            { id: 'performance', label: 'Performance', when: () => XS.state.tuningEnabled !== false },
+            { id: 'dyno', label: 'Dyno', when: () => XS.state.dynoEnabled !== false },
             { id: 'invoices', label: 'Invoices', badge: () => XS.state.unpaid },
             { id: 'parts', label: 'Parts' },
             { id: 'home', label: 'Shop' },
@@ -40,6 +43,7 @@
     const LAYOUT = {
         home: 'one', vehicle: 'one', tuning: 'three', repairs: 'two',
         invoices: 'two', parts: 'two', team: 'two', settings: 'one', builder: 'two', orders: 'two',
+        service: 'two', performance: 'two', dyno: 'one',
     };
 
     function renderNav() {
@@ -47,6 +51,7 @@
 
         for (const tab of TABS[XS.mode] || []) {
             if (tab.boss && !XS.state.isBoss) continue;
+            if (tab.when && !tab.when()) continue;
 
             const count = tab.badge ? tab.badge() : 0;
 
@@ -259,6 +264,11 @@
 
             case 'toast':
                 XS.toast(data.message, data.kind);
+                break;
+
+            case 'dyno':
+                XS.state.dyno = data;
+                if (XS.panel === 'dyno') XS.show('dyno');
                 break;
 
             case 'draft':

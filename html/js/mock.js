@@ -32,6 +32,51 @@
         };
     }
 
+
+    const SERVICE_PARTS = [
+        { id: 'engine_oil', label: 'Engine Oil', wear: 12, due: true, item: 'engine_oil', quantity: 1, lifespanKm: 400, affects: 'accel' },
+        { id: 'air_filter', label: 'Air Filter', wear: 41, due: false, item: 'air_filter', quantity: 1, lifespanKm: 650, affects: 'topSpeed' },
+        { id: 'spark_plugs', label: 'Spark Plugs', wear: 18, due: true, item: 'spark_plugs', quantity: 4, lifespanKm: 800, affects: 'accel' },
+        { id: 'clutch', label: 'Clutch', wear: 74, due: false, item: 'clutch', quantity: 1, lifespanKm: 1200, affects: 'gearTime' },
+        { id: 'brake_pads', label: 'Brake Pads', wear: 9, due: true, item: 'brake_pads', quantity: 2, lifespanKm: 700, affects: 'brake' },
+        { id: 'tyres', label: 'Tyres', wear: 55, due: false, item: 'tyres', quantity: 4, lifespanKm: 900, affects: 'traction' },
+        { id: 'suspension', label: 'Suspension', wear: 88, due: false, item: 'suspension_kit', quantity: 1, lifespanKm: 1600, affects: 'suspension' },
+    ];
+
+    // Matches CustomTuning.Sheet()
+    const TUNING_SHEET = [
+        { id: 'engineSwaps', label: 'Engine Swap', requiresItem: true, current: 'v8', options: [
+            { id: 'i4', name: 'I4 Turbo 2.0', info: 'Small and revvy. Best on something light.', item: 'i4_engine', price: 18000, fitted: false },
+            { id: 'v6', name: 'V6 3.5', info: 'The sensible one.', item: 'v6_engine', price: 26000, fitted: false },
+            { id: 'v8', name: 'V8 6.2', info: 'Torque everywhere. Heavy over the front axle.', item: 'v8_engine', price: 42000, fitted: true },
+            { id: 'v12', name: 'V12 6.5', info: 'Do not put this in a hatchback and complain.', item: 'v12_engine', price: 78000, fitted: false },
+        ] },
+        { id: 'drivetrains', label: 'Drivetrain', requiresItem: true, current: null, options: [
+            { id: 'fwd', name: 'Front Wheel Drive', item: 'drivetrain_kit', price: 14000, fitted: false },
+            { id: 'rwd', name: 'Rear Wheel Drive', item: 'drivetrain_kit', price: 14000, fitted: false },
+            { id: 'awd', name: 'All Wheel Drive', info: 'Traction everywhere, a little more weight.', item: 'drivetrain_kit', price: 22000, fitted: false },
+        ] },
+        { id: 'turbos', label: 'Turbo', requiresItem: true, current: 'stage1', options: [
+            { id: 'stage1', name: 'Stage 1 Turbo', item: 'turbo_kit', price: 20000, fitted: true },
+            { id: 'stage2', name: 'Stage 2 Turbo', info: 'More boost, more heat. Service it more often.', item: 'turbo_kit', price: 38000, fitted: false },
+        ] },
+        { id: 'brakes', label: 'Brake Kit', requiresItem: true, current: null, options: [
+            { id: 'street', name: 'Street Brakes', item: 'brake_kit', price: 9000, fitted: false },
+            { id: 'track', name: 'Track Brakes', item: 'brake_kit', price: 24000, fitted: false },
+        ] },
+        { id: 'tyres', label: 'Tyres', requiresItem: true, current: 'sport', options: [
+            { id: 'sport', name: 'Sport Tyres', item: 'tyre_kit', price: 8000, fitted: true },
+            { id: 'semislick', name: 'Semi Slicks', info: 'Grippy when warm, awful in the wet.', item: 'tyre_kit', price: 19000, fitted: false },
+        ] },
+        { id: 'gearboxes', label: 'Gearbox', requiresItem: true, current: null, options: [
+            { id: 'close', name: 'Close Ratio', item: 'gearbox_kit', price: 22000, fitted: false },
+            { id: 'sequential', name: 'Sequential', info: 'Shifts fast enough to notice.', item: 'gearbox_kit', price: 46000, fitted: false },
+        ] },
+        { id: 'drift', label: 'Drift Tune', requiresItem: true, current: null, options: [
+            { id: 'drift', name: 'Drift Setup', info: 'Loose on purpose. Not faster.', item: 'drift_kit', price: 26000, fitted: false },
+        ] },
+    ];
+
     const CATALOGUE = {
         model: 'elegy2',
         name: 'Elegy Retro Custom',
@@ -112,6 +157,9 @@
         unpaid: 2,
         openOrders: 3,
         serviceEnabled: true,
+        tuningEnabled: true,
+        dynoEnabled: true,
+        stanceLimits: { height: 0.30, camber: 0.35, track: 0.25 },
         canLift: true,
         lifted: false,
         settings: { accent: 'amber', hud: true, sounds: true, autoDraft: true },
@@ -225,7 +273,11 @@
             className: 'Sports', drive: 'RWD', electric: false,
             owner: 'Ellis Ward', odometer: 4812, output: 412, outputPercent: 71,
             health: { engine: 924, body: 781, petrolTank: 1000, dirt: 4.2 },
-            service: { due: 3 },
+            service: { due: 3, parts: SERVICE_PARTS },
+            tuning: TUNING_SHEET,
+            performance: { engineSwaps: 'v8', turbos: 'stage1', tyres: 'sport' },
+            stance: { height: -0.06, fl: { camber: -0.12, track: 0.04 }, fr: { camber: -0.12, track: 0.04 },
+                      rl: { camber: -0.18, track: 0.06 }, rr: { camber: -0.18, track: 0.06 } },
         },
 
         catalogue: CATALOGUE,
@@ -235,6 +287,15 @@
             { id: 2, name: 'Paleto Auto Repair', kind: 'owned', job: 'paletomech', enabled: true },
             { id: 3, name: 'Sandy Shores Bay', kind: 'self', job: '', enabled: false },
         ],
+    };
+
+    const DYNO = {
+        state: 'done',
+        peak: 486,
+        plate: '46VSN720',
+        name: 'Elegy Retro Custom',
+        points: [{ hp: 39, torque: 31, rpm: 1233 }, { hp: 76, torque: 62, rpm: 1467 }, { hp: 113, torque: 91, rpm: 1700 }, { hp: 148, torque: 120, rpm: 1933 }, { hp: 182, torque: 147, rpm: 2167 }, { hp: 215, torque: 173, rpm: 2400 }, { hp: 245, torque: 198, rpm: 2633 }, { hp: 273, torque: 220, rpm: 2867 }, { hp: 299, torque: 241, rpm: 3100 }, { hp: 323, torque: 261, rpm: 3333 }, { hp: 344, torque: 278, rpm: 3567 }, { hp: 363, torque: 293, rpm: 3800 }, { hp: 379, torque: 306, rpm: 4033 }, { hp: 393, torque: 317, rpm: 4267 }, { hp: 403, torque: 325, rpm: 4500 }, { hp: 411, torque: 331, rpm: 4733 }, { hp: 416, torque: 336, rpm: 4967 }, { hp: 418, torque: 337, rpm: 5200 }, { hp: 418, torque: 337, rpm: 5433 }, { hp: 415, torque: 334, rpm: 5667 }, { hp: 409, torque: 330, rpm: 5900 }, { hp: 400, torque: 323, rpm: 6133 }, { hp: 389, torque: 314, rpm: 6367 }, { hp: 376, torque: 304, rpm: 6600 }, { hp: 361, torque: 291, rpm: 6833 }, { hp: 343, torque: 277, rpm: 7067 }, { hp: 324, torque: 261, rpm: 7300 }, { hp: 303, torque: 244, rpm: 7533 }, { hp: 280, torque: 226, rpm: 7767 }, { hp: 256, torque: 207, rpm: 8000 }],
+        stats: { hp: 486, torque: 392, mass: 1450, gears: 6, topSpeed: 189 },
     };
 
     const HUD = {
@@ -254,6 +315,7 @@
             setTimeout(() => {
                 window.postMessage({ action: 'open', mode: 'tablet', state: STATE }, '*');
                 window.postMessage({ action: 'hud', hud: HUD }, '*');
+                window.postMessage({ action: 'dyno', ...DYNO }, '*');
             }, 60);
             return {};
         },

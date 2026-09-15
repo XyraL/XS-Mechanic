@@ -1,5 +1,22 @@
 # Changelog
 
+## 0.2.0
+
+Servicing, custom tuning, stance, lifts and the dyno.
+
+- Parts wear as a vehicle gains mileage. Nine of them, each with its own
+  lifespan and its own effect on how the car drives. Replace them from the
+  tablet with the right part in hand.
+- Odometer built in. No second resource.
+- Engine swaps with their own sound, plus drivetrains, turbos, brake kits,
+  tyres, gearboxes and a drift setup. Item or shop money, per shop.
+- Stance: ride height, and camber and track per wheel, live on the vehicle.
+- Car lifts that actually raise the car on them. Job locked.
+- Dyno bay with a real sweep, an HP and torque graph, and a sheet you can
+  show the customer.
+- Nitrous and a lighting remote as pocket items.
+- Twenty one new items across both inventory blocks.
+
 ## 0.1.0
 
 First build.

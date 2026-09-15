@@ -9,11 +9,13 @@ Builder = { draft = nil, dirty = false }
 local LIMITS = {
     tuning = 'bays', repair = 'bays', counter = 'shops',
     storage = 'storage', laptop = 'shops', desk = 'desks', duty = 'duty',
+    lift = 'lifts', dyno = 'dynos',
 }
 
 local LABELS = {
     tuning = 'Tuning bay', repair = 'Repair bay', counter = 'Parts counter',
     storage = 'Storage', laptop = 'Office laptop', desk = 'Customer desk', duty = 'Duty point',
+    lift = 'Car lift', dyno = 'Dyno bay',
 }
 
 local preview = {}
@@ -172,10 +174,10 @@ function Builder.Place(kind)
     XSM.Send('close')
 
     local result = Placement.Start({
-        mode = (kind == 'tuning' or kind == 'repair') and 'zone' or 'point',
+        mode = (kind == 'tuning' or kind == 'repair' or kind == 'dyno') and 'zone' or 'point',
         label = LABELS[kind] or kind,
         colour = Zones.Colour[kind],
-        radius = (kind == 'tuning' or kind == 'repair') and 5.0 or 1.8,
+        radius = (kind == 'tuning' or kind == 'repair' or kind == 'dyno') and 5.0 or 1.8,
     })
 
     SetNuiFocus(true, true)
@@ -209,7 +211,7 @@ function Builder.Move(id)
     XSM.Send('close')
 
     local result = Placement.Start({
-        mode = (found.kind == 'tuning' or found.kind == 'repair') and 'zone' or 'point',
+        mode = (found.kind == 'tuning' or found.kind == 'repair' or found.kind == 'dyno') and 'zone' or 'point',
         label = LABELS[found.kind] or found.kind,
         colour = Zones.Colour[found.kind],
         radius = found.radius or 2.5,

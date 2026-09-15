@@ -52,7 +52,10 @@ local function stateFor(src, mode, shopId)
         levelMultiplier = Config.Pricing.levelMultiplier,
         pricingMode = Config.Pricing.mode,
         partsPaidBy = Config.Parts.paidBy,
-        serviceEnabled = false,
+        serviceEnabled = Config.Service.enabled,
+        tuningEnabled = Config.CustomTuning.enabled,
+        dynoEnabled = Config.Dyno.enabled,
+        stanceLimits = { height = 0.30, camber = 0.35, track = 0.25 },
         manageJobs = Config.Jobs.manageFromTablet,
         ledgerOnly = Banking.LedgerOnly(),
         kits = {},
@@ -526,4 +529,74 @@ RegisterNetEvent('XS-Mechanic:server:storeMods', function(plate, props)
     if plate == '' or type(props) ~= 'table' then return end
 
     MySQL.update.await('UPDATE player_vehicles SET mods = ? WHERE plate = ?', { json.encode(props), plate })
+end)
+
+lib.callback.register('XS-Mechanic:serviceCheck', function(src, data)
+    if not Config.Service.enabled then
+        return { ok = false, error = 'Servicing is off on this server.' }
+    end
+
+    local part = Service.ById[data and data.part or '']
+    if not part then return { ok = false, error = 'Unknown part.' } end
+
+    local quantity = part.quantity or 1
+
+    if not Inventory.Has(src, part.item, quantity) then
+        return { ok = false, error = ('You need %dx %s.'):format(quantity, part.label) }
+    end
+
+    return { ok = true }
+end)
+
+lib.callback.register('XS-Mechanic:serviceReplace', function(src, data)
+    local shop = shopFor(src, data and data.shop)
+    return Servicing.Replace(src, Util.Trim(data and data.plate or ''), data and data.part, shop)
+end)
+
+lib.callback.register('XS-Mechanic:fitTuning', function(src, data)
+    return CustomTuning.Fit(src, data or {})
+end)
+
+lib.callback.register('XS-Mechanic:removeTuning', function(src, data)
+    return CustomTuning.Remove(src, data or {})
+end)
+
+lib.callback.register('XS-Mechanic:saveStance', function(src, data)
+    return CustomTuning.SaveStance(src, data or {})
+end)
+
+lib.callback.register('XS-Mechanic:dynoCheck', function(src, data)
+    if not Config.Dyno.enabled then return { ok = false, error = 'No dyno on this server.' } end
+
+    local shop = shopFor(src, data and data.shop)
+    if not shop then return { ok = false, error = 'No shop.' } end
+
+    local job = Framework.GetJob(src)
+    if shop.kind == 'owned' and job ~= shop.job then
+        return { ok = false, error = 'Not your shop.' }
+    end
+
+    return { ok = true }
+end)
+
+-- A dyno sheet goes to whoever is stood nearby, which is how a mechanic shows
+-- a customer what they just paid for.
+RegisterNetEvent('XS-Mechanic:server:shareDyno', function(sheet)
+    local src = source
+
+    if type(sheet) ~= 'table' or type(sheet.stats) ~= 'table' then return end
+
+    local ped = GetPlayerPed(src)
+    if not ped or ped == 0 then return end
+
+    local coords = GetEntityCoords(ped)
+
+    for _, id in ipairs(GetPlayers()) do
+        id = tonumber(id)
+        local other = GetPlayerPed(id)
+
+        if other and other ~= 0 and #(coords - GetEntityCoords(other)) <= 12.0 then
+            TriggerClientEvent('XS-Mechanic:client:dynoSheet', id, sheet)
+        end
+    end
 end)

@@ -5,7 +5,7 @@ lua54 'yes'
 name 'XS-Mechanic'
 author 'XyraL'
 description 'Mechanic shops for QBox/QBCore. Build them in game, tune off the vehicle itself, bill the customer.'
-version '0.1.0'
+version '0.2.0'
 
 -- Works on QBox (qbx_core) OR QBCore (qb-core). The bridge auto-detects.
 -- Inventory, target, vehicle keys, banking and phone are all auto-detected too
@@ -20,6 +20,8 @@ shared_scripts {
     'config.lua',
     'shared/util.lua',
     'shared/mods.lua',
+    'shared/tuning.lua',
+    'shared/service.lua',
 }
 
 client_scripts {
@@ -31,8 +33,14 @@ client_scripts {
     'client/catalogue.lua',
     'client/placement.lua',
     'client/preview.lua',
+    'client/stance.lua',
+    'client/perf.lua',
+    'client/service.lua',
+    'client/dyno.lua',
+    'client/extras.lua',
     'client/repair.lua',
     'client/orders.lua',
+    'client/lift.lua',
     'client/zones.lua',
     'client/builder.lua',
     'client/hud.lua',
@@ -53,6 +61,8 @@ server_scripts {
     'server/discord.lua',
     'server/pricing.lua',
     'server/vehicles.lua',
+    'server/service.lua',
+    'server/tuning.lua',
     'server/invoices.lua',
     'server/orders.lua',
     'server/team.lua',
@@ -76,6 +86,9 @@ files {
     'html/js/panels/invoices.js',
     'html/js/panels/parts.js',
     'html/js/panels/orders.js',
+    'html/js/panels/service.js',
+    'html/js/panels/performance.js',
+    'html/js/panels/dyno.js',
     'html/js/panels/home.js',
     'html/js/panels/team.js',
     'html/js/panels/settings.js',

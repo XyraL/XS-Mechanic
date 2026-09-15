@@ -45,6 +45,8 @@
         { kind: 'storage', label: 'Storage', note: 'A stash for employees' },
         { kind: 'laptop', label: 'Office laptop', note: 'Billing, orders, staff and money' },
         { kind: 'desk', label: 'Customer desk', note: 'Where work orders get left' },
+        { kind: 'lift', label: 'Car lift', note: 'Actually raises the car on it' },
+        { kind: 'dyno', label: 'Dyno bay', note: 'Where a run is done' },
         { kind: 'duty', label: 'Duty point', note: 'Toggles on and off duty' },
     ];
 

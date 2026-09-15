@@ -80,22 +80,15 @@ function Vehicles.Summary(plate, model)
 
     return {
         odometer = math.floor(profile.odometer or 0),
-        service = { due = Vehicles.DueCount(profile) },
+        service = {
+            due = Servicing and Servicing.DueCount(profile) or 0,
+            parts = Servicing and Servicing.Sheet(profile) or {},
+        },
         owner = owner and Framework.GetNameByCitizenId(owner.citizenid) or nil,
         performance = profile.performance,
+        stance = profile.stance,
+        tuning = CustomTuning and CustomTuning.Sheet(profile, nil) or {},
     }
-end
-
--- Servicing arrives in phase two; until then nothing is ever due, and the
--- panel hides the readout rather than showing a permanent zero.
-function Vehicles.DueCount(profile)
-    local due = 0
-
-    for _, wear in pairs(profile.service or {}) do
-        if type(wear) == 'number' and wear <= 20 then due = due + 1 end
-    end
-
-    return due
 end
 
 function Vehicles.Push(entity, plate, model)
@@ -142,6 +135,12 @@ RegisterNetEvent('XS-Mechanic:server:odometer', function(plate, metres)
     if not profile then return end
 
     profile.odometer = (profile.odometer or 0) + (metres / 1000)
+
+    -- Wear is derived from the same distance, here, rather than being reported
+    -- separately — otherwise the two can drift apart and a client could send
+    -- one without the other.
+    if Servicing then Servicing.Advance(profile, metres) end
+
     Vehicles.Save(profile)
 end)
 

@@ -111,3 +111,41 @@ if Inventory.name ~= 'ox_inventory' then
         end
     end)
 end
+
+if Config.Nitrous.enabled and Config.Nitrous.item ~= '' then
+    exports('use_nitrous', function(event, _, inventory)
+        if event ~= 'usingItem' then return end
+        TriggerClientEvent('XS-Mechanic:client:useNitrous', inventory.id)
+    end)
+end
+
+if Config.Lighting.enabled and Config.Lighting.item ~= '' then
+    exports('use_lighting_remote', function(event, _, inventory)
+        if event ~= 'usingItem' then return end
+        TriggerClientEvent('XS-Mechanic:client:useLighting', inventory.id)
+    end)
+end
+
+-- qb-style inventories use the framework registrar instead.
+if Inventory.name ~= 'ox_inventory' then
+    CreateThread(function()
+        Wait(2000)
+
+        local pocket = {
+            [Config.Nitrous.item] = 'XS-Mechanic:client:useNitrous',
+            [Config.Lighting.item] = 'XS-Mechanic:client:useLighting',
+        }
+
+        for item, event in pairs(pocket) do
+            if item and item ~= '' then
+                local handler = function(src) TriggerClientEvent(event, src) end
+
+                if Framework.name == 'qbox' then
+                    exports.qbx_core:CreateUseableItem(item, handler)
+                elseif Framework.core then
+                    Framework.core.Functions.CreateUseableItem(item, handler)
+                end
+            end
+        end
+    end)
+end

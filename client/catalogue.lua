@@ -249,13 +249,18 @@ end
 -- Electric vehicles cannot take an engine swap or most servicing parts, so the
 -- panel needs to know before it offers them.
 function Catalogue.IsElectric(vehicle)
+    if not vehicle or vehicle == 0 or not DoesEntityExist(vehicle) then return false end
+
     local model = string.lower(GetDisplayNameFromVehicleModel(GetEntityModel(vehicle)) or '')
 
     for _, name in ipairs(Config.Tuning.electricModels or {}) do
         if string.lower(name) == model then return true end
     end
 
-    -- No native answers this directly. A vehicle with no gears to speak of and
-    -- no petrol tank damage model is the reliable tell across the stock list.
-    return GetVehicleHasKers(vehicle) == 1 and GetVehicleHandlingFloat(model, 'CHandlingData', 'fPetrolTankVolume') == 0.0
+    -- No native answers this directly. An empty petrol tank in the handling
+    -- data is the tell across the stock list. Note the handling natives take
+    -- the ENTITY, not the model — passing a model name returns nothing useful
+    -- and every vehicle reads as electric.
+    local tank = GetVehicleHandlingFloat(vehicle, 'CHandlingData', 'fPetrolTankVolume')
+    return type(tank) == 'number' and tank <= 0.0
 end

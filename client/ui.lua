@@ -207,3 +207,78 @@ RegisterNUICallback('discardDraft', function(_, cb)
     Builder.Discard()
     cb({ ok = true })
 end)
+
+RegisterNUICallback('replacePart', function(data, cb)
+    cb({ ok = true })
+    ServiceUI.Replace(data.part)
+end)
+
+RegisterNUICallback('fitTuning', function(data, cb)
+    local result = lib.callback.await('XS-Mechanic:fitTuning', false, {
+        shop = XSM.shop and XSM.shop.id,
+        plate = XSM.catalogue and XSM.catalogue.plate,
+        model = XSM.catalogue and XSM.catalogue.model,
+        category = data.category,
+        option = data.option,
+    })
+
+    if result and result.message then XSM.Toast(result.message, result.ok and 'good' or 'error')
+    elseif result and result.error then XSM.Toast(result.error, 'error') end
+
+    XSM.PushVehicle()
+    XSM.Refresh()
+    cb(result or { ok = false })
+end)
+
+RegisterNUICallback('removeTuning', function(data, cb)
+    local result = lib.callback.await('XS-Mechanic:removeTuning', false, {
+        shop = XSM.shop and XSM.shop.id,
+        plate = XSM.catalogue and XSM.catalogue.plate,
+        category = data.category,
+    })
+
+    if result and result.message then XSM.Toast(result.message, result.ok and 'good' or 'error') end
+
+    XSM.PushVehicle()
+    XSM.Refresh()
+    cb(result or { ok = false })
+end)
+
+RegisterNUICallback('previewStance', function(data, cb)
+    if XSM.vehicle and DoesEntityExist(XSM.vehicle) then
+        Stance.Preview(XSM.vehicle, data.stance)
+    end
+
+    cb({ ok = true })
+end)
+
+RegisterNUICallback('saveStance', function(data, cb)
+    local result = lib.callback.await('XS-Mechanic:saveStance', false, {
+        shop = XSM.shop and XSM.shop.id,
+        plate = XSM.catalogue and XSM.catalogue.plate,
+        model = XSM.catalogue and XSM.catalogue.model,
+        class = XSM.catalogue and XSM.catalogue.class,
+        stance = data.stance,
+    })
+
+    if result and result.message then XSM.Toast(result.message, result.ok and 'good' or 'error')
+    elseif result and result.error then XSM.Toast(result.error, 'error') end
+
+    XSM.Refresh()
+    cb(result or { ok = false })
+end)
+
+RegisterNUICallback('runDyno', function(_, cb)
+    cb({ ok = true })
+    Dyno.Run()
+end)
+
+RegisterNUICallback('stopDyno', function(_, cb)
+    Dyno.Stop()
+    cb({ ok = true })
+end)
+
+RegisterNUICallback('shareDyno', function(_, cb)
+    Dyno.Share()
+    cb({ ok = true })
+end)

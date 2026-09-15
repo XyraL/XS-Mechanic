@@ -12,6 +12,8 @@ local KIND_COLOUR = {
     laptop  = { 255, 196, 107 },
     desk    = { 138, 148, 162 },
     duty    = { 47, 224, 189 },
+    lift    = { 255, 122, 89 },
+    dyno    = { 109, 224, 255 },
 }
 
 Zones.Colour = KIND_COLOUR
@@ -125,6 +127,16 @@ local function optionsFor(shop, point)
         } }
     end
 
+    if point.kind == 'dyno' then
+        return { {
+            id = 'dyno',
+            label = 'Use the dyno',
+            icon = 'fa-solid fa-gauge-high',
+            canInteract = function() return jobMatches(shop) end,
+            action = function() XSM.Open('tablet', shop.id) end,
+        } }
+    end
+
     if point.kind == 'desk' then
         return { {
             id = 'order',
@@ -172,6 +184,8 @@ function Zones.Rebuild()
         for _, point in ipairs(shop.points or {}) do
             if point.kind == 'laptop' then
                 spawnLaptop(shop, point)
+            elseif point.kind == 'lift' then
+                Lift.Spawn(shop, point)
             else
                 local options = optionsFor(shop, point)
 
@@ -241,19 +255,7 @@ CreateThread(function()
 end)
 
 function XSM.NearLift()
-    local coords = GetEntityCoords(cache.ped)
-
-    for _, shop in ipairs(XSM.shops or {}) do
-        for _, point in ipairs(shop.points or {}) do
-            if point.kind == 'tuning' and point.lift then
-                if #(coords - vector3(point.coords.x, point.coords.y, point.coords.z)) < 6.0 then
-                    return true
-                end
-            end
-        end
-    end
-
-    return false
+    return Lift.NearAny()
 end
 
 AddEventHandler('onResourceStop', function(resource)

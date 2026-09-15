@@ -195,6 +195,93 @@ Config.Tuning = {
     restoreOnCancel = true,
 }
 
+-- ── Servicing ────────────────────────────────────────────────────────────────
+-- Parts wear as a vehicle gains mileage, and worn parts make it drive worse
+-- until a mechanic replaces them. What each part is, how long it lasts and what
+-- it costs the car is in shared/service.lua — that file is the one to edit.
+--
+-- Wear is worked out on the server from reported distance. Changing a lifespan
+-- does not reset anything already worn; the new rate applies from then on.
+Config.Service = {
+    enabled = true,
+
+    -- Percentage at or below which a part is flagged as due. Higher flags it
+    -- sooner. It only decides when the warning appears — it does not change
+    -- how fast the part wears or how much it costs the car.
+    threshold = 20,
+
+    -- Seconds to replace one part.
+    replaceSeconds = 10,
+
+    -- Vehicles that never wear. Spawn codes, lowercase.
+    blocked = { 'police', 'police2', 'police3', 'ambulance', 'firetruk' },
+
+    -- Charge the customer for labour on top of the parts. 0 is parts only.
+    labour = 250,
+}
+
+-- ── Custom tuning ────────────────────────────────────────────────────────────
+-- Engine swaps, drivetrains, turbos, brakes, tyres, gearboxes and drift setups.
+-- The options themselves live in shared/tuning.lua.
+--
+-- These change the vehicle's HANDLING. The shipped values are tuned against
+-- vanilla vehicles; an addon car with an unbalanced handling file can come out
+-- slower after a swap. That is the handling file, not the swap.
+Config.CustomTuning = {
+    enabled = true,
+
+    -- Take the item rather than the money. Per shop this is set in the builder;
+    -- this is what a new shop starts with.
+    requiresItem = true,
+
+    -- Seconds to fit one. An engine swap is deliberately slower than a set of
+    -- tyres.
+    seconds = { engineSwaps = 25, drivetrains = 18, gearboxes = 18, default = 10 },
+}
+
+-- ── Dyno ─────────────────────────────────────────────────────────────────────
+-- Place a dyno bay in the builder. Numbers come from the vehicle's handling and
+-- what is fitted, so they are consistent rather than physical.
+Config.Dyno = {
+    enabled = true,
+    seconds = 30,
+}
+
+-- ── Car lifts ────────────────────────────────────────────────────────────────
+-- A prop you place in the shop that actually lifts the car on it. Job locked.
+Config.Lift = {
+    enabled = true,
+
+    prop = 'prop_carjack',
+
+    -- Off leaves the point working with no prop, for MLOs that model their own.
+    spawnProp = true,
+
+    -- Metres. How close a vehicle has to be to count as on the lift.
+    catchRadius = 3.2,
+}
+
+-- ── Nitrous ──────────────────────────────────────────────────────────────────
+-- An item, and a package the mechanic fits. Both are needed.
+Config.Nitrous = {
+    enabled = true,
+    item = 'nitrous',
+
+    -- Which key holds the boost. 21 is left shift.
+    control = 21,
+
+    push = 14.0,
+    drainPerSecond = 22.0,
+    refillPerSecond = 4.0,
+}
+
+-- ── Lighting remote ──────────────────────────────────────────────────────────
+-- An item that controls the xenons and underglow, with effects.
+Config.Lighting = {
+    enabled = true,
+    item = 'lighting_remote',
+}
+
 -- ── Repairs ──────────────────────────────────────────────────────────────────
 Config.Repair = {
     -- A full repair at a bay. Price comes from Config.Pricing.
