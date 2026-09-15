@@ -96,14 +96,448 @@ you would rather import it by hand.
 
 ### 2. Add the items
 
-28 items. Copy the whole block for your inventory:
+28 items. Copy the block for your inventory and paste it **inside** the
+existing table, before its closing `}`.
 
-| Inventory | Paste `items/…` | Into |
-|---|---|---|
-| ox_inventory | `ox_inventory.lua` | `ox_inventory/data/items.lua` |
-| qb-inventory, ps-inventory, qs-inventory, others | `qb_core.lua` | `qb-core/shared/items.lua` |
+<details>
+<summary><strong>ox_inventory</strong> — paste into <code>ox_inventory/data/items.lua</code></summary>
 
-Paste the entries **inside** the existing table, before its closing `}`.
+```lua
+['mechanic_tablet'] = {
+    label = 'Mechanic Tablet',
+    weight = 800,
+    stack = false,
+    close = true,
+    description = 'Plugs into a vehicle and tells you everything it can take.',
+    client = { export = 'XS-Mechanic.openTablet' },
+},
+
+['repair_kit'] = {
+    label = 'Repair Kit',
+    weight = 3000,
+    stack = true,
+    close = true,
+    description = 'Enough to put an engine back together properly.',
+    client = { export = 'XS-Mechanic.use_repair_kit' },
+},
+
+['advanced_repair_kit'] = {
+    label = 'Advanced Repair Kit',
+    weight = 4000,
+    stack = true,
+    close = true,
+    description = 'The same job, done faster.',
+    client = { export = 'XS-Mechanic.use_advanced_repair_kit' },
+},
+
+['duct_tape'] = {
+    label = 'Duct Tape',
+    weight = 200,
+    stack = true,
+    close = true,
+    description = 'Gets you moving. Does not get you fixed.',
+    client = { export = 'XS-Mechanic.use_duct_tape' },
+},
+
+['cleaning_kit'] = {
+    label = 'Cleaning Kit',
+    weight = 1000,
+    stack = true,
+    close = true,
+    description = 'Bucket, sponge, and some pride.',
+},
+
+['tyre_kit'] = {
+    label = 'Tyre Kit',
+    weight = 5000,
+    stack = true,
+    close = true,
+    description = 'A set of tyres and the tools to fit them.',
+},
+
+['performance_part'] = {
+    label = 'Performance Part',
+    weight = 2500,
+    stack = true,
+    close = true,
+    description = 'Whatever the tuning menu asked for.',
+},
+
+['engine_oil'] = {
+    label = 'Engine Oil',
+    weight = 1200,
+    stack = true,
+    close = true,
+    description = 'Five litres and a funnel.',
+},
+
+['air_filter'] = {
+    label = 'Air Filter',
+    weight = 400,
+    stack = true,
+    close = true,
+    description = 'Cheap, and nobody changes it often enough.',
+},
+
+['spark_plugs'] = {
+    label = 'Spark Plugs',
+    weight = 200,
+    stack = true,
+    close = true,
+    description = 'Sold in fours for a reason.',
+},
+
+['clutch'] = {
+    label = 'Clutch',
+    weight = 6000,
+    stack = true,
+    close = true,
+    description = 'A long afternoon.',
+},
+
+['brake_pads'] = {
+    label = 'Brake Pads',
+    weight = 1500,
+    stack = true,
+    close = true,
+    description = 'The bit that wears out first.',
+},
+
+['tyres'] = {
+    label = 'Tyres',
+    weight = 7000,
+    stack = true,
+    close = true,
+    description = 'Rubber, round, four of them.',
+},
+
+['suspension_kit'] = {
+    label = 'Suspension Kit',
+    weight = 8000,
+    stack = true,
+    close = true,
+    description = 'Springs, dampers and top mounts.',
+},
+
+['ev_battery'] = {
+    label = 'EV Battery',
+    weight = 12000,
+    stack = true,
+    close = true,
+    description = 'Heavy, expensive, and not to be dropped.',
+},
+
+['ev_coolant'] = {
+    label = 'EV Coolant',
+    weight = 1000,
+    stack = true,
+    close = true,
+    description = 'Keeps the pack from cooking itself.',
+},
+
+['i4_engine'] = {
+    label = 'I4 Engine',
+    weight = 40000,
+    stack = true,
+    close = true,
+    description = 'Small and revvy.',
+},
+
+['v6_engine'] = {
+    label = 'V6 Engine',
+    weight = 55000,
+    stack = true,
+    close = true,
+    description = 'The sensible one.',
+},
+
+['v8_engine'] = {
+    label = 'V8 Engine',
+    weight = 70000,
+    stack = true,
+    close = true,
+    description = 'Torque everywhere.',
+},
+
+['v12_engine'] = {
+    label = 'V12 Engine',
+    weight = 85000,
+    stack = true,
+    close = true,
+    description = 'Not for a hatchback.',
+},
+
+['electric_motor'] = {
+    label = 'Electric Motor',
+    weight = 60000,
+    stack = true,
+    close = true,
+    description = 'Instant, and quiet about it.',
+},
+
+['turbo_kit'] = {
+    label = 'Turbo Kit',
+    weight = 9000,
+    stack = true,
+    close = true,
+    description = 'Snail, pipework, wastegate.',
+},
+
+['drivetrain_kit'] = {
+    label = 'Drivetrain Kit',
+    weight = 15000,
+    stack = true,
+    close = true,
+    description = 'Changes which wheels do the work.',
+},
+
+['gearbox_kit'] = {
+    label = 'Gearbox',
+    weight = 25000,
+    stack = true,
+    close = true,
+    description = 'Ratios you actually chose.',
+},
+
+['brake_kit'] = {
+    label = 'Brake Kit',
+    weight = 6000,
+    stack = true,
+    close = true,
+    description = 'Discs, calipers, braided lines.',
+},
+
+['drift_kit'] = {
+    label = 'Drift Kit',
+    weight = 7000,
+    stack = true,
+    close = true,
+    description = 'Loose on purpose.',
+},
+
+['nitrous'] = {
+    label = 'Nitrous Bottle',
+    weight = 5000,
+    stack = true,
+    close = true,
+    description = 'Arms the bottle. Hold the boost key once it is armed.',
+    client = { export = 'XS-Mechanic.use_nitrous' },
+},
+
+['lighting_remote'] = {
+    label = 'Lighting Remote',
+    weight = 300,
+    stack = false,
+    close = true,
+    description = 'Xenons and underglow, with the effects that make a meet worth turning up to.',
+    client = { export = 'XS-Mechanic.use_lighting_remote' },
+},
+```
+
+</details>
+
+<details>
+<summary><strong>qb-inventory, ps-inventory, qs-inventory and the rest</strong> — paste into <code>qb-core/shared/items.lua</code></summary>
+
+```lua
+['mechanic_tablet'] = {
+    name = 'mechanic_tablet', label = 'Mechanic Tablet', weight = 800,
+    type = 'item', image = 'mechanic_tablet.png', unique = true, useable = true,
+    shouldClose = true, combinable = nil,
+    description = 'Plugs into a vehicle and tells you everything it can take.',
+},
+
+['repair_kit'] = {
+    name = 'repair_kit', label = 'Repair Kit', weight = 3000,
+    type = 'item', image = 'repair_kit.png', unique = false, useable = true,
+    shouldClose = true, combinable = nil,
+    description = 'Enough to put an engine back together properly.',
+},
+
+['advanced_repair_kit'] = {
+    name = 'advanced_repair_kit', label = 'Advanced Repair Kit', weight = 4000,
+    type = 'item', image = 'advanced_repair_kit.png', unique = false, useable = true,
+    shouldClose = true, combinable = nil,
+    description = 'The same job, done faster.',
+},
+
+['duct_tape'] = {
+    name = 'duct_tape', label = 'Duct Tape', weight = 200,
+    type = 'item', image = 'duct_tape.png', unique = false, useable = true,
+    shouldClose = true, combinable = nil,
+    description = 'Gets you moving. Does not get you fixed.',
+},
+
+['cleaning_kit'] = {
+    name = 'cleaning_kit', label = 'Cleaning Kit', weight = 1000,
+    type = 'item', image = 'cleaning_kit.png', unique = false, useable = false,
+    shouldClose = true, combinable = nil,
+    description = 'Bucket, sponge, and some pride.',
+},
+
+['tyre_kit'] = {
+    name = 'tyre_kit', label = 'Tyre Kit', weight = 5000,
+    type = 'item', image = 'tyre_kit.png', unique = false, useable = false,
+    shouldClose = true, combinable = nil,
+    description = 'A set of tyres and the tools to fit them.',
+},
+
+['performance_part'] = {
+    name = 'performance_part', label = 'Performance Part', weight = 2500,
+    type = 'item', image = 'performance_part.png', unique = false, useable = false,
+    shouldClose = true, combinable = nil,
+    description = 'Whatever the tuning menu asked for.',
+},
+
+['engine_oil'] = {
+    name = 'engine_oil', label = 'Engine Oil', weight = 1200,
+    type = 'item', image = 'engine_oil.png', unique = false, useable = false,
+    shouldClose = true, combinable = nil,
+    description = 'Five litres and a funnel.',
+},
+
+['air_filter'] = {
+    name = 'air_filter', label = 'Air Filter', weight = 400,
+    type = 'item', image = 'air_filter.png', unique = false, useable = false,
+    shouldClose = true, combinable = nil,
+    description = 'Cheap, and nobody changes it often enough.',
+},
+
+['spark_plugs'] = {
+    name = 'spark_plugs', label = 'Spark Plugs', weight = 200,
+    type = 'item', image = 'spark_plugs.png', unique = false, useable = false,
+    shouldClose = true, combinable = nil,
+    description = 'Sold in fours for a reason.',
+},
+
+['clutch'] = {
+    name = 'clutch', label = 'Clutch', weight = 6000,
+    type = 'item', image = 'clutch.png', unique = false, useable = false,
+    shouldClose = true, combinable = nil,
+    description = 'A long afternoon.',
+},
+
+['brake_pads'] = {
+    name = 'brake_pads', label = 'Brake Pads', weight = 1500,
+    type = 'item', image = 'brake_pads.png', unique = false, useable = false,
+    shouldClose = true, combinable = nil,
+    description = 'The bit that wears out first.',
+},
+
+['tyres'] = {
+    name = 'tyres', label = 'Tyres', weight = 7000,
+    type = 'item', image = 'tyres.png', unique = false, useable = false,
+    shouldClose = true, combinable = nil,
+    description = 'Rubber, round, four of them.',
+},
+
+['suspension_kit'] = {
+    name = 'suspension_kit', label = 'Suspension Kit', weight = 8000,
+    type = 'item', image = 'suspension_kit.png', unique = false, useable = false,
+    shouldClose = true, combinable = nil,
+    description = 'Springs, dampers and top mounts.',
+},
+
+['ev_battery'] = {
+    name = 'ev_battery', label = 'EV Battery', weight = 12000,
+    type = 'item', image = 'ev_battery.png', unique = false, useable = false,
+    shouldClose = true, combinable = nil,
+    description = 'Heavy, expensive, and not to be dropped.',
+},
+
+['ev_coolant'] = {
+    name = 'ev_coolant', label = 'EV Coolant', weight = 1000,
+    type = 'item', image = 'ev_coolant.png', unique = false, useable = false,
+    shouldClose = true, combinable = nil,
+    description = 'Keeps the pack from cooking itself.',
+},
+
+['i4_engine'] = {
+    name = 'i4_engine', label = 'I4 Engine', weight = 40000,
+    type = 'item', image = 'i4_engine.png', unique = false, useable = false,
+    shouldClose = true, combinable = nil,
+    description = 'Small and revvy.',
+},
+
+['v6_engine'] = {
+    name = 'v6_engine', label = 'V6 Engine', weight = 55000,
+    type = 'item', image = 'v6_engine.png', unique = false, useable = false,
+    shouldClose = true, combinable = nil,
+    description = 'The sensible one.',
+},
+
+['v8_engine'] = {
+    name = 'v8_engine', label = 'V8 Engine', weight = 70000,
+    type = 'item', image = 'v8_engine.png', unique = false, useable = false,
+    shouldClose = true, combinable = nil,
+    description = 'Torque everywhere.',
+},
+
+['v12_engine'] = {
+    name = 'v12_engine', label = 'V12 Engine', weight = 85000,
+    type = 'item', image = 'v12_engine.png', unique = false, useable = false,
+    shouldClose = true, combinable = nil,
+    description = 'Not for a hatchback.',
+},
+
+['electric_motor'] = {
+    name = 'electric_motor', label = 'Electric Motor', weight = 60000,
+    type = 'item', image = 'electric_motor.png', unique = false, useable = false,
+    shouldClose = true, combinable = nil,
+    description = 'Instant, and quiet about it.',
+},
+
+['turbo_kit'] = {
+    name = 'turbo_kit', label = 'Turbo Kit', weight = 9000,
+    type = 'item', image = 'turbo_kit.png', unique = false, useable = false,
+    shouldClose = true, combinable = nil,
+    description = 'Snail, pipework, wastegate.',
+},
+
+['drivetrain_kit'] = {
+    name = 'drivetrain_kit', label = 'Drivetrain Kit', weight = 15000,
+    type = 'item', image = 'drivetrain_kit.png', unique = false, useable = false,
+    shouldClose = true, combinable = nil,
+    description = 'Changes which wheels do the work.',
+},
+
+['gearbox_kit'] = {
+    name = 'gearbox_kit', label = 'Gearbox', weight = 25000,
+    type = 'item', image = 'gearbox_kit.png', unique = false, useable = false,
+    shouldClose = true, combinable = nil,
+    description = 'Ratios you actually chose.',
+},
+
+['brake_kit'] = {
+    name = 'brake_kit', label = 'Brake Kit', weight = 6000,
+    type = 'item', image = 'brake_kit.png', unique = false, useable = false,
+    shouldClose = true, combinable = nil,
+    description = 'Discs, calipers, braided lines.',
+},
+
+['drift_kit'] = {
+    name = 'drift_kit', label = 'Drift Kit', weight = 7000,
+    type = 'item', image = 'drift_kit.png', unique = false, useable = false,
+    shouldClose = true, combinable = nil,
+    description = 'Loose on purpose.',
+},
+
+['nitrous'] = {
+    name = 'nitrous', label = 'Nitrous Bottle', weight = 5000,
+    type = 'item', image = 'nitrous.png', unique = false, useable = true,
+    shouldClose = true, combinable = nil,
+    description = 'Arms the bottle. Hold the boost key once it is armed.',
+},
+
+['lighting_remote'] = {
+    name = 'lighting_remote', label = 'Lighting Remote', weight = 300,
+    type = 'item', image = 'lighting_remote.png', unique = true, useable = true,
+    shouldClose = true, combinable = nil,
+    description = 'Xenons and underglow, with the effects that make a meet worth turning up to.',
+},
+```
+
+</details>
 
 **ox_inventory: the `client = { export = ... }` lines are not optional.** ox
 ignores `CreateUseableItem` entirely and only calls an export named in its own
@@ -118,6 +552,9 @@ duct_tape         nitrous      lighting_remote
 
 No item images ship with this. The qb block names a `.png` per item; drop your
 own into your inventory's images folder, or the slots show blank.
+
+The same blocks live in `items/` in the folder if you would rather open them
+there.
 
 ### 3. Give yourself admin
 
