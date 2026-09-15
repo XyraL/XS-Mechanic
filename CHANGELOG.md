@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.2.1
+
+First in-game pass. Three fixes.
+
+- Vehicles threw `bad argument #2 to tonumber` the moment one spawned.
+- ox_inventory would not start: the tablet and kit items pointed at exports
+  that were registered on the server instead of the client.
+- A vehicle you could not see logged an error instead of being ignored.
+
 ## 0.2.0
 
 Servicing, custom tuning, stance, lifts and the dyno.

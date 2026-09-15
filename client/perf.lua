@@ -127,16 +127,22 @@ function Perf.Forget(vehicle)
 end
 
 AddStateBagChangeHandler('xsmech', nil, function(bagName, _, value)
-    local netId = tonumber(bagName:gsub('entity:', ''))
+    -- gsub returns the string AND the number of replacements, and passing that
+    -- straight into tonumber makes the count its BASE — which is 1, and out of
+    -- range. The parentheses throw the second value away.
+    local netId = tonumber((bagName:gsub('entity:', '')))
     if not netId then return end
 
     CreateThread(function()
-        local vehicle = lib.waitFor(function()
+        -- lib.waitFor ERRORS on timeout when given a message, it does not
+        -- return nil. A state bag for a vehicle this client cannot see is
+        -- normal and must not spam the console, so the timeout is swallowed.
+        local ok, vehicle = pcall(lib.waitFor, function()
             local entity = NetworkGetEntityFromNetworkId(netId)
             if entity and entity ~= 0 and DoesEntityExist(entity) then return entity end
         end, 'no entity for the state bag', 5000)
 
-        if not vehicle then return end
+        if not ok or not vehicle then return end
 
         Perf.Apply(vehicle, value)
     end)

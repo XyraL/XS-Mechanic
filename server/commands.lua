@@ -56,14 +56,8 @@ RegisterCommand('mechanicshops', function(source, args)
 end, false)
 
 if Config.Tablet.item ~= '' then
-    -- ox_inventory ignores CreateUseableItem entirely; it only calls an export
-    -- named in its own data/items.lua. items/ox_inventory.lua is the paste-in
-    -- block for that, and this export is what it points at.
-    exports('openTablet', function(event, item, inventory)
-        if event ~= 'usingItem' then return end
-        TriggerClientEvent('XS-Mechanic:client:openTablet', inventory.id)
-    end)
-
+    -- ox_inventory's client.export path lives in client/items.lua; it has to
+    -- be registered on the client or ox cannot find it.
     if Inventory.name ~= 'ox_inventory' then
         CreateThread(function()
             Wait(2000)
@@ -79,15 +73,6 @@ if Config.Tablet.item ~= '' then
                     TriggerClientEvent('XS-Mechanic:client:openTablet', src)
                 end)
             end
-        end)
-    end
-end
-
-for item, kit in pairs(Config.Repair.kits) do
-    if kit then
-        exports(('use_%s'):format(item), function(event, _, inventory)
-            if event ~= 'usingItem' then return end
-            TriggerClientEvent('XS-Mechanic:client:useKit', inventory.id, item)
         end)
     end
 end
@@ -109,20 +94,6 @@ if Inventory.name ~= 'ox_inventory' then
                 end
             end
         end
-    end)
-end
-
-if Config.Nitrous.enabled and Config.Nitrous.item ~= '' then
-    exports('use_nitrous', function(event, _, inventory)
-        if event ~= 'usingItem' then return end
-        TriggerClientEvent('XS-Mechanic:client:useNitrous', inventory.id)
-    end)
-end
-
-if Config.Lighting.enabled and Config.Lighting.item ~= '' then
-    exports('use_lighting_remote', function(event, _, inventory)
-        if event ~= 'usingItem' then return end
-        TriggerClientEvent('XS-Mechanic:client:useLighting', inventory.id)
     end)
 end
 
