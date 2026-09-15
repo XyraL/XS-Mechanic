@@ -132,7 +132,7 @@ RegisterNUICallback('sendInvoice', serverCall('sendInvoice'))
 RegisterNUICallback('saveInvoice', serverCall('saveInvoice'))
 RegisterNUICallback('resendInvoice', serverCall('resendInvoice'))
 RegisterNUICallback('dropLine', serverCall('dropLine'))
-RegisterNUICallback('checkout', serverCall('checkout'))
+
 RegisterNUICallback('buyPart', serverCall('buyPart'))
 RegisterNUICallback('claimOrder', serverCall('claimOrder'))
 RegisterNUICallback('finishOrder', serverCall('finishOrder'))
@@ -280,5 +280,135 @@ end)
 
 RegisterNUICallback('shareDyno', function(_, cb)
     Dyno.Share()
+    cb({ ok = true })
+end)
+
+-- The bay basket. A customer picks, sees it on the car, and the shop gets the
+-- list. Prices shown are the shop's list price; the server prices the order
+-- again when it lands, so nothing here is trusted.
+XSM.basket = {}
+
+local function pushBasket()
+    XSM.Send('state', { state = { basket = XSM.basket } })
+end
+
+RegisterNUICallback('addPick', function(data, cb)
+    local pick = XSM.preview
+
+    -- A blind category (performance) posts the pick with the payload instead
+    -- of previewing it first.
+    if data and data.category then
+        pick = {
+            category = data.category,
+            slotId = data.slotId,
+            slot = data.slot,
+            index = data.index,
+            label = data.label,
+        }
+    end
+
+    if not pick then
+        cb({ ok = false })
+        return
+    end
+
+    local priced = lib.callback.await('XS-Mechanic:pricePick', false, {
+        shop = XSM.shop and XSM.shop.id,
+        model = XSM.catalogue and XSM.catalogue.model,
+        class = XSM.catalogue and XSM.catalogue.class,
+        category = pick.category,
+        index = pick.index,
+    })
+
+    XSM.basket[#XSM.basket + 1] = {
+        category = pick.category,
+        categoryLabel = priced and priced.label or pick.category,
+        slotId = pick.slotId,
+        slot = pick.slot,
+        index = pick.index,
+        label = pick.label,
+        wheelType = pick.wheelType,
+        legacy = pick.legacy,
+        price = priced and priced.price or 0,
+    }
+
+    -- The car goes back to how it arrived; the pick lives on the list now.
+    XSM.StopPreview(false)
+    XSM.PushVehicle()
+    pushBasket()
+
+    cb({ ok = true })
+end)
+
+RegisterNUICallback('dropPick', function(data, cb)
+    local index = tonumber(data and data.index)
+
+    if index and XSM.basket[index + 1] then
+        table.remove(XSM.basket, index + 1)
+        pushBasket()
+    end
+
+    cb({ ok = true })
+end)
+
+RegisterNUICallback('submitOrder', function(_, cb)
+    if #XSM.basket == 0 then
+        cb({ ok = false })
+        return
+    end
+
+    local notes = lib.inputDialog('Anything to tell them?', {
+        { type = 'textarea', label = 'Notes', required = false, max = 300,
+          description = 'Optional. Colour preferences, what it is doing, when you need it back.' },
+    })
+
+    local result = lib.callback.await('XS-Mechanic:submitOrder', false, {
+        shop = XSM.shop and XSM.shop.id,
+        plate = XSM.catalogue and XSM.catalogue.plate,
+        model = XSM.catalogue and XSM.catalogue.model,
+        picks = XSM.basket,
+        notes = notes and notes[1] or '',
+    })
+
+    if not result or not result.ok then
+        XSM.Toast(result and result.error or 'That did not go through.', 'error')
+        cb({ ok = false })
+        return
+    end
+
+    XSM.basket = {}
+    pushBasket()
+    XSM.Toast(result.message or 'Sent to the shop.', 'good')
+    XSM.Close()
+
+    cb({ ok = true })
+end)
+
+RegisterNUICallback('checkout', function(_, cb)
+    local result = lib.callback.await('XS-Mechanic:checkout', false, {
+        shop = XSM.shop and XSM.shop.id,
+        plate = XSM.catalogue and XSM.catalogue.plate,
+        model = XSM.catalogue and XSM.catalogue.model,
+        class = XSM.catalogue and XSM.catalogue.class,
+        picks = XSM.basket,
+    })
+
+    if not result or not result.ok then
+        XSM.Toast(result and result.error or 'That did not go through.', 'error')
+        cb({ ok = false })
+        return
+    end
+
+    -- Paid for, so what is on the car now is the truth.
+    for _, pick in ipairs(XSM.basket) do
+        Preview.Show(pick)
+    end
+
+    Preview.Commit()
+    XSM.basket = {}
+    pushBasket()
+    XSM.PushVehicle()
+    XSM.Toast(result.message or 'Done.', 'good')
+
     cb({ ok = true })
 end)

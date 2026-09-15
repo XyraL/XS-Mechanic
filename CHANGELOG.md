@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.3.0
+
+- The tablet crashed the moment it read a vehicle: two natives were spelled
+  wrong. Every native the resource calls is now checked against the real
+  list, which found a second one nobody had hit yet.
+- Customers can use a bay themselves. Pick parts, see them on the car, and
+  send the lot to the shop as a work order with an estimate. Performance
+  goes straight on the list, since there is nothing to look at.
+- The shop sees exactly what was picked, priced, on the order.
+- Paying on the spot is still there where self service is allowed.
+- The parts counter has its own screen instead of opening the laptop.
+
 ## 0.2.5
 
 - `Tried to access invalid entity`. The lift and the dyno held onto a

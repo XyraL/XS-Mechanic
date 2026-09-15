@@ -51,10 +51,8 @@
             rows.append(XS.el('div', { class: 'row' }, [
                 XS.el('div', {}, [
                     XS.el('div', { class: 't', text: `${order.customerName || 'Unknown'} · ${order.plate || '——'}` }),
-                    XS.el('div', {
-                        class: 'm',
-                        text: `${(order.requested || []).join(', ') || 'no categories'} · ${XS.ago(order.createdAt)}`,
-                    }),
+                    XS.el('div', { class: 'm', text: summarise(order.requested) + ' · ' + XS.ago(order.createdAt) }),
+                    picks(order.requested),
                     order.notes ? XS.el('div', { style: 'font-size:12px;color:var(--dim);margin-top:8px;line-height:1.5', text: order.notes }) : null,
                 ]),
                 XS.el('div', { class: 'acts' }, [
@@ -75,4 +73,43 @@
         grid.append(rows);
         host.append(grid);
     };
+
+    // An order arrives one of two ways: a list of categories ticked at the
+    // desk, or the actual parts a customer picked and looked at in a bay.
+    function summarise(requested) {
+        const list = requested || [];
+        if (!list.length) return 'nothing listed';
+
+        if (typeof list[0] === 'string') return list.join(', ');
+
+        const seen = [];
+        for (const pick of list) {
+            const label = pick.categoryLabel || pick.category;
+            if (label && !seen.includes(label)) seen.push(label);
+        }
+
+        return `${list.length} part${list.length === 1 ? '' : 's'} · ${seen.join(', ')}`;
+    }
+
+    // Only a bay order has parts to show; a desk order has nothing to list.
+    function picks(requested) {
+        const list = (requested || []).filter((entry) => typeof entry === 'object' && entry.label);
+        if (!list.length) return null;
+
+        const wrap = XS.el('div', { style: 'margin-top:10px;display:flex;flex-direction:column;gap:5px' });
+
+        for (const pick of list) {
+            wrap.append(XS.el('div', {
+                style: 'display:flex;justify-content:space-between;gap:12px;font-size:12px;padding:5px 9px;background:var(--sunk);border:1px solid var(--line);border-radius:6px',
+            }, [
+                XS.el('span', {}, [
+                    XS.el('span', { style: 'color:var(--faint);font:10px/1 var(--mono);letter-spacing:.08em;margin-right:8px', text: (pick.categoryLabel || pick.category || '').toUpperCase() }),
+                    pick.label,
+                ]),
+                XS.el('span', { style: 'font:600 12px/1 var(--mono);color:var(--accent2)', text: XS.money(pick.price) }),
+            ]));
+        }
+
+        return wrap;
+    }
 })();

@@ -52,20 +52,29 @@ function Orders.Leave(src, data)
         return { ok = false, error = 'You already have work waiting here.' }
     end
 
+    -- Two shapes arrive here. A desk order is a list of category names the
+    -- customer ticked; a bay order is the actual picks they previewed, already
+    -- priced by the server. Both are kept as they came.
     local requested = {}
+
     for _, entry in ipairs(data.requested or {}) do
-        if type(entry) == 'string' and #entry <= 32 then requested[#requested + 1] = entry end
+        if type(entry) == 'string' and #entry <= 32 then
+            requested[#requested + 1] = entry
+        elseif type(entry) == 'table' and entry.label then
+            requested[#requested + 1] = entry
+        end
     end
 
     local id = MySQL.insert.await([[
-        INSERT INTO xs_mechanic_orders (shop_id, customer, customer_name, plate, model, requested, notes)
-        VALUES (?, ?, ?, ?, ?, ?, ?)
+        INSERT INTO xs_mechanic_orders (shop_id, customer, customer_name, plate, model, requested, notes, quote)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
     ]], {
         shop.id, citizenid, Framework.GetName(src),
         Util.Trim(data.plate or ''):sub(1, 12),
         tostring(data.model or ''):sub(1, 64),
         json.encode(requested),
         tostring(data.notes or ''):sub(1, 300),
+        math.max(0, math.floor(tonumber(data.quote) or 0)),
     })
 
     if not id then return { ok = false, error = 'Could not write that down.' } end

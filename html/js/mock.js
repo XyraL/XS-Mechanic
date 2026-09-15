@@ -156,6 +156,12 @@
         commission: 10,
         unpaid: 2,
         openOrders: 3,
+        selfService: true,
+        basket: [
+            { category: 'cosmetics', categoryLabel: 'Cosmetics', label: 'Carbon Lip — Front Bumper', price: 2150 },
+            { category: 'wheels', categoryLabel: 'Wheels', label: 'Endo v1', price: 750 },
+            { category: 'performance', categoryLabel: 'Performance', label: 'Level 3 — Engine', price: 3250 },
+        ],
         serviceEnabled: true,
         tuningEnabled: true,
         dynoEnabled: true,
@@ -221,7 +227,12 @@
 
         orders: [
             { id: 412, status: 'open', customerName: 'Ellis Ward', plate: '46VSN720',
-              requested: ['Cosmetics', 'Performance'], quote: 0, createdAt: NOW - 60 * 9,
+              quote: 6150, createdAt: NOW - 60 * 9,
+              requested: [
+                  { category: 'cosmetics', categoryLabel: 'Cosmetics', label: 'Carbon Lip — Front Bumper', price: 2150 },
+                  { category: 'cosmetics', categoryLabel: 'Cosmetics', label: 'GT Wing — Spoiler', price: 2750 },
+                  { category: 'performance', categoryLabel: 'Performance', label: 'Level 2 — Brakes', price: 1250 },
+              ],
               notes: 'Wants the front end done and the engine stepped up. Not fussed on colour.' },
             { id: 411, status: 'open', customerName: 'Rosa Delgado', plate: 'KTM 8841',
               requested: ['Wheels'], quote: 0, createdAt: NOW - 60 * 34,

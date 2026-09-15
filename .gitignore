@@ -3,3 +3,6 @@ node_modules/
 
 # Internal build notes. Never ships.
 DESIGN.md
+
+# Fetched native list for tools/check-natives.mjs. Dev only.
+tools/.natives-cache.json

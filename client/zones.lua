@@ -108,10 +108,10 @@ local function optionsFor(shop, point)
     if point.kind == 'counter' then
         return { {
             id = 'parts',
-            label = 'Buy parts',
+            label = 'Parts counter',
             icon = 'fa-solid fa-boxes-stacked',
             canInteract = function() return jobMatches(shop) end,
-            action = function() XSM.Open('desk', shop.id) end,
+            action = function() XSM.Open('counter', shop.id) end,
         } }
     end
 

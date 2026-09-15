@@ -1,4 +1,7 @@
 (function () {
+    // Categories with nothing visual to show a customer.
+    const NO_PREVIEW = new Set(['performance']);
+
     XS.panels.tuning = function (host) {
         XS.clear(host);
 
@@ -134,10 +137,18 @@
         if (group.id === 'wheels') return renderWheels(grid, group, prices);
         if (group.id === 'extras') return renderExtras(grid, group, prices);
 
+        // Performance changes nothing you can look at, and a customer already
+        // knows what a bigger engine does. In a bay it goes straight onto the
+        // order rather than pretending there is something to preview.
+        const blind = XS.mode === 'bay' && NO_PREVIEW.has(group.id);
+
         for (const slot of group.slots) {
             grid.append(XS.el('div', { class: 'gh' }, [
                 XS.el('h2', { text: `${group.label} · ${slot.label}` }),
-                XS.el('div', { class: 'cap', text: `${slot.options.length} read from model` }),
+                XS.el('div', {
+                    class: 'cap',
+                    text: blind ? 'nothing to see · goes straight on the order' : `${slot.options.length} read from model`,
+                }),
             ]));
 
             const cards = XS.el('div', { class: 'cards' });
@@ -148,7 +159,21 @@
 
                 cards.append(XS.el('button', {
                     class: `c ${XS.isPreviewing(slot.id, option.index) ? 'on' : ''}`,
-                    onclick: () => XS.preview(slot, option, group.id, price),
+                    disabled: blind && option.index === -1,
+                    onclick: () => {
+                        if (blind) {
+                            XS.post('addPick', {
+                                category: group.id,
+                                slotId: slot.id,
+                                slot: slot.slot,
+                                index: option.index,
+                                label: `${option.label} — ${slot.label}`,
+                            });
+                            return;
+                        }
+
+                        XS.preview(slot, option, group.id, price);
+                    },
                 }, [
                     XS.el('div', { class: 'idx', text: option.index === -1 ? 'STOCK' : `IDX ${String(option.index).padStart(2, '0')}` }),
                     XS.el('div', { class: 'nm', text: option.label }),
@@ -362,7 +387,81 @@
         XS.panels.tuning(document.querySelector('[data-panel="tuning"]'));
     };
 
+    // A customer in a bay is building an ORDER, not paying a bill. They pick,
+    // they see it on the car, and the shop gets the list. Paying on the spot is
+    // still offered, but only where self service is actually allowed.
+    function renderBasket() {
+        const side = XS.el('aside', { class: 'side' });
+        const basket = XS.state.basket || [];
+        const preview = XS.state.previewing;
+        const total = basket.reduce((sum, item) => sum + (item.price || 0), 0);
+
+        side.append(XS.el('div', { class: 'sh' }, [
+            XS.el('span', { class: 't', text: 'What you want doing' }),
+            XS.el('span', { class: 'n', text: `${basket.length} ITEM${basket.length === 1 ? '' : 'S'}` }),
+        ]));
+
+        const lines = XS.el('div', { class: 'lines' });
+
+        for (const [i, item] of basket.entries()) {
+            lines.append(XS.el('div', { class: 'ln' }, [
+                XS.el('div', {}, [
+                    XS.el('div', { class: 'd', text: item.label }),
+                    XS.el('div', { class: 'm', text: item.categoryLabel || item.category }),
+                ]),
+                XS.el('div', { class: 'a', text: XS.money(item.price) }),
+                XS.el('button', {
+                    class: 'del', text: '×', title: 'Remove',
+                    onclick: () => XS.post('dropPick', { index: i }),
+                }),
+            ]));
+        }
+
+        if (!basket.length) {
+            lines.append(XS.el('div', { style: 'padding:26px 16px;text-align:center;color:var(--faint);font-size:12px;line-height:1.6' },
+                'Pick something and it lands here. Nothing is bought until you say so.'));
+        }
+
+        side.append(lines);
+
+        side.append(XS.el('div', { class: 'tot' }, [
+            XS.el('div', { class: 'tr big' }, [
+                XS.el('span', { text: 'ESTIMATE' }),
+                XS.el('span', { text: XS.money(total) }),
+            ]),
+
+            XS.el('div', {
+                style: 'font-size:11px;color:var(--faint);line-height:1.5;margin:-4px 0 12px',
+                text: 'The shop can change any of these prices before you pay.',
+            }),
+
+            preview
+                ? XS.el('button', {
+                    class: 'go', text: 'Add to the order',
+                    onclick: () => XS.post('addPick'),
+                })
+                : XS.el('button', {
+                    class: 'go', text: 'Send it to the shop',
+                    disabled: !basket.length,
+                    onclick: () => XS.post('submitOrder'),
+                }),
+
+            preview
+                ? XS.el('button', { class: 'sub', text: 'Not that one', onclick: () => XS.post('cancelPreview') })
+                : XS.state.selfService && basket.length
+                    ? XS.el('button', {
+                        class: 'sub', text: `Pay and fit now · ${XS.money(total)}`,
+                        onclick: () => XS.post('checkout'),
+                    })
+                    : null,
+        ]));
+
+        return side;
+    }
+
     function renderDraft() {
+        if (XS.mode === 'bay') return renderBasket();
+
         const side = XS.el('aside', { class: 'side' });
         const draft = XS.state.invoice || { items: [], total: 0 };
         const preview = XS.state.previewing;

@@ -8,6 +8,17 @@ local function shopFor(src, shopId)
     return Store.ByJob(job)
 end
 
+-- A bay is open to anyone at a self-service shop, and at an owned shop only
+-- while none of its staff are working — which is the same rule the target
+-- options use client side.
+local function selfServiceAllowed(shop)
+    if not shop or not shop.enabled then return false end
+    if shop.kind ~= 'owned' then return true end
+    if shop.selfServiceWhenEmpty == false then return false end
+
+    return Team.OnDuty(shop) == 0
+end
+
 local function settings(src)
     local citizenid = Framework.GetCitizenId(src)
     if not citizenid then return {} end
@@ -114,6 +125,10 @@ local function stateFor(src, mode, shopId)
         funds = Banking.Balance(shop),
         earned = 0,
     }
+
+    -- The bay only offers "pay and fit now" where self service is genuinely
+    -- allowed; otherwise the customer's only route is an order to the shop.
+    state.selfService = selfServiceAllowed(shop)
 
     state.ledger = Banking.Recent(shop, 25)
     state.counters = {}
@@ -372,10 +387,7 @@ lib.callback.register('XS-Mechanic:dropLine', function(src, data)
     return { ok = true }
 end)
 
-lib.callback.register('XS-Mechanic:checkout', function(src)
-    Invoices.Clear(src)
-    return { ok = true, message = 'Done.' }
-end)
+
 
 lib.callback.register('XS-Mechanic:myInvoices', function(src)
     local citizenid = Framework.GetCitizenId(src)
@@ -599,4 +611,100 @@ RegisterNetEvent('XS-Mechanic:server:shareDyno', function(sheet)
             TriggerClientEvent('XS-Mechanic:client:dynoSheet', id, sheet)
         end
     end
+end)
+
+lib.callback.register('XS-Mechanic:pricePick', function(src, data)
+    local shop = shopFor(src, data and data.shop)
+    local category = tostring(data and data.category or '')
+
+    return {
+        label = Mods.CategoryLabel[category] or category,
+        price = shop and Pricing.For(shop, category, data.model, data.class, data.index) or 0,
+    }
+end)
+
+-- A customer's order. Every price is worked out again here; the panel's
+-- numbers are for the customer to look at, not for the server to trust.
+lib.callback.register('XS-Mechanic:submitOrder', function(src, data)
+    local shop = Store.Get(data and data.shop)
+    if not shop or not shop.enabled then return { ok = false, error = 'That shop is closed.' } end
+
+    local picks = type(data.picks) == 'table' and data.picks or {}
+    if #picks == 0 then return { ok = false, error = 'Nothing on the order.' } end
+    if #picks > 40 then return { ok = false, error = 'That is too much for one order.' } end
+
+    local priced, total = {}, 0
+
+    for _, pick in ipairs(picks) do
+        local category = tostring(pick.category or '')
+
+        if Pricing.CategoryEnabled(shop, category) then
+            local price = Pricing.For(shop, category, data.model, data.class, pick.index) or 0
+
+            priced[#priced + 1] = {
+                category = category,
+                categoryLabel = Mods.CategoryLabel[category] or category,
+                slotId = tostring(pick.slotId or ''),
+                slot = tonumber(pick.slot),
+                index = tonumber(pick.index),
+                wheelType = tonumber(pick.wheelType),
+                legacy = pick.legacy == true,
+                label = tostring(pick.label or 'Part'):sub(1, 64),
+                price = price,
+            }
+
+            total = total + price
+        end
+    end
+
+    if #priced == 0 then return { ok = false, error = 'This shop does not do any of that.' } end
+
+    return Orders.Leave(src, {
+        shop = shop.id,
+        plate = data.plate,
+        model = data.model,
+        requested = priced,
+        notes = data.notes,
+        quote = total,
+    })
+end)
+
+-- Paying on the spot. Only where self service is actually allowed, and the
+-- total is worked out here rather than taken from the panel.
+lib.callback.register('XS-Mechanic:checkout', function(src, data)
+    local shop = Store.Get(data and data.shop)
+    if not shop or not shop.enabled then return { ok = false, error = 'That shop is closed.' } end
+
+    if not selfServiceAllowed(shop) then
+        return { ok = false, error = 'Somebody is working. Leave it with them.' }
+    end
+
+    local picks = type(data.picks) == 'table' and data.picks or {}
+    if #picks == 0 then return { ok = false, error = 'Nothing picked.' } end
+
+    local total = 0
+
+    for _, pick in ipairs(picks) do
+        local category = tostring(pick.category or '')
+
+        if Pricing.CategoryEnabled(shop, category) then
+            total = total + (Pricing.For(shop, category, data.model, data.class, pick.index) or 0)
+        end
+    end
+
+    local account = Config.SelfService.account
+
+    if Framework.GetMoney(src, account) < total then
+        return { ok = false, error = ('You need %s.'):format(Util.Money(total)) }
+    end
+
+    Framework.RemoveMoney(src, account, total, 'Mechanic')
+    Banking.Add(shop, total, 'Self service', Framework.GetName(src), 'selfservice')
+
+    Discord.Send('tuning', 'Self service',
+        ('**%s** fitted %d thing(s) at %s for %s'):format(
+            Framework.GetName(src), #picks, shop.name, Util.Money(total)),
+        Discord.Colour.info)
+
+    return { ok = true, message = ('Paid %s.'):format(Util.Money(total)) }
 end)

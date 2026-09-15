@@ -29,6 +29,9 @@
             { id: 'team', label: 'Team', boss: true },
             { id: 'settings', label: 'Settings' },
         ],
+        counter: [
+            { id: 'parts', label: 'Parts' },
+        ],
         bay: [
             { id: 'tuning', label: 'Tuning' },
             { id: 'repairs', label: 'Repairs' },
@@ -74,7 +77,7 @@
 
         // The laptop never leaves the office, so it summarises the shop where
         // the handheld would be showing the car it is plugged into.
-        if (XS.mode === 'desk') {
+        if (XS.mode === 'desk' || XS.mode === 'counter') {
             const s = XS.state.summary || {};
 
             strip.className = 'strip';

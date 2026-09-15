@@ -186,12 +186,13 @@ local function readPaint(vehicle)
         secondary = secondary,
         pearlescent = pearl,
         wheelColour = wheelColour,
-        customPrimary = IsVehiclePrimaryColourCustom(vehicle) and { r = pr, g = pg, b = pb } or nil,
-        customSecondary = IsVehicleSecondaryColourCustom(vehicle) and { r = sr, g = sg, b = sb } or nil,
+        customPrimary = GetIsVehiclePrimaryColourCustom(vehicle) and { r = pr, g = pg, b = pb } or nil,
+        customSecondary = GetIsVehicleSecondaryColourCustom(vehicle) and { r = sr, g = sg, b = sb } or nil,
         dashboard = GetVehicleDashboardColour(vehicle),
         interior = GetVehicleInteriorColour(vehicle),
         windowTint = GetVehicleWindowTint(vehicle),
-        chameleon = Catalogue.SupportsChameleon() and GetVehicleModColour_1(vehicle) or nil,
+        -- Color, not Colour. This one keeps the American spelling.
+        chameleon = Catalogue.SupportsChameleon() and GetVehicleModColor_1(vehicle) or nil,
     }
 end
 
