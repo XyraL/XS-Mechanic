@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>XS-Mechanic</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<div id="hud" hidden>
+  <div class="hh">
+    <span class="t" data-hud-shop>Mechanic</span>
+    <span class="p" data-hud-plate></span>
+  </div>
+  <div class="hb" data-hud-body></div>
+</div>
+
+<div id="root">
+  <div class="device" data-device="tablet">
+    <span class="led" data-led></span>
+    <span class="port"></span>
+
+    <div class="frame">
+
+      <div class="bar">
+        <div class="logo">
+          <i>M</i>
+          <div>
+            <div class="t">Mechanic</div>
+            <div class="s" data-shop-name>No shop</div>
+          </div>
+        </div>
+
+        <nav class="nav" data-nav></nav>
+
+        <div class="sp"></div>
+
+        <div class="who">
+          <i data-duty></i>
+          <span data-who>—</span>
+        </div>
+
+        <button class="xbtn" data-close title="Close">
+          <svg viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"/></svg>
+        </button>
+      </div>
+
+      <div class="strip" data-strip></div>
+
+      <div class="work" data-work>
+        <section class="panel" data-panel="home"></section>
+        <section class="panel" data-panel="vehicle"></section>
+        <section class="panel" data-panel="tuning"></section>
+        <section class="panel" data-panel="repairs"></section>
+        <section class="panel" data-panel="invoices"></section>
+        <section class="panel" data-panel="parts"></section>
+        <section class="panel" data-panel="orders"></section>
+        <section class="panel" data-panel="team"></section>
+        <section class="panel" data-panel="settings"></section>
+        <section class="panel" data-panel="builder"></section>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<div id="toasts"></div>
+<div id="modal" hidden></div>
+
+<script src="js/mock.js"></script>
+<script src="js/core.js"></script>
+<script src="js/panels/home.js"></script>
+<script src="js/panels/vehicle.js"></script>
+<script src="js/panels/tuning.js"></script>
+<script src="js/panels/repairs.js"></script>
+<script src="js/panels/invoices.js"></script>
+<script src="js/panels/parts.js"></script>
+<script src="js/panels/orders.js"></script>
+<script src="js/panels/team.js"></script>
+<script src="js/panels/settings.js"></script>
+<script src="js/panels/builder.js"></script>
+<script src="js/hud.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>

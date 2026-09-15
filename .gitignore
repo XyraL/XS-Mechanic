@@ -1,0 +1,5 @@
+node_modules/
+*.log
+
+# Internal build notes. Never ships.
+DESIGN.md

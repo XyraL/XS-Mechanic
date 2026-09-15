@@ -1,0 +1,44 @@
+--[[ Loaded last on the client.
+
+     FiveM logs a missing manifest file once at startup and carries on, so the
+     first thing that touches that file's global is where it blows up — and the
+     stack points at the caller rather than the cause. Each optional global gets
+     a no-op stub and a line in the console naming the file that is missing. The
+     feature switches off, the resource keeps running. ]]
+
+local missing = {}
+
+local function optional(name, file, stub)
+    if _G[name] ~= nil then return end
+
+    _G[name] = stub or setmetatable({}, {
+        __index = function() return function() end end,
+    })
+
+    missing[#missing + 1] = file
+end
+
+optional('Placement', 'client/placement.lua', { active = false, Start = function() return nil end, Abort = function() end })
+optional('Builder', 'client/builder.lua')
+optional('Zones', 'client/zones.lua', { Rebuild = function() end, Colour = {}, JobMatches = function() return false end, CanUseBay = function() return false end })
+optional('Preview', 'client/preview.lua', { Show = function() return false end, Respray = function() return false end, Extra = function() return false end, Commit = function() end, StopCam = function() end, Snapshot = function() end })
+optional('Repair', 'client/repair.lua')
+optional('Hud', 'client/hud.lua', { Update = function() end })
+optional('Orders', 'client/orders.lua')
+optional('Team', 'client/orders.lua', { NearestPlayer = function() return nil end })
+optional('Catalogue', 'client/catalogue.lua', { Build = function() return nil end, SupportsChameleon = function() return false end, IsElectric = function() return false end })
+
+if XSM and not XSM.StopPreview then
+    XSM.StopPreview = function() end
+end
+
+if XSM and not XSM.NearLift then
+    XSM.NearLift = function() return false end
+end
+
+if #missing > 0 then
+    print(('^1[XS-Mechanic]^0 %d file(s) missing from the client, features switched off:'):format(#missing))
+    for _, file in ipairs(missing) do
+        print(('^1[XS-Mechanic]^0   %s'):format(file))
+    end
+end
