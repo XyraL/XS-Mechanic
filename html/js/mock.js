@@ -150,7 +150,6 @@
         isBoss: true,
         manageJobs: true,
         ledgerOnly: true,
-        partsPaidBy: 'society',
         pricingMode: 'fixed',
         levelMultiplier: 0.1,
         commission: 10,
@@ -205,26 +204,6 @@
             { amount: -2500, kind: 'withdraw', note: 'Withdrawn by the boss', byName: 'Vincent Valentine', createdAt: NOW - 60 * 320 },
         ],
 
-        counters: [
-            { id: 'c1', label: 'Front counter', near: true, items: [
-                { item: 'repair_kit', label: 'Repair Kit', price: 850, stocked: 5 },
-                { item: 'advanced_repair_kit', label: 'Advanced Repair Kit', price: 2200, stocked: 1 },
-                { item: 'duct_tape', label: 'Duct Tape', price: 120, stocked: 12 },
-                { item: 'tyre_kit', label: 'Tyre Kit', price: 1400, stocked: 0 },
-                { item: 'performance_part', label: 'Performance Part', price: 3500, stocked: 2 },
-            ] },
-            { id: 'c2', label: 'Back store', near: false, items: [
-                { item: 'engine_oil', label: 'Engine Oil', price: 180 },
-                { item: 'brake_pads', label: 'Brake Pads', price: 900 },
-            ] },
-        ],
-
-        kits: [
-            { item: 'repair_kit', label: 'Repair Kit', engine: 100, held: 2 },
-            { item: 'advanced_repair_kit', label: 'Advanced Repair Kit', engine: 100, held: 0 },
-            { item: 'duct_tape', label: 'Duct Tape', engine: 35, held: 5 },
-        ],
-
         orders: [
             { id: 412, status: 'open', customerName: 'Ellis Ward', plate: '46VSN720',
               quote: 6150, createdAt: NOW - 60 * 9,
@@ -276,42 +255,38 @@
             },
         },
 
+
         crafting: [
             { item: 'body_part', label: 'Body Part', category: 'cosmetics', onShelf: 6, canMake: true,
               needs: [
-                  { key: 'metal', item: 'iron', label: 'Metal', need: 3, have: 9 },
-                  { key: 'scrap', item: 'metalscrap', label: 'Scrap', need: 5, have: 22 },
-                  { key: 'steel', item: 'steel', label: 'Steel', need: 2, have: 6 },
+                  { key: 'scrap', item: 'metalscrap', label: 'Scrap', need: 6, have: 22 },
+                  { key: 'steel', item: 'steel', label: 'Steel', need: 4, have: 9 },
               ] },
             { item: 'wheel_set', label: 'Wheel Set', category: 'wheels', onShelf: 0, canMake: false,
               needs: [
-                  { key: 'metal', item: 'iron', label: 'Metal', need: 2, have: 9 },
                   { key: 'rubber', item: 'rubber', label: 'Rubber', need: 6, have: 1 },
-                  { key: 'steel', item: 'steel', label: 'Steel', need: 4, have: 6 },
+                  { key: 'steel', item: 'steel', label: 'Steel', need: 5, have: 9 },
               ] },
             { item: 'paint_can', label: 'Paint Can', category: 'respray', onShelf: 3, canMake: true,
               needs: [
-                  { key: 'metal', item: 'iron', label: 'Metal', need: 1, have: 9 },
-                  { key: 'scrap', item: 'metalscrap', label: 'Scrap', need: 2, have: 22 },
+                  { key: 'scrap', item: 'metalscrap', label: 'Scrap', need: 3, have: 22 },
               ] },
             { item: 'light_kit', label: 'Light Kit', category: 'lights', onShelf: 2, canMake: false,
               needs: [
                   { key: 'glass', item: 'glass', label: 'Glass', need: 4, have: 2 },
-                  { key: 'metal', item: 'iron', label: 'Metal', need: 2, have: 9 },
-                  { key: 'scrap', item: 'metalscrap', label: 'Scrap', need: 1, have: 22 },
+                  { key: 'scrap', item: 'metalscrap', label: 'Scrap', need: 3, have: 22 },
               ] },
             { item: 'performance_part', label: 'Performance Part', category: 'performance', onShelf: 2, canMake: true,
               needs: [
-                  { key: 'metal', item: 'iron', label: 'Metal', need: 5, have: 9 },
-                  { key: 'rubber', item: 'rubber', label: 'Rubber', need: 2, have: 3 },
-                  { key: 'scrap', item: 'metalscrap', label: 'Scrap', need: 4, have: 22 },
-                  { key: 'steel', item: 'steel', label: 'Steel', need: 6, have: 6 },
+                  { key: 'rubber', item: 'rubber', label: 'Rubber', need: 2, have: 1 },
+                  { key: 'scrap', item: 'metalscrap', label: 'Scrap', need: 6, have: 22 },
+                  { key: 'steel', item: 'steel', label: 'Steel', need: 8, have: 9 },
               ] },
-            { item: 'repair_kit', label: 'Repair Kit', category: null, onShelf: 5, canMake: true,
+            { item: 'repair_kit', label: 'Repair Kit', onShelf: 5, canMake: true,
               needs: [
-                  { key: 'metal', item: 'iron', label: 'Metal', need: 3, have: 9 },
                   { key: 'rubber', item: 'rubber', label: 'Rubber', need: 1, have: 1 },
-                  { key: 'scrap', item: 'metalscrap', label: 'Scrap', need: 4, have: 22 },
+                  { key: 'scrap', item: 'metalscrap', label: 'Scrap', need: 5, have: 22 },
+                  { key: 'steel', item: 'steel', label: 'Steel', need: 3, have: 9 },
               ] },
         ],
 

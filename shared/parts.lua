@@ -7,7 +7,7 @@ Parts = {}
      so the panel and the server agree on what is short. ]]
 
 function Parts.ItemFor(category)
-    local item = Config.Parts.categoryItems[category or '']
+    local item = Config.Stock.categoryItems[category or '']
     if not item or item == '' then return nil end
     return item
 end
@@ -28,8 +28,8 @@ function Parts.RecipeForCategory(category)
     return nil
 end
 
--- The recipe's needs are written against the five raw materials, not against
--- item names, so a server that calls scrap something else changes one line.
+-- The recipe's needs are written against the raw materials, not against item
+-- names, so a server that calls scrap something else changes one line.
 function Parts.Materials(recipe)
     local out = {}
 
@@ -54,10 +54,6 @@ end
 function Parts.Label(item)
     local recipe = Parts.RecipeFor(item)
     if recipe then return recipe.label end
-
-    for _, entry in ipairs(Config.Parts) do
-        if entry.item == item then return entry.label end
-    end
 
     return item
 end

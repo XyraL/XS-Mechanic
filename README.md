@@ -37,7 +37,7 @@ The **tablet** is an item. It is the tool a mechanic takes to a car — plug int
 whatever is in front of you, read what is fitted, change it, repair it, bill it.
 
 The **laptop** is a prop you place in the shop. It runs the business: invoices,
-the parts counter, staff and the money. No car needed.
+work orders, staff and the money. No car needed.
 
 **Ownership is the job.** You build a shop over someone's interior, point it at
 a job, and give them that job. That is the whole ownership model — there is
@@ -46,8 +46,8 @@ each one is sealed off: its own staff, prices, parts, storage, invoices and
 money.
 
 **The builder.** `/mechanic` opens a free camera. Fly to the interior you
-actually own, drop the tuning bays, the parts counter, the storage, the laptop
-and the crafting bench where they really are, and save. No restart, no config
+actually own, drop the tuning bays, the storage, the laptop and the crafting
+bench where they really are, and save. No restart, no config
 editing, no coordinates to copy.
 
 **The boundary.** Draw the walls of the shop in the builder and that is what "at
@@ -78,22 +78,25 @@ the parts live in the shop's storage, and the tablet greys out what has run out
 instead of offering it anyway. A customer can still order something the shop has
 not got — somebody just has to go and make one.
 
-**The bench.** Place one in the builder and the shop can make its own parts out
-of scrap, metal, rubber, steel and glass. Material comes out of the mechanic's
-pockets, the finished part goes on the shelf. No minigame — pick the part, and
-if the material is there, it gets made.
+**The bench.** Place one in the builder and the shop makes its own parts out of
+scrap, steel, rubber and glass. The material comes off the shelf and the
+finished part goes back onto it, so a shop that keeps its storage stocked keeps
+itself supplied. No minigame — pick the part, and if the material is there, it
+gets made.
 
 **Who sets the prices.** A grade you pick per shop can change what the shop
-charges: the categories, the parts counter, and what a performance package
-costs and is called. Below that grade you can do the work and write the invoice,
+charges: what each category costs, and what a performance package costs and is
+called. Below that grade you can do the work and write the invoice,
 you just cannot decide what any of it is worth.
 
 **Self service.** A shop can be open to anyone, or an owned shop can fall back
 to self service while none of its staff are online. Self service pays from the
 customer's own account and writes no invoice.
 
-**Repairs.** At a bay priced off the vehicle, or from a kit anyone can carry.
-Duct tape gets you moving again without getting you fixed.
+**Repairs.** The job, not a menu option: a customer sees exactly what is wrong
+with their car and puts a repair on the same order, and the shop does the work.
+Kits anyone can carry are still there for the roadside — duct tape gets you
+moving again without getting you fixed.
 
 ## Requirements
 
@@ -126,8 +129,7 @@ existing table, before its closing `}`.
 
 The crafting bench also needs raw material, and that is **not** in the blocks
 below — it uses what your server already has. Out of the box it looks for
-`metalscrap`, `iron`, `rubber`, `steel` and `glass`, which is what QBCore ships
-with. Point `Config.Crafting.materials` at your own names if they differ.
+`metalscrap`, `steel`, `rubber` and `glass`, which is what QBCore ships with. Point `Config.Crafting.materials` at your own names if they differ.
 
 <details>
 <summary><strong>ox_inventory</strong> — paste into <code>ox_inventory/data/items.lua</code></summary>
@@ -695,11 +697,27 @@ mechanic_tablet   repair_kit   advanced_repair_kit
 duct_tape         nitrous      lighting_remote
 ```
 
-No item images ship with this. The qb block names a `.png` per item; drop your
-own into your inventory's images folder, or the slots show blank.
-
 The same blocks live in `items/` in the folder if you would rather open them
 there.
+
+**Images.** All 35 ship in `inventory_images/`, named to match the item names
+above. Copy them into your inventory's image folder:
+
+| Inventory | Where |
+|---|---|
+| ox_inventory | `ox_inventory/web/images/` |
+| qb-inventory | `qb-inventory/html/images/` |
+| ps-inventory | `ps-inventory/html/images/` |
+| qs-inventory | `qs-inventory/html/images/` |
+| codem-inventory | `codem-inventory/html/itemimages/` |
+| core_inventory | `core_inventory/html/img/` |
+
+If yours is not listed, put them wherever its existing item PNGs already live.
+Restart the inventory resource afterwards, and hard-refresh the NUI cache if
+the old blank slots stick around.
+
+The crafting materials are the exception — `metalscrap`, `steel`, `rubber` and
+`glass` are your server's items, so they keep whatever images they already have.
 
 ### 3. Give yourself admin
 

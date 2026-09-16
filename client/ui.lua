@@ -71,13 +71,25 @@ RegisterNUICallback('apply', function(_, cb)
         return
     end
 
+    -- The shelf is checked BEFORE the mechanic spends twelve seconds fitting
+    -- something that was never going to go on.
+    local stock = XSM.state and XSM.state.stock
+    local item = stock and stock.categories and stock.categories[preview.category]
+
+    if item and (stock.items[item] or 0) < 1 then
+        XSM.Toast(('No %s on the shelf. Make one at the bench.'):format(
+            string.lower(stock.labels[item] or item)), 'error')
+        cb({ ok = false })
+        return
+    end
+
     local seconds = Config.Tuning.seconds[preview.category] or Config.Tuning.seconds.default or 0
     local panel = XSM.panel or 'tuning'
 
     if seconds > 0 then
         XSM.Hide()
 
-        local done = Anim.Work(seconds, 'Fitting')
+        local done = Anim.Work(seconds, 'Fitting', preview.category)
 
         if not done then
             XSM.Unhide(panel)
@@ -117,14 +129,12 @@ RegisterNUICallback('apply', function(_, cb)
     cb({ ok = true })
 end)
 
-RegisterNUICallback('repair', function(data, cb)
+-- Staff only. A customer looking at the same screen gets a button that puts a
+-- repair on their order instead; kits are used from the inventory, not here.
+RegisterNUICallback('repair', function(_, cb)
     XSM.Close()
 
-    if data.how == 'kit' then
-        Repair.UseKit(data.item)
-    elseif XSM.shop then
-        Repair.AtBay(XSM.shop, nil)
-    end
+    if XSM.shop then Repair.AtBay(XSM.shop, nil) end
 
     cb({ ok = true })
 end)
@@ -155,12 +165,10 @@ RegisterNUICallback('saveInvoice', serverCall('saveInvoice'))
 RegisterNUICallback('resendInvoice', serverCall('resendInvoice'))
 RegisterNUICallback('dropLine', serverCall('dropLine'))
 
-RegisterNUICallback('buyPart', serverCall('buyPart'))
 RegisterNUICallback('claimOrder', serverCall('claimOrder'))
 RegisterNUICallback('finishOrder', serverCall('finishOrder'))
 RegisterNUICallback('dropOrderLine', serverCall('dropOrderLine'))
 RegisterNUICallback('setCategoryPrice', serverCall('setCategoryPrice'))
-RegisterNUICallback('setPartPrice', serverCall('setPartPrice'))
 RegisterNUICallback('setTuningPrice', serverCall('setTuningPrice'))
 RegisterNUICallback('shopMoney', serverCall('shopMoney'))
 RegisterNUICallback('setGrade', serverCall('setGrade'))
@@ -254,10 +262,20 @@ RegisterNUICallback('fitTuning', function(data, cb)
     -- steps aside and the mechanic works on the car for a bit.
     local seconds = Config.CustomTuning.seconds[data.category] or Config.CustomTuning.seconds.default or 10
 
+    local stock = XSM.state and XSM.state.stock
+    local item = stock and stock.categories and stock.categories.performance
+
+    if item and (stock.items[item] or 0) < 1 then
+        XSM.Toast(('No %s on the shelf. Make one at the bench.'):format(
+            string.lower(stock.labels[item] or item)), 'error')
+        cb({ ok = false })
+        return
+    end
+
     if seconds > 0 then
         XSM.Hide()
 
-        if not Anim.Work(seconds, 'Fitting') then
+        if not Anim.Work(seconds, 'Fitting', 'performance') then
             XSM.Unhide('performance')
             cb({ ok = false })
             return
@@ -346,13 +364,71 @@ local function pushBasket()
     XSM.Send('state', { state = { basket = XSM.basket } })
 end
 
-RegisterNUICallback('addPick', function(_, cb)
-    -- Whatever is on the car right now. A customer adds what they are looking
-    -- at, which is why performance is not on their screen: there is nothing to
-    -- look at, so there is nothing to add.
-    local pick = XSM.preview
+--[[ Building the list.
 
-    if not pick then
+     A customer clicks a part and it goes on the car AND onto the list, and it
+     stays on the car — so what they are looking at after five clicks is the
+     five things they are about to ask for, priced, rather than one part at a
+     time and a running total they have to imagine.
+
+     One pick per slot: choosing a second front bumper replaces the first. ]]
+local function putOnCar(pick)
+    -- A repair is a job, not a part. There is nothing to show on the car, so
+    -- there is nothing to put on it.
+    if pick.plain then return true end
+
+    if pick.paint then return Preview.Respray(pick) end
+    if pick.extra then return Preview.Extra(pick.extra, pick.on) end
+
+    return Preview.Show(pick)
+end
+
+local function rebuild()
+    -- Back to the car as it arrived, then everything still on the list goes
+    -- on again. Taking one part off cannot be done in isolation: putting a
+    -- bumper back means knowing what was there, and that is the snapshot.
+    Preview.Revert()
+
+    for _, pick in ipairs(XSM.basket) do putOnCar(pick) end
+
+    XSM.preview = nil
+    XSM.PushVehicle()
+    pushBasket()
+end
+
+local function forget(slotId)
+    for index, pick in ipairs(XSM.basket) do
+        if pick.slotId == slotId then
+            table.remove(XSM.basket, index)
+            return true
+        end
+    end
+
+    return false
+end
+
+RegisterNUICallback('pickPart', function(data, cb)
+    local had = forget(data.slotId)
+
+    if data.remove then
+        if had then rebuild() end
+
+        cb({ ok = true })
+        return
+    end
+
+    -- Putting a slot back to stock is not something to be charged for, so it
+    -- takes the pick off the list rather than adding one. Nothing to take off
+    -- means the car already looks like that.
+    if not data.paint and not data.extra and tonumber(data.index) == -1 then
+        if had then rebuild() end
+
+        cb({ ok = true })
+        return
+    end
+
+    if not putOnCar(data) then
+        XSM.Toast(XSM.vehicle and 'Cannot get hold of that vehicle.' or 'Nothing connected.', 'error')
         cb({ ok = false })
         return
     end
@@ -361,24 +437,30 @@ RegisterNUICallback('addPick', function(_, cb)
         shop = XSM.shop and XSM.shop.id,
         model = XSM.catalogue and XSM.catalogue.model,
         class = XSM.catalogue and XSM.catalogue.class,
-        category = pick.category,
-        index = pick.index,
+        category = data.category,
+        index = data.index,
     })
 
     XSM.basket[#XSM.basket + 1] = {
-        category = pick.category,
-        categoryLabel = priced and priced.label or pick.category,
-        slotId = pick.slotId,
-        slot = pick.slot,
-        index = pick.index,
-        label = pick.label,
-        wheelType = pick.wheelType,
-        legacy = pick.legacy,
+        category = data.category,
+        categoryLabel = priced and priced.label or data.category,
+        slotId = data.slotId,
+        slot = data.slot,
+        index = data.index,
+        label = data.label,
+        wheelType = data.wheelType,
+        legacy = data.legacy,
+        plain = data.plain,
+        paint = data.paint,
+        part = data.part,
+        custom = data.custom,
+        hex = data.hex,
+        extra = data.extra,
+        on = data.on,
         price = priced and priced.price or 0,
     }
 
-    -- The car goes back to how it arrived; the pick lives on the list now.
-    XSM.StopPreview(false)
+    XSM.preview = nil
     XSM.PushVehicle()
     pushBasket()
 
@@ -390,9 +472,15 @@ RegisterNUICallback('dropPick', function(data, cb)
 
     if index and XSM.basket[index + 1] then
         table.remove(XSM.basket, index + 1)
-        pushBasket()
+        rebuild()
     end
 
+    cb({ ok = true })
+end)
+
+RegisterNUICallback('clearPicks', function(_, cb)
+    XSM.basket = {}
+    rebuild()
     cb({ ok = true })
 end)
 
@@ -422,6 +510,10 @@ RegisterNUICallback('submitOrder', function(_, cb)
     end
 
     XSM.basket = {}
+
+    -- The order is placed, not done. The car goes back to how it arrived until
+    -- somebody actually fits any of it.
+    XSM.StopPreview(true)
     pushBasket()
     XSM.Toast(result.message or 'Sent to the shop.', 'good')
     XSM.Close()
@@ -444,11 +536,8 @@ RegisterNUICallback('checkout', function(_, cb)
         return
     end
 
-    -- Paid for, so what is on the car now is the truth.
-    for _, pick in ipairs(XSM.basket) do
-        Preview.Show(pick)
-    end
-
+    -- Everything picked is already on the car — that is what the customer has
+    -- been looking at. Paying for it just makes it the truth.
     Preview.Commit()
     XSM.basket = {}
     pushBasket()

@@ -203,6 +203,16 @@ function Preview.Restore()
     restore(held.entity, held.was)
 end
 
+-- The same, but the record is KEPT. A customer building up a list of parts
+-- takes one back off it, and everything else has to go on again from a clean
+-- car — which needs the record to still be there afterwards.
+function Preview.Revert()
+    if not snapshot then return end
+    if not snapshot.entity or not DoesEntityExist(snapshot.entity) then return end
+
+    restore(snapshot.entity, snapshot.was)
+end
+
 local function startCam(vehicle, category)
     if not Config.Tuning.preview then return end
 

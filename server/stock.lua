@@ -12,7 +12,7 @@ Stock = {}
      the point of the setting. ]]
 
 function Stock.Enabled()
-    return Config.Parts.requireStock == true
+    return Config.Stock.require == true
 end
 
 function Stock.StashOf(shop)
@@ -47,15 +47,29 @@ function Stock.Take(shop, item, amount, src)
     return Inventory.Remove(src, item, amount)
 end
 
--- A crafted part goes on the shelf. With nowhere to put it, the mechanic keeps
--- hold of it, which is also where the shop then reads it from.
+--[[ A made part goes on the shelf. With nowhere to put it, the mechanic keeps
+     hold of it, which is also where the shop then reads it from.
+
+     The count is read back rather than trusting what the add returned. A stash
+     that is full, or that the inventory decided not to write, reports success
+     in some forks and then simply does not have the item — and the mechanic is
+     left with the material gone and nothing to show for it. ]]
 function Stock.Put(shop, item, amount, src)
     amount = amount or 1
 
     local stash = Stock.StashOf(shop)
-    if stash and Inventory.StashAdd(stash, item, amount) then return true end
 
-    return Inventory.Add(src, item, amount)
+    if stash then
+        local before = Inventory.StashCount(stash, item)
+
+        Inventory.StashAdd(stash, item, amount)
+
+        if Inventory.StashCount(stash, item) >= before + amount then return true, 'shelf' end
+    end
+
+    if Inventory.Add(src, item, amount) then return true, 'pocket' end
+
+    return false
 end
 
 -- What the item each category uses is called, and how many of it there are.
@@ -68,7 +82,7 @@ function Stock.Sheet(shop, src)
     local items = {}
     local labels = {}
 
-    for category, item in pairs(Config.Parts.categoryItems) do
+    for category, item in pairs(Config.Stock.categoryItems) do
         if item and item ~= '' then
             categories[category] = item
 

@@ -34,12 +34,12 @@ function want(item, from) {
     wanted.get(item).add(from);
 }
 
-// Config.Parts.categoryItems = { cosmetics = 'body_part', ... }
-const categoryBlock = config.match(/Config\.Parts\.categoryItems\s*=\s*\{([\s\S]*?)\n\}/);
-if (categoryBlock) {
-    for (const m of categoryBlock[1].matchAll(/([a-zA-Z]+)\s*=\s*'([^']*)'/g)) {
-        want(m[2], `Config.Parts.categoryItems.${m[1]}`);
-    }
+// Config.Stock.categoryItems = { cosmetics = 'body_part', ... }
+const categoryBlock = config.match(/categoryItems\s*=\s*\{([\s\S]*?)\n    \}/);
+if (!categoryBlock) throw new Error('Config.Stock.categoryItems not found — has the block been renamed?');
+
+for (const m of categoryBlock[1].matchAll(/([a-zA-Z]+)\s*=\s*'([^']*)'/g)) {
+    want(m[2], `Config.Stock.categoryItems.${m[1]}`);
 }
 
 // Config.Crafting.recipes = { { item = 'body_part', ... }, ... }
@@ -47,14 +47,6 @@ const recipeBlock = config.match(/recipes\s*=\s*\{([\s\S]*?)\n    \},/);
 if (recipeBlock) {
     for (const m of recipeBlock[1].matchAll(/item\s*=\s*'([^']+)'/g)) {
         want(m[1], 'Config.Crafting.recipes');
-    }
-}
-
-// Config.Parts = { { item = 'repair_kit', ... } } — the counter list.
-const countersBlock = config.match(/Config\.Parts\s*=\s*\{([\s\S]*?)\n\}/);
-if (countersBlock) {
-    for (const m of countersBlock[1].matchAll(/item\s*=\s*'([^']+)'/g)) {
-        want(m[1], 'Config.Parts');
     }
 }
 

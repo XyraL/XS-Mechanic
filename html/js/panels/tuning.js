@@ -164,7 +164,7 @@
 
                 cards.append(XS.el('button', {
                     class: `c ${XS.isPreviewing(slot.id, option.index) ? 'on' : ''} ${dry && option.index !== -1 ? 'dry' : ''}`,
-                    onclick: () => XS.preview(slot, option, group.id, price),
+                    onclick: () => choose(slot, option, group.id, price),
                 }, [
                     XS.el('div', { class: 'idx', text: option.index === -1 ? 'STOCK' : `IDX ${String(option.index).padStart(2, '0')}` }),
                     XS.el('div', { class: 'nm', text: option.label }),
@@ -245,7 +245,7 @@
                 type: 'color',
                 value: hexOf(paint[`custom${part[0].toUpperCase()}${part.slice(1)}`]) || '#1e2530',
                 style: 'width:100%;height:38px;padding:2px;background:var(--sunk);border:1px solid var(--line2);border-radius:7px;cursor:pointer',
-                onchange: (ev) => XS.post('respray', { custom: part, hex: ev.target.value }),
+                onchange: (ev) => paint({ custom: part, hex: ev.target.value, label: 'Custom ' + part }),
             });
 
             custom.append(XS.el('div', { class: 'c' }, [
@@ -268,7 +268,7 @@
                 class: `sw ${current === colour.id ? 'on' : ''}`,
                 style: `background:${colour.hex}`,
                 title: colour.label,
-                onclick: () => XS.post('respray', { part, index: colour.id }),
+                onclick: () => paint({ part, index: colour.id, label: 'Respray — ' + colour.label }),
             }, [
                 XS.el('span', { class: 'lbl', text: colour.label }),
             ]));
@@ -326,7 +326,7 @@
 
             cards.append(XS.el('button', {
                 class: `c ${XS.isPreviewing('wheels', option.index) ? 'on' : ''}`,
-                onclick: () => XS.preview(
+                onclick: () => choose(
                     { id: 'wheels', slot: 23, label: 'Wheels', wheelType: chosen.type },
                     option, 'wheels', price,
                 ),
@@ -358,7 +358,7 @@
         for (const extra of group.extras) {
             cards.append(XS.el('button', {
                 class: `c ${extra.on ? 'on' : ''}`,
-                onclick: () => XS.post('extra', { id: extra.id, on: !extra.on }),
+                onclick: () => toggleExtra(extra),
             }, [
                 XS.el('div', { class: 'idx', text: `EXTRA ${String(extra.id).padStart(2, '0')}` }),
                 XS.el('div', { class: 'nm', text: `Extra ${extra.id}` }),
@@ -390,14 +390,16 @@
     }
 
     XS.isPreviewing = function (slotId, index) {
+        if (XS.mode === 'bay') {
+            return (XS.state.basket || []).some((p) => p.slotId === slotId && p.index === index);
+        }
+
         const p = XS.state.previewing;
         return !!p && p.slot === slotId && p.index === index;
     };
 
-    XS.preview = function (slot, option, category, price) {
-        XS.state.previewing = { slot: slot.id, index: option.index, label: option.label, category, price };
-
-        XS.post('preview', {
+    function payload(slot, option, category, price) {
+        return {
             slot: slot.slot,
             slotId: slot.id,
             index: option.index,
@@ -406,23 +408,72 @@
             price,
             wheelType: slot.wheelType,
             legacy: slot.legacy || false,
-        });
+        };
+    }
+
+    // A mechanic is looking at one thing at a time and then fitting it.
+    XS.preview = function (slot, option, category, price) {
+        XS.state.previewing = { slot: slot.id, index: option.index, label: option.label, category, price };
+
+        XS.post('preview', payload(slot, option, category, price));
 
         XS.panels.tuning(document.querySelector('[data-panel="tuning"]'));
     };
 
-    // A customer in a bay is building an ORDER, not paying a bill. They pick,
-    // they see it on the car, and the shop gets the list. Paying on the spot is
-    // still offered, but only where self service is actually allowed.
+    // A customer is building a list. Clicking puts it on the car AND on the
+    // list, and it stays on the car, so the total adds up in front of them.
+    XS.pick = function (slot, option, category, price) {
+        XS.post('pickPart', payload(slot, option, category, price));
+    };
+
+    function choose(slot, option, category, price) {
+        if (XS.mode === 'bay') XS.pick(slot, option, category, price);
+        else XS.preview(slot, option, category, price);
+    }
+
+    // Paint and extras take the same two routes as everything else: a mechanic
+    // is previewing, a customer is picking.
+    function paint(data) {
+        if (XS.mode === 'bay') {
+            XS.post('pickPart', Object.assign({
+                paint: true, slotId: 'respray', category: 'respray',
+            }, data));
+            return;
+        }
+
+        XS.post('respray', data);
+    }
+
+    function toggleExtra(extra) {
+        if (XS.mode === 'bay') {
+            XS.post('pickPart', {
+                extra: extra.id, on: !extra.on, category: 'extras',
+                slotId: `extra_${extra.id}`, label: `Extra ${extra.id}`,
+            });
+            return;
+        }
+
+        XS.post('extra', { id: extra.id, on: !extra.on });
+    }
+
+    // A customer in a bay is building an ORDER, not paying a bill. Clicking a
+    // part puts it on the car and on this list at the same time and leaves it
+    // there, so what they are looking at is what they are about to ask for,
+    // and the total adds up as they go.
     function renderBasket() {
         const side = XS.el('aside', { class: 'side' });
         const basket = XS.state.basket || [];
-        const preview = XS.state.previewing;
         const total = basket.reduce((sum, item) => sum + (item.price || 0), 0);
 
         side.append(XS.el('div', { class: 'sh' }, [
             XS.el('span', { class: 't', text: 'What you want doing' }),
-            XS.el('span', { class: 'n', text: `${basket.length} ITEM${basket.length === 1 ? '' : 'S'}` }),
+            basket.length
+                ? XS.el('button', {
+                    class: 'sub', style: 'padding:4px 9px;font-size:11px',
+                    text: 'Clear',
+                    onclick: () => XS.post('clearPicks'),
+                })
+                : XS.el('span', { class: 'n', text: 'NOTHING YET' }),
         ]));
 
         const lines = XS.el('div', { class: 'lines' });
@@ -459,30 +510,21 @@
                 text: 'The shop can change any of these prices before you pay.',
             }),
 
-            preview
+            // One button. With staff in you send an order; with the shop empty
+            // and self service allowed, you pay for it yourself.
+            XS.state.takesOrders
                 ? XS.el('button', {
-                    class: 'go', text: 'Add to the order',
-                    onclick: () => XS.post('addPick'),
+                    class: 'go', text: 'Send it to the shop',
+                    disabled: !basket.length,
+                    onclick: () => XS.post('submitOrder'),
                 })
-                : XS.state.takesOrders
-                    ? XS.el('button', {
-                        class: 'go', text: 'Send it to the shop',
-                        disabled: !basket.length,
-                        onclick: () => XS.post('submitOrder'),
-                    })
-                    : XS.el('button', {
-                        class: 'go', text: XS.state.selfService ? 'Pay and fit it yourself' : 'Nobody is in',
-                        disabled: !basket.length || !XS.state.selfService,
-                        onclick: () => XS.post('checkout'),
-                    }),
+                : XS.el('button', {
+                    class: 'go', text: XS.state.selfService ? 'Pay and fit it yourself' : 'Nobody is in',
+                    disabled: !basket.length || !XS.state.selfService,
+                    onclick: () => XS.post('checkout'),
+                }),
 
-            // No second pay button: with staff in you send an order, and with
-            // the shop empty the primary button already is the pay one.
-            preview
-                ? XS.el('button', { class: 'sub', text: 'Not that one', onclick: () => XS.post('cancelPreview') })
-                : null,
-
-            !preview && !XS.state.takesOrders && !XS.state.selfService
+            !XS.state.takesOrders && !XS.state.selfService
                 ? XS.el('div', {
                     style: 'font-size:11px;color:var(--faint);line-height:1.5;margin-top:10px;text-align:center',
                     text: 'Nobody is working and this shop does not allow self service. Come back later.',

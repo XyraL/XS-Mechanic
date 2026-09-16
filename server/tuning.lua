@@ -184,6 +184,8 @@ function CustomTuning.SaveStance(src, data)
         height = math.max(-0.30, math.min(0.30, tonumber(data.stance.height) or 0)),
     }
 
+    local touched = stance.height ~= 0
+
     for _, wheel in ipairs({ 'fl', 'fr', 'rl', 'rr' }) do
         local entry = data.stance[wheel] or {}
 
@@ -191,9 +193,15 @@ function CustomTuning.SaveStance(src, data)
             camber = math.max(-0.35, math.min(0.35, tonumber(entry.camber) or 0)),
             track = math.max(-0.25, math.min(0.25, tonumber(entry.track) or 0)),
         }
+
+        if stance[wheel].camber ~= 0 or stance[wheel].track ~= 0 then touched = true end
     end
 
-    profile.stance = stance
+    -- All zeros means the car goes back on its factory suspension, so the
+    -- profile is cleared rather than storing a stance of nothing — otherwise
+    -- there is always something to re-apply and never a way back.
+    profile.stance = touched and stance or nil
+
     Vehicles.Save(profile)
 
     for _, entity in ipairs(GetAllVehicles and GetAllVehicles() or {}) do

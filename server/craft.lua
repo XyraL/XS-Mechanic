@@ -2,26 +2,26 @@ Craft = {}
 
 --[[ The bench.
 
-     Raw material comes out of the mechanic's own pockets and the finished part
-     goes onto the shop's shelf, so crafting is how a shop restocks itself
-     rather than a second way to print items.
+     Material comes off the shop's shelf and the finished part goes back onto
+     it, so the bench is how a shop turns a pile of scrap into the parts it
+     fits. A shop with nowhere to keep anything uses the mechanic's pockets for
+     both ends, which is the rule the rest of stock follows.
 
-     Everything is checked again here. The panel's counts are what the mechanic
-     had a moment ago, not what the server is going to act on. ]]
+     Everything is checked again here. The panel's counts are what the shelf
+     held a moment ago, not what the server is going to act on. ]]
 
 local function recipeFor(item)
     return Parts.RecipeFor(tostring(item or ''))
 end
 
--- What the mechanic is holding of each material, against what a recipe wants.
+-- What the shop has of each material, against what a recipe wants.
 function Craft.Sheet(src, shop)
     local out = {}
-
     local held = {}
 
     for _, material in pairs(Config.Crafting.materials) do
         if held[material.item] == nil then
-            held[material.item] = Inventory.Count(src, material.item)
+            held[material.item] = Stock.Count(shop, material.item, src)
         end
     end
 
@@ -72,45 +72,47 @@ function Craft.Make(src, shop, item, amount)
     local materials = Parts.Materials(recipe)
 
     for _, material in ipairs(materials) do
-        if Inventory.Count(src, material.item) < material.need * amount then
+        if Stock.Count(shop, material.item, src) < material.need * amount then
             return { ok = false, error = ('Not enough %s.'):format(string.lower(material.label)) }
         end
     end
 
-    -- Taken one at a time so a failure halfway through can be handed back
-    -- rather than leaving the mechanic short.
+    -- Taken one material at a time so a failure halfway through can be handed
+    -- back rather than leaving the shop short.
     local taken = {}
 
-    for _, material in ipairs(materials) do
-        if Inventory.Remove(src, material.item, material.need * amount) then
-            taken[#taken + 1] = { item = material.item, count = material.need * amount }
-        else
-            for _, back in ipairs(taken) do
-                Inventory.Add(src, back.item, back.count)
-            end
+    local function handBack()
+        for _, back in ipairs(taken) do
+            Stock.Put(shop, back.item, back.count, src)
+        end
+    end
 
+    for _, material in ipairs(materials) do
+        local count = material.need * amount
+
+        if Stock.Take(shop, material.item, count, src) then
+            taken[#taken + 1] = { item = material.item, count = count }
+        else
+            handBack()
             return { ok = false, error = ('Could not take the %s.'):format(string.lower(material.label)) }
         end
     end
 
-    if not Stock.Put(shop, recipe.item, amount, src) then
-        for _, back in ipairs(taken) do
-            Inventory.Add(src, back.item, back.count)
-        end
+    local made, where = Stock.Put(shop, recipe.item, amount, src)
 
-        return { ok = false, error = 'Nowhere to put it. Clear some room.' }
+    if not made then
+        handBack()
+        return { ok = false, error = 'Nowhere to put it. Clear some room on the shelf.' }
     end
 
     Discord.Send('tuning', 'Parts made',
         ('**%s** made %dx %s at %s'):format(Framework.GetName(src), amount, recipe.label, shop.name),
         Discord.Colour.info)
 
-    local shelf = Stock.StashOf(shop)
-
     return {
         ok = true,
-        message = shelf
+        message = where == 'shelf'
             and ('Made %dx %s. On the shelf.'):format(amount, recipe.label)
-            or ('Made %dx %s.'):format(amount, recipe.label),
+            or ('Made %dx %s. In your pockets.'):format(amount, recipe.label),
     }
 end

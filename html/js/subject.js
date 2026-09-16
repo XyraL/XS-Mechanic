@@ -205,9 +205,9 @@ XS.subject = (function () {
             return;
         }
 
-        // The laptop, the counter and the bench are not pointed at a car, so
-        // they get the whole width rather than an empty column.
-        if (XS.mode === 'desk' || XS.mode === 'counter' || XS.mode === 'bench') {
+        // The laptop and the bench are not pointed at a car, so they get the
+        // whole width rather than an empty column.
+        if (XS.mode === 'desk' || XS.mode === 'bench') {
             split.className = 'split wide';
             reportViewport();
             return;

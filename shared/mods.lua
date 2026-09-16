@@ -83,6 +83,12 @@ for _, entry in ipairs(Mods.Categories) do
     Mods.CategoryLabel[entry.id] = entry.label
 end
 
+-- Priced like a category and billed like one, but not a slot on the vehicle,
+-- so they are not in the list above and still need a name to appear under.
+Mods.CategoryLabel.repair = 'Repair'
+Mods.CategoryLabel.service = 'Service'
+Mods.CategoryLabel.stance = 'Stance'
+
 -- The ten stock wheel types, plus the two that only some models carry. A model
 -- is asked which ones it actually has rather than being assumed to have all.
 Mods.WheelTypes = {

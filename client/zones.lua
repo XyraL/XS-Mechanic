@@ -137,16 +137,6 @@ local function optionsFor(shop, point)
         } }
     end
 
-    if point.kind == 'counter' then
-        return { {
-            id = 'parts',
-            label = 'Parts counter',
-            icon = 'fa-solid fa-boxes-stacked',
-            canInteract = function() return jobMatches(shop) end,
-            action = function() XSM.Open('counter', shop.id) end,
-        } }
-    end
-
     if point.kind == 'storage' then
         return { {
             id = 'stash',

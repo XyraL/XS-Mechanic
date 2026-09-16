@@ -36,7 +36,7 @@ function XSM.Close()
     Craft.Close()
 end
 
--- mode is 'tablet', 'desk', 'bay', 'counter', 'bench' or 'builder'.
+-- mode is 'tablet', 'desk', 'bay', 'bench' or 'builder'.
 function XSM.Open(mode, shopId)
     if XSM.open then return end
 

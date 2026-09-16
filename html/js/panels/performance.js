@@ -195,11 +195,14 @@
                 class: 'mini hot', text: 'Save stance',
                 onclick: () => { XS.post('saveStance', { stance: draft }); },
             }),
+            // Resetting has to be saved as well as shown, or the old stance
+            // comes straight back the next time the car spawns.
             XS.el('button', {
-                class: 'mini', text: 'Reset',
+                class: 'mini', text: 'Back to factory',
                 onclick: () => {
                     XS.state.stanceDraft = blank();
                     XS.post('previewStance', { stance: XS.state.stanceDraft });
+                    XS.post('saveStance', { stance: XS.state.stanceDraft });
                     XS.panels.performance(document.querySelector('[data-panel="performance"]'));
                 },
             }),

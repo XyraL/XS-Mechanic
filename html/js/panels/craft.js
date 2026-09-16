@@ -1,6 +1,6 @@
 (function () {
     // How many of each part to make. Kept out of XS.state so a refresh from
-    // the server does not reset what somebody was in the middle of typing.
+    // the server does not reset what somebody was in the middle of setting.
     const amounts = {};
 
     XS.panels.craft = function (host) {
@@ -11,7 +11,10 @@
 
         grid.append(XS.el('div', { class: 'gh' }, [
             XS.el('h2', { text: 'Bench' }),
-            XS.el('div', { class: 'cap', text: 'material from your pockets, part onto the shelf' }),
+            XS.el('div', {
+                class: 'cap',
+                text: XS.state.stock?.shelf ? 'material off the shelf, part back on it' : 'material out of your pockets',
+            }),
         ]));
 
         if (!recipes.length) {
@@ -20,6 +23,8 @@
             return;
         }
 
+        grid.append(materials(recipes));
+
         const cards = XS.el('div', { class: 'recipes' });
 
         for (const recipe of recipes) cards.append(card(recipe));
@@ -27,6 +32,32 @@
         grid.append(cards);
         host.append(grid);
     };
+
+    // What raw material the shop has, across the top. It is the first thing
+    // anyone walking up to the bench wants to know.
+    function materials(recipes) {
+        const held = new Map();
+
+        for (const recipe of recipes) {
+            for (const need of recipe.needs) {
+                if (!held.has(need.key)) held.set(need.key, { label: need.label, have: need.have });
+            }
+        }
+
+        const bar = XS.el('div', { class: 'stockbar' });
+
+        for (const [key, entry] of held) {
+            bar.append(XS.el('div', { class: `mat ${entry.have ? '' : 'out'}`, 'data-mat': key }, [
+                XS.el('span', { class: 'dot' }),
+                XS.el('div', {}, [
+                    XS.el('div', { class: 'k', text: entry.label }),
+                    XS.el('div', { class: 'n', text: XS.num(entry.have) }),
+                ]),
+            ]));
+        }
+
+        return bar;
+    }
 
     function card(recipe) {
         const amount = amounts[recipe.item] || 1;
@@ -37,11 +68,11 @@
         node.append(XS.el('div', { class: 'rh' }, [
             XS.el('div', {}, [
                 XS.el('div', { class: 'nm', text: recipe.label }),
-                XS.el('div', { class: 'ct', text: recipe.category ? `for ${recipe.category}` : 'supplies' }),
+                XS.el('div', { class: 'ct', text: recipe.category ? `used for ${recipe.category}` : 'supplies' }),
             ]),
-            XS.el('div', { class: 'shelf' }, [
+            XS.el('div', { class: `shelf ${recipe.onShelf ? '' : 'none'}` }, [
                 XS.el('span', { class: 'n', text: XS.num(recipe.onShelf) }),
-                XS.el('span', { class: 'k', text: 'on the shelf' }),
+                XS.el('span', { class: 'k', text: 'in stock' }),
             ]),
         ]));
 
@@ -54,7 +85,7 @@
             needs.append(XS.el('div', { class: `nd ${ok ? '' : 'no'}` }, [
                 XS.el('span', { class: 'l', text: need.label }),
                 XS.el('span', { class: 'v', text: `${XS.num(need.have)} / ${XS.num(want)}` }),
-                XS.track(Math.min(100, want > 0 ? (need.have / want) * 100 : 100), ok ? 't-cool' : 't-bad'),
+                XS.track(want > 0 ? Math.min(100, (need.have / want) * 100) : 100, ok ? '' : 't-bad'),
             ]));
         }
 
@@ -62,15 +93,9 @@
 
         node.append(XS.el('div', { class: 'ra' }, [
             XS.el('div', { class: 'qty' }, [
-                XS.el('button', {
-                    text: '−', title: 'Fewer',
-                    onclick: () => step(recipe.item, -1),
-                }),
+                XS.el('button', { text: '−', title: 'Fewer', onclick: () => step(recipe.item, -1) }),
                 XS.el('span', { text: String(amount) }),
-                XS.el('button', {
-                    text: '+', title: 'More',
-                    onclick: () => step(recipe.item, 1),
-                }),
+                XS.el('button', { text: '+', title: 'More', onclick: () => step(recipe.item, 1) }),
             ]),
             XS.el('button', {
                 class: 'go',

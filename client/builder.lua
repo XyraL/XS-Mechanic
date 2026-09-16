@@ -7,14 +7,14 @@ Builder = { draft = nil, dirty = false }
      it, and Lua pushes the whole draft back. ]]
 
 local LIMITS = {
-    tuning = 'bays', repair = 'bays', counter = 'shops',
-    storage = 'storage', laptop = 'shops', bench = 'benches', duty = 'duty',
+    tuning = 'bays', repair = 'bays', storage = 'storage',
+    laptop = 'shops', bench = 'benches', duty = 'duty',
     dyno = 'dynos',
 }
 
 local LABELS = {
-    tuning = 'Tuning bay', repair = 'Repair bay', counter = 'Parts counter',
-    storage = 'Storage', laptop = 'Office laptop', bench = 'Crafting bench', duty = 'Duty point',
+    tuning = 'Tuning bay', repair = 'Repair bay', storage = 'Storage',
+    laptop = 'Office laptop', bench = 'Crafting bench', duty = 'Duty point',
     dyno = 'Dyno bay',
 }
 

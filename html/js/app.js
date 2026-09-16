@@ -13,20 +13,15 @@
             { id: 'dyno', label: 'Dyno', when: () => XS.state.dynoEnabled !== false },
             { id: 'orders', label: 'Orders', badge: () => XS.state.openOrders },
             { id: 'invoices', label: 'Invoices', badge: () => XS.state.unpaid, when: () => XS.state.invoicesEnabled !== false },
-            { id: 'parts', label: 'Parts' },
             { id: 'home', label: 'Shop' },
             { id: 'team', label: 'Team', boss: true, when: () => !XS.state.deskOnlyManagement },
             { id: 'settings', label: 'Settings' },
         ],
         desk: [
             { id: 'invoices', label: 'Invoices', badge: () => XS.state.unpaid, when: () => XS.state.invoicesEnabled !== false },
-            { id: 'parts', label: 'Parts' },
             { id: 'home', label: 'Shop' },
             { id: 'team', label: 'Team', boss: true },
             { id: 'settings', label: 'Settings' },
-        ],
-        counter: [
-            { id: 'parts', label: 'Parts' },
         ],
         bay: [
             { id: 'tuning', label: 'Tuning' },
@@ -111,7 +106,7 @@
         if (device) {
             device.dataset.device =
                 XS.mode === 'desk' ? 'laptop'
-                    : XS.mode === 'bench' ? 'holo'
+                    : XS.mode === 'bench' ? 'bench'
                         : 'tablet';
         }
 

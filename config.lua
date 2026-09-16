@@ -333,51 +333,41 @@ Config.Repair = {
     wash = { enabled = true, seconds = 6, item = 'cleaning_kit', price = 150 },
 }
 
--- ── Parts counters ───────────────────────────────────────────────────────────
--- What each shop sells is set per shop in the builder. This is the list the
--- builder offers when you place a counter, so you are not typing item names.
-Config.Parts = {
-    { item = 'repair_kit',          label = 'Repair Kit',          price = 850 },
-    { item = 'advanced_repair_kit', label = 'Advanced Repair Kit', price = 2200 },
-    { item = 'duct_tape',           label = 'Duct Tape',           price = 120 },
-    { item = 'cleaning_kit',        label = 'Cleaning Kit',        price = 300 },
-    { item = 'tyre_kit',            label = 'Tyre Kit',            price = 1400 },
-    { item = 'performance_part',    label = 'Performance Part',    price = 3500 },
-}
-
--- Whether buying from a counter takes the shop's money or the employee's own.
-Config.Parts.paidBy = 'society'   -- society | player
-
 -- ── Stock ────────────────────────────────────────────────────────────────────
 -- A shop can only fit what it has on the shelf. The shelf is the shop's own
 -- storage point, so a mechanic stocks it the same way they stock anything else:
--- put parts in, or craft them at the bench, and the tablet reads what is there.
+-- put parts in, or make them at the bench, and the tablet reads what is there.
 --
 -- Off, every option is fittable and nothing is ever consumed — which is how
 -- this resource behaved before, if that is what you want.
 --
 -- A shop with no storage point reads the mechanic's own pockets instead, so a
 -- one-room self service shop still works without building a stockroom.
-Config.Parts.requireStock = true
+Config.Stock = {
+    require = true,
 
--- Which item each kind of work uses up. One per category; set any of them to
--- '' and that category stops needing anything.
-Config.Parts.categoryItems = {
-    cosmetics   = 'body_part',
-    wheels      = 'wheel_set',
-    respray     = 'paint_can',
-    livery      = 'vinyl_wrap',
-    lights      = 'light_kit',
-    interior    = 'interior_part',
-    extras      = 'body_part',
-    plate       = 'plate_blank',
-    performance = 'performance_part',
+    -- Which item each kind of work uses up. One per category; set any of them
+    -- to '' and that category stops needing anything.
+    categoryItems = {
+        cosmetics   = 'body_part',
+        wheels      = 'wheel_set',
+        respray     = 'paint_can',
+        livery      = 'vinyl_wrap',
+        lights      = 'light_kit',
+        interior    = 'interior_part',
+        extras      = 'body_part',
+        plate       = 'plate_blank',
+        performance = 'performance_part',
+    },
 }
 
 -- ── The crafting bench ───────────────────────────────────────────────────────
--- Place one in the builder. Raw material comes out of the mechanic's own
--- pockets and the finished part goes onto the shop's shelf, so crafting is how
--- a shop restocks itself.
+-- Place one in the builder. Material comes off the shop's own shelf and the
+-- finished part goes back onto it, so the bench is how a shop turns a pile of
+-- scrap into the parts it fits.
+--
+-- A shop with no storage point uses the mechanic's pockets for both ends
+-- instead, which is the same rule the rest of stock follows.
 --
 -- The item names below are the ones QBCore ships with. Point them at whatever
 -- your server already uses for raw material and nothing else has to change.
@@ -392,9 +382,8 @@ Config.Crafting = {
 
     materials = {
         scrap  = { item = 'metalscrap', label = 'Scrap' },
-        metal  = { item = 'iron',       label = 'Metal' },
-        rubber = { item = 'rubber',     label = 'Rubber' },
         steel  = { item = 'steel',      label = 'Steel' },
+        rubber = { item = 'rubber',     label = 'Rubber' },
         glass  = { item = 'glass',      label = 'Glass' },
     },
 
@@ -402,34 +391,37 @@ Config.Crafting = {
     -- for, which is what the tablet reads when it says a part is out of stock.
     recipes = {
         { item = 'body_part',       label = 'Body Part',      category = 'cosmetics',
-          needs = { scrap = 5, metal = 3, steel = 2 } },
+          needs = { scrap = 6, steel = 4 } },
 
         { item = 'wheel_set',       label = 'Wheel Set',      category = 'wheels',
-          needs = { rubber = 6, steel = 4, metal = 2 } },
+          needs = { rubber = 6, steel = 5 } },
 
         { item = 'paint_can',       label = 'Paint Can',      category = 'respray',
-          needs = { scrap = 2, metal = 1 } },
+          needs = { scrap = 3 } },
 
         { item = 'vinyl_wrap',      label = 'Vinyl Wrap',     category = 'livery',
           needs = { rubber = 3, scrap = 2 } },
 
         { item = 'light_kit',       label = 'Light Kit',      category = 'lights',
-          needs = { glass = 4, metal = 2, scrap = 1 } },
+          needs = { glass = 4, scrap = 3 } },
 
         { item = 'interior_part',   label = 'Interior Part',  category = 'interior',
           needs = { rubber = 3, scrap = 3, glass = 1 } },
 
         { item = 'plate_blank',     label = 'Plate Blank',    category = 'plate',
-          needs = { metal = 2, scrap = 1 } },
+          needs = { steel = 2, scrap = 1 } },
 
         { item = 'performance_part', label = 'Performance Part', category = 'performance',
-          needs = { steel = 6, metal = 5, scrap = 4, rubber = 2 } },
+          needs = { steel = 8, scrap = 6, rubber = 2 } },
 
-        { item = 'tyre_kit',        label = 'Tyre Kit',       category = nil,
+        { item = 'tyre_kit',        label = 'Tyre Kit',
           needs = { rubber = 8, steel = 2 } },
 
-        { item = 'repair_kit',      label = 'Repair Kit',     category = nil,
-          needs = { scrap = 4, metal = 3, rubber = 1 } },
+        { item = 'repair_kit',      label = 'Repair Kit',
+          needs = { scrap = 5, steel = 3, rubber = 1 } },
+
+        { item = 'cleaning_kit',    label = 'Cleaning Kit',
+          needs = { rubber = 2, glass = 1 } },
     },
 }
 

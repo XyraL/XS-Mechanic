@@ -1,5 +1,39 @@
 # Changelog
 
+## 0.5.1
+
+- **Stancing broke cars and would not reset.** Ride height was read back off
+  the car it had just changed, so once a vehicle was lowered the "stock" height
+  was the lowered one and there was nothing left to put back. Factory values
+  are taken once now, per vehicle, and everything is a difference from them —
+  so Back to factory is a real instruction and applying a stance twice does not
+  stack. Resetting saves as well as shows.
+- **The live car was framed for the whole screen** and then shown through a
+  window a sixth of it wide, which is why you got a close-up of one wing. The
+  distance is worked out from how much of the screen the window covers and how
+  big the vehicle actually is, and in a lock-up where the camera cannot back
+  off far enough, the lens widens instead. The window is bigger too.
+- **The tablet pose kept playing after the tablet closed.** It was stopped only
+  if the game said it was playing, and it reports as not playing while it is
+  still blending in. Stopped unconditionally now.
+- **A part could be fitted with an empty shelf** — the shop said no after the
+  mechanic had spent twelve seconds fitting it. The shelf is checked first.
+- **Every kind of work has its own animation.** Welding a bumper on is not
+  kneeling by a wheel.
+- **The bay adds up as you go.** Clicking a part puts it on the car and on the
+  order at the same time and leaves it there, so five clicks is five parts you
+  can see, priced, with a running total. No add-one-at-a-time step.
+- **Repairs are the job.** A customer sees what is wrong with their car and
+  puts a repair on the same order; the shop does the work. The list of ways to
+  fix it yourself is gone.
+- **The parts counter is gone.** A mechanic shop works on cars.
+- **The bench works off the shelf** — material out of storage, part back into
+  storage, and the count is read back afterwards rather than trusting what the
+  inventory said. It also no longer asks for an item called metal, which no
+  server has.
+- The bench is a solid panel over the workbench instead of a see-through one,
+  with the shop's raw material across the top.
+
 ## 0.5.0
 
 Four fixes and the shop actually being a shop.

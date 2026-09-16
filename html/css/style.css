@@ -240,7 +240,7 @@ button{cursor:pointer;border:0;background:none}
 
 /* ── Split: the subject on the left, the work on the right ─────────────── */
 
-.split{display:grid;grid-template-columns:392px minmax(0,1fr);min-height:0;overflow:hidden}
+.split{display:grid;grid-template-columns:460px minmax(0,1fr);min-height:0;overflow:hidden}
 .split.wide{grid-template-columns:minmax(0,1fr)}
 
 /* No background: the live car window is cut through this column, and a
@@ -271,7 +271,7 @@ button{cursor:pointer;border:0;background:none}
    shape — a rounded corner over a square hole leaks daylight. */
 .hero.live{border-radius:0 0 var(--r-xl) var(--r-xl);border-top:0}
 .hero .view{
-  position:relative;height:190px;
+  position:relative;height:300px;
   background:transparent;
 }
 .hero .view::after{
@@ -816,75 +816,103 @@ body.open #hud{display:none}
 
 /* ── The bench ─────────────────────────────────────────────────────────── */
 
-/* The bench is not the tablet: the shell drops away and what is left is a
-   sheet of light over the workbench, with the camera looking down at it. */
-.device[data-device="holo"]{
-  width:min(1080px,86vw);
-  height:min(720px,84vh);
-  padding:0;
-  border-radius:16px;
-  box-shadow:none;
+/* Not the tablet and not a hologram: a machine bolted to the wall over the
+   workbench, with the camera looking down at the bench behind it. Solid,
+   because you are reading numbers off it while holding a grinder. */
+.device[data-device="bench"]{
+  --shell:#1b1e22;
+  width:min(1180px,90vw);
+  height:min(760px,88vh);
+  padding:16px;
+  border-radius:18px;
 }
-.device[data-device="holo"] .skin,
-.device[data-device="holo"]::before,
-.device[data-device="holo"]::after,
-.device[data-device="holo"] .led,
-.device[data-device="holo"] .port{display:none}
-
-.device[data-device="holo"] .frame{
-  border-radius:16px;
-  box-shadow:
-    0 0 0 1px color-mix(in srgb,var(--cyan) 42%,transparent),
-    0 0 44px -6px color-mix(in srgb,var(--cyan) 34%,transparent),
-    0 0 90px -20px color-mix(in srgb,var(--cyan) 50%,transparent) inset;
-}
-.device[data-device="holo"] .frame::before{
+.device[data-device="bench"] .skin{
   background:
-    repeating-linear-gradient(180deg,
-      color-mix(in srgb,var(--cyan) 5%,transparent) 0 1px,
-      transparent 1px 3px),
-    linear-gradient(170deg,rgba(9,22,34,.9),rgba(4,11,19,.84));
-  box-shadow:none;
+    repeating-linear-gradient(90deg,rgba(255,255,255,.014) 0 2px,transparent 2px 6px),
+    linear-gradient(180deg,#2a2f35 0%,#1b1e22 12%,#101315 90%,#0a0c0e 100%);
+  box-shadow:
+    0 2px 0 rgba(255,255,255,.08) inset,
+    0 -2px 0 rgba(0,0,0,.7) inset;
 }
-.device[data-device="holo"] .frame::after{
-  background:linear-gradient(118deg,
-    color-mix(in srgb,var(--cyan) 9%,transparent) 0%,
-    transparent 46%);
+.device[data-device="bench"]::before,
+.device[data-device="bench"]::after{
+  content:"";position:absolute;top:auto;bottom:auto;
+  width:10px;height:10px;border-radius:50%;
+  background:radial-gradient(circle at 35% 35%,#4a5058,#20242a 60%,#0d0f11);
+  box-shadow:0 1px 1px rgba(0,0,0,.8);
 }
-.device[data-device="holo"] .bar{background:rgba(8,20,31,.72)}
+.device[data-device="bench"]::before{left:7px;top:7px}
+.device[data-device="bench"]::after{right:7px;top:7px}
+.device[data-device="bench"] .led{left:auto;right:7px;top:auto;bottom:7px;transform:none}
+.device[data-device="bench"] .port{display:none}
 
-.recipes{display:grid;grid-template-columns:repeat(auto-fill,minmax(264px,1fr));gap:12px}
+.device[data-device="bench"] .frame{
+  border-radius:10px;
+  box-shadow:
+    0 0 0 1px #05080c,
+    0 0 0 3px #22262b,
+    0 14px 34px rgba(0,0,0,.7) inset;
+}
+
+/* The raw material the shop has, across the top. It is the first thing you
+   want to know and the reason you walked over. */
+.stockbar{
+  display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;
+  margin-bottom:20px;
+}
+.mat{
+  display:grid;grid-template-columns:auto minmax(0,1fr);gap:12px;align-items:center;
+  padding:13px 15px;border-radius:var(--r-lg);
+  border:1px solid var(--line);background:var(--panel);
+}
+.mat .dot{width:10px;height:10px;border-radius:3px;background:var(--line3)}
+.mat[data-mat="scrap"] .dot{background:#8a94a3}
+.mat[data-mat="steel"] .dot{background:#5f7fa8}
+.mat[data-mat="rubber"] .dot{background:#3c4147}
+.mat[data-mat="glass"] .dot{background:#5fd0e0}
+.mat .k{font:9.5px/1 var(--mono);letter-spacing:.12em;text-transform:uppercase;color:var(--faint)}
+.mat .n{font:650 19px/1 var(--mono);margin-top:7px}
+.mat.out .n{color:var(--bad)}
+
+.recipes{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:12px}
 
 .rc{
-  padding:15px;border-radius:var(--r-lg);
-  border:1px solid color-mix(in srgb,var(--cyan) 26%,transparent);
-  background:linear-gradient(170deg,
-    color-mix(in srgb,var(--cyan) 7%,transparent),
-    rgba(6,14,23,.55));
+  display:flex;flex-direction:column;
+  padding:0;border-radius:var(--r-lg);overflow:hidden;
+  border:1px solid var(--line2);background:var(--panel);
   transition:.15s;
 }
-.rc:hover{border-color:color-mix(in srgb,var(--cyan) 55%,transparent)}
-.rc.short{border-color:var(--line);background:rgba(6,14,23,.5)}
+.rc:hover{border-color:var(--line3)}
+.rc.short{opacity:.72}
+.rc.short:hover{opacity:1}
 
-.rc .rh{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:12px;align-items:start;margin-bottom:14px}
-.rc .nm{font-size:14px;font-weight:600;letter-spacing:-.01em}
+.rc .rh{
+  display:grid;grid-template-columns:minmax(0,1fr) auto;gap:12px;align-items:center;
+  padding:14px 16px;border-bottom:1px solid var(--line);
+  background:linear-gradient(180deg,var(--panel2),var(--panel));
+}
+.rc .nm{font-size:14.5px;font-weight:620;letter-spacing:-.01em}
 .rc .ct{font:9.5px/1 var(--mono);letter-spacing:.1em;text-transform:uppercase;color:var(--faint);margin-top:7px}
-.rc .shelf{text-align:right}
-.rc .shelf .n{display:block;font:650 20px/1 var(--mono);color:var(--cyan)}
+.rc .shelf{text-align:right;white-space:nowrap}
+.rc .shelf .n{display:block;font:650 22px/1 var(--mono);color:var(--accent2)}
+.rc .shelf.none .n{color:var(--faint)}
 .rc .shelf .k{display:block;font:9px/1 var(--mono);letter-spacing:.09em;text-transform:uppercase;color:var(--faint);margin-top:6px}
 
-.rc .needs{display:flex;flex-direction:column;gap:9px;margin-bottom:15px}
+.rc .needs{display:flex;flex-direction:column;gap:11px;padding:15px 16px;flex:1}
 .rc .nd{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:10px;align-items:center}
-.rc .nd .l{font-size:11.5px;color:var(--dim)}
-.rc .nd .v{font:600 11px/1 var(--mono);color:var(--cyan)}
+.rc .nd .l{font-size:12px;color:var(--dim)}
+.rc .nd .v{font:600 11.5px/1 var(--mono);color:var(--good)}
 .rc .nd.no .v{color:var(--bad)}
 .rc .nd .trk{grid-column:1 / -1;margin-top:0}
 
-.rc .ra{display:grid;grid-template-columns:auto minmax(0,1fr);gap:9px;align-items:center}
+.rc .ra{
+  display:grid;grid-template-columns:auto minmax(0,1fr);gap:9px;align-items:center;
+  padding:0 16px 16px;
+}
 .rc .qty{
   display:flex;align-items:center;gap:2px;
   border:1px solid var(--line2);border-radius:var(--r);background:var(--sunk);
 }
-.rc .qty button{width:26px;height:30px;color:var(--dim);font-size:14px;transition:.15s}
-.rc .qty button:hover{color:var(--accent2)}
-.rc .qty span{min-width:20px;text-align:center;font:600 12px/1 var(--mono)}
+.rc .qty button{width:28px;height:34px;color:var(--dim);font-size:15px;transition:.15s}
+.rc .qty button:hover{color:var(--accent2);background:var(--panel2)}
+.rc .qty span{min-width:22px;text-align:center;font:600 12.5px/1 var(--mono)}

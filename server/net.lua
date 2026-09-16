@@ -78,7 +78,6 @@ local function stateFor(src, mode, shopId)
         colours = colourTable(),
         levelMultiplier = Config.Pricing.levelMultiplier,
         pricingMode = Config.Pricing.mode,
-        partsPaidBy = Config.Parts.paidBy,
         serviceEnabled = Config.Service.enabled,
         livePreview = Config.Tablet.livePreview,
         invoicesEnabled = Config.Invoices.enabled,
@@ -88,22 +87,9 @@ local function stateFor(src, mode, shopId)
         stanceLimits = { height = 0.30, camber = 0.35, track = 0.25 },
         manageJobs = Config.Jobs.manageFromTablet,
         ledgerOnly = Banking.LedgerOnly(),
-        kits = {},
         shops = {},
         invoice = Invoices.Draft(src),
     }
-
-    for item, kit in pairs(Config.Repair.kits) do
-        if kit then
-            state.kits[#state.kits + 1] = {
-                item = item, label = kit.label,
-                engine = kit.engine, body = kit.body,
-                held = Inventory.Count(src, item),
-            }
-        end
-    end
-
-    table.sort(state.kits, function(a, b) return a.label < b.label end)
 
     if mode == 'builder' then
         for _, entry in ipairs(Store.All()) do
@@ -164,39 +150,6 @@ local function stateFor(src, mode, shopId)
         state.crafting = Craft.Sheet(src, shop)
     end
 
-    -- Config.Parts is an array with a few settings hung off it, so the list
-    -- the panel gets is built rather than passed straight through — otherwise
-    -- paidBy arrives looking like something the counter sells.
-    local catalogue = {}
-
-    if #(shop.parts or {}) > 0 then
-        for _, entry in ipairs(shop.parts) do
-            catalogue[#catalogue + 1] = { item = entry.item, label = entry.label, price = entry.price }
-        end
-    else
-        for _, entry in ipairs(Config.Parts) do
-            catalogue[#catalogue + 1] = { item = entry.item, label = entry.label, price = entry.price }
-        end
-    end
-
-    for _, entry in ipairs(catalogue) do
-        entry.stocked = Stock.Count(shop, entry.item, src)
-    end
-
-    state.partsList = catalogue
-    state.counters = {}
-
-    for _, point in ipairs(shop.points or {}) do
-        if point.kind == 'counter' then
-            state.counters[#state.counters + 1] = {
-                id = point.id,
-                label = point.label or 'Parts counter',
-                near = true,
-                items = catalogue,
-            }
-        end
-    end
-
     return state
 end
 
@@ -216,7 +169,7 @@ lib.callback.register('XS-Mechanic:bootstrap', function(src, data)
 
     -- The bench belongs to the shop rather than to the tablet, so it needs the
     -- job and not the item.
-    if mode == 'tablet' or mode == 'desk' or mode == 'bench' or mode == 'counter' then
+    if mode == 'tablet' or mode == 'desk' or mode == 'bench' then
         local shop = shopFor(src, data and data.shop)
         if not shop then return { ok = false, error = 'You do not work at a shop.' } end
 
@@ -468,51 +421,6 @@ lib.callback.register('XS-Mechanic:myInvoices', function(src)
     return { invoices = Util.Plain(Invoices.ForCustomer(citizenid)) }
 end)
 
-lib.callback.register('XS-Mechanic:buyPart', function(src, data)
-    local shop = shopFor(src)
-    if not shop then return { ok = false, error = 'No shop.' } end
-
-    local job = Framework.GetJob(src)
-    if shop.kind == 'owned' and job ~= shop.job then return { ok = false, error = 'Not your shop.' } end
-
-    local list = #(shop.parts or {}) > 0 and shop.parts or Config.Parts
-    local wanted = tostring(data and data.item or '')
-    local amount = math.max(1, math.min(50, math.floor(tonumber(data and data.amount) or 1)))
-
-    local part
-    for _, entry in ipairs(list) do
-        if entry.item == wanted then part = entry break end
-    end
-
-    if not part then return { ok = false, error = 'That is not stocked here.' } end
-
-    local cost = part.price * amount
-
-    if Config.Parts.paidBy == 'society' then
-        if not Banking.Remove(shop, cost, ('Parts — %dx %s'):format(amount, part.label), Framework.GetName(src), 'parts') then
-            return { ok = false, error = 'The shop cannot cover that.' }
-        end
-    else
-        if Framework.GetMoney(src, 'bank') < cost then
-            return { ok = false, error = ('You need %s.'):format(Util.Money(cost)) }
-        end
-
-        Framework.RemoveMoney(src, 'bank', cost, 'Mechanic parts')
-    end
-
-    if not Inventory.Add(src, part.item, amount) then
-        if Config.Parts.paidBy == 'society' then
-            Banking.Add(shop, cost, 'Parts refunded', Framework.GetName(src), 'refund')
-        else
-            Framework.AddMoney(src, 'bank', cost, 'Mechanic parts refund')
-        end
-
-        return { ok = false, error = 'No room for that.' }
-    end
-
-    return { ok = true, message = ('Bought %dx %s.'):format(amount, part.label) }
-end)
-
 lib.callback.register('XS-Mechanic:claimOrder', function(src, data)
     return Orders.Claim(src, data and data.id)
 end)
@@ -579,60 +487,6 @@ lib.callback.register('XS-Mechanic:setCategoryPrice', function(src, data)
         Discord.Colour.info)
 
     return { ok = true, message = 'Price set.' }
-end)
-
-lib.callback.register('XS-Mechanic:setPartPrice', function(src, data)
-    local shop = shopFor(src, data and data.shop)
-    if not Team.CanPrice(src, shop) then return { ok = false, error = 'Not your call.' } end
-
-    local item = tostring(data and data.item or '')
-    if item == '' then return { ok = false, error = 'No such part.' } end
-
-    local known = false
-
-    for _, entry in ipairs(Config.Parts) do
-        if entry.item == item then known = true break end
-    end
-
-    if not known and not Parts.RecipeFor(item) then
-        return { ok = false, error = 'No such part.' }
-    end
-
-    -- A shop with no list of its own starts from the server's.
-    if #(shop.parts or {}) == 0 then
-        shop.parts = {}
-
-        for _, entry in ipairs(Config.Parts) do
-            shop.parts[#shop.parts + 1] = { item = entry.item, label = entry.label, price = entry.price }
-        end
-    end
-
-    local price = math.max(0, math.floor(tonumber(data.price) or 0))
-    local found
-
-    for _, entry in ipairs(shop.parts) do
-        if entry.item == item then found = entry break end
-    end
-
-    if data.remove then
-        for index, entry in ipairs(shop.parts) do
-            if entry.item == item then table.remove(shop.parts, index) break end
-        end
-    elseif found then
-        found.price = price
-        if data.label then found.label = Util.Trim(tostring(data.label)):sub(1, 48) end
-    else
-        shop.parts[#shop.parts + 1] = {
-            item = item,
-            label = Util.Trim(tostring(data.label or Parts.Label(item))):sub(1, 48),
-            price = price,
-        }
-    end
-
-    Store.Update(shop.id, shop)
-    Store.Broadcast()
-
-    return { ok = true, message = data.remove and 'Taken off the list.' or 'Price set.' }
 end)
 
 lib.callback.register('XS-Mechanic:setTuningPrice', function(src, data)

@@ -10,7 +10,7 @@
 
         if (!draft) {
             grid.append(XS.empty('Pick a shop, or build one',
-                'Nothing ships with this resource. Fly to the interior you want to use, drop the bays and the counters where they actually are, and save.'));
+                'Nothing ships with this resource. Fly to the interior you want to use, drop the bays and the bench where they actually are, and save.'));
             host.append(grid);
             return;
         }
@@ -22,7 +22,6 @@
     const POINT_KINDS = [
         { kind: 'tuning', label: 'Tuning bay', note: 'Where a car gets worked on' },
         { kind: 'repair', label: 'Repair bay', note: 'Repairs, priced off the vehicle' },
-        { kind: 'counter', label: 'Parts counter', note: 'What this shop sells' },
         { kind: 'storage', label: 'Storage', note: 'A stash for employees' },
         { kind: 'laptop', label: 'Office laptop', note: 'Billing, staff and money' },
         { kind: 'bench', label: 'Crafting bench', note: 'Where parts get made' },
