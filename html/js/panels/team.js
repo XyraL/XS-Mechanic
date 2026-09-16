@@ -14,7 +14,7 @@
         ]) {
             tree.append(XS.el('button', {
                 class: `tn ${tab === id ? 'on' : ''}`,
-                onclick: () => { XS.state.teamTab = id; XS.panels.team(host); },
+                onclick: () => { XS.state.teamTab = id; XS.rerender('team'); },
             }, [
                 XS.el('span', { class: 'n', text: label }),
                 count === null ? null : XS.el('span', { class: 'b', text: String(count) }),

@@ -17,7 +17,7 @@
         for (const [id, label] of [['open', 'Waiting'], ['claimed', 'In progress'], ['done', 'Finished'], ['all', 'Everything']]) {
             tree.append(XS.el('button', {
                 class: `tn ${filter === id ? 'on' : ''}`,
-                onclick: () => { XS.state.orderFilter = id; XS.panels.orders(host); },
+                onclick: () => { XS.state.orderFilter = id; XS.rerender('orders'); },
             }, [
                 XS.el('span', { class: 'n', text: label }),
                 XS.el('span', {

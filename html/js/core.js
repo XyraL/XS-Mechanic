@@ -108,6 +108,43 @@ XS.stockFor = function (category, slotId) {
     };
 };
 
+// Panels redraw by throwing the DOM away and building it again, which loses
+// where the list was scrolled to. Clicking the fourth bumper down and being
+// bounced to the top of the page is the symptom. The scroll offset of every
+// scrolling box in the host is taken before and put back after.
+XS.keepScroll = function (host, redraw) {
+    const boxes = [...host.querySelectorAll('.grid, .tree, .lines, .body')];
+    const was = boxes.map((box) => [box.className, box.scrollTop, box.scrollLeft]);
+
+    redraw();
+
+    // After layout, or the box has no height yet and the offset is discarded.
+    requestAnimationFrame(() => {
+        const now = [...host.querySelectorAll('.grid, .tree, .lines, .body')];
+
+        for (const box of now) {
+            const found = was.find(([name]) => name === box.className);
+            if (!found) continue;
+
+            box.scrollTop = found[1];
+            box.scrollLeft = found[2];
+        }
+    });
+};
+
+// Redraw one panel in place, keeping the list where it was. Panels that redraw
+// themselves after a click go through here rather than calling their own
+// render function directly.
+XS.rerender = function (id) {
+    const which = id || XS.panel;
+    const host = document.querySelector(`[data-panel="${which}"]`);
+    const render = XS.panels[which];
+
+    if (!host || !render) return;
+
+    XS.keepScroll(host, () => render(host));
+};
+
 XS.clear = function (node) {
     while (node.firstChild) node.removeChild(node.firstChild);
     return node;

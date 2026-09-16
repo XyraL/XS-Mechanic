@@ -438,6 +438,12 @@ Config.Crafting = {
         { item = 'repair_kit',      label = 'Repair Kit',     group = 'Supplies',
           needs = { scrap = 5, steel = 3, rubber = 1 } },
 
+        { item = 'advanced_repair_kit', label = 'Advanced Repair Kit', group = 'Supplies',
+          needs = { scrap = 9, steel = 6, rubber = 2 } },
+
+        { item = 'duct_tape',       label = 'Duct Tape',      group = 'Supplies',
+          needs = { rubber = 3, scrap = 1 } },
+
         { item = 'cleaning_kit',    label = 'Cleaning Kit',   group = 'Supplies',
           needs = { rubber = 2, glass = 1 } },
 

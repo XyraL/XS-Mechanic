@@ -68,8 +68,7 @@
 
         renderNav();
 
-        const render = XS.panels[id];
-        if (render) render(document.querySelector(`[data-panel="${id}"]`));
+        XS.rerender(id);
 
         // The pane can change shape between panels, so the camera is told
         // again rather than assuming the window has not moved.
@@ -90,8 +89,7 @@
         XS.subject.redraw();
         renderNav();
 
-        const render = XS.panels[XS.panel];
-        if (render) render(document.querySelector(`[data-panel="${XS.panel}"]`));
+        XS.rerender(XS.panel);
     };
 
     XS.open = function (payload) {

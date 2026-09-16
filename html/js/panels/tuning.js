@@ -123,7 +123,7 @@
 
             tree.append(XS.el('button', {
                 class: `tn ${XS.state.tuneGroup === group.id ? 'on' : ''}`,
-                onclick: () => { XS.state.tuneGroup = group.id; XS.state.tuneSlot = null; XS.panels.tuning(document.querySelector('[data-panel="tuning"]')); },
+                onclick: () => { XS.state.tuneGroup = group.id; XS.state.tuneSlot = null; XS.rerender('tuning'); },
             }, [
                 XS.el('span', { class: 'n', text: group.label }),
                 XS.el('span', { class: 'b', text: group.count === null ? 'RGB' : String(group.count) }),
@@ -306,7 +306,7 @@
         for (const type of wheels.types) {
             types.append(XS.el('button', {
                 class: `c ${XS.state.wheelType === type.type ? 'on' : ''}`,
-                onclick: () => { XS.state.wheelType = type.type; XS.panels.tuning(document.querySelector('[data-panel="tuning"]')); },
+                onclick: () => { XS.state.wheelType = type.type; XS.rerender('tuning'); },
             }, [
                 XS.el('div', { class: 'idx', text: `TYPE ${String(type.type).padStart(2, '0')}` }),
                 XS.el('div', { class: 'nm', text: type.label }),

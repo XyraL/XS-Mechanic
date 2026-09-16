@@ -16,7 +16,7 @@
         for (const [id, label] of [['unpaid', 'Unpaid'], ['paid', 'Paid'], ['draft', 'Saved'], ['all', 'Everything']]) {
             tree.append(XS.el('button', {
                 class: `tn ${filter === id ? 'on' : ''}`,
-                onclick: () => { XS.state.invoiceFilter = id; XS.panels.invoices(host); },
+                onclick: () => { XS.state.invoiceFilter = id; XS.rerender('invoices'); },
             }, [
                 XS.el('span', { class: 'n', text: label }),
                 XS.el('span', {

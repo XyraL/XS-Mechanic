@@ -39,7 +39,7 @@
 
             tree.append(XS.el('button', {
                 class: `tn ${XS.state.craftGroup === group.name ? 'on' : ''}`,
-                onclick: () => { XS.state.craftGroup = group.name; XS.panels.craft(host); },
+                onclick: () => { XS.state.craftGroup = group.name; XS.rerender('craft'); },
             }, [
                 XS.el('span', { class: 'n', text: group.name }),
                 XS.el('span', { class: `b ${ready ? 'good' : ''}`, text: `${ready}/${group.recipes.length}` }),
@@ -146,6 +146,6 @@
 
     function step(item, by) {
         amounts[item] = Math.max(1, Math.min(10, (amounts[item] || 1) + by));
-        XS.panels.craft(document.querySelector('[data-panel="craft"]'));
+        XS.rerender('craft');
     }
 })();

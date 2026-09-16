@@ -15,7 +15,7 @@
         for (const category of sheet) {
             tree.append(XS.el('button', {
                 class: `tn ${chosen === category.id ? 'on' : ''}`,
-                onclick: () => { XS.state.tuneCategory = category.id; XS.panels.performance(host); },
+                onclick: () => { XS.state.tuneCategory = category.id; XS.rerender('performance'); },
             }, [
                 XS.el('span', { class: 'n', text: category.label }),
                 XS.el('span', {
@@ -28,7 +28,7 @@
         tree.append(XS.el('div', { class: 'grp', text: 'Setup' }));
         tree.append(XS.el('button', {
             class: `tn ${chosen === 'stance' ? 'on' : ''}`,
-            onclick: () => { XS.state.tuneCategory = 'stance'; XS.panels.performance(host); },
+            onclick: () => { XS.state.tuneCategory = 'stance'; XS.rerender('performance'); },
         }, [XS.el('span', { class: 'n', text: 'Stance' })]));
 
         host.append(tree);
@@ -159,7 +159,7 @@
 
         const push = () => {
             XS.post('previewStance', { stance: draft });
-            XS.panels.performance(document.querySelector('[data-panel="performance"]'));
+            XS.rerender('performance');
         };
 
         grid.append(slider('Ride height', draft.height, -limits.height, limits.height, (v) => {
@@ -203,7 +203,7 @@
                     XS.state.stanceDraft = blank();
                     XS.post('previewStance', { stance: XS.state.stanceDraft });
                     XS.post('saveStance', { stance: XS.state.stanceDraft });
-                    XS.panels.performance(document.querySelector('[data-panel="performance"]'));
+                    XS.rerender('performance');
                 },
             }),
         ]));
