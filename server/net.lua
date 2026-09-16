@@ -65,6 +65,8 @@ local function stateFor(src, mode, shopId)
         partsPaidBy = Config.Parts.paidBy,
         serviceEnabled = Config.Service.enabled,
         livePreview = Config.Tablet.livePreview,
+        invoicesEnabled = Config.Invoices.enabled,
+        deskOnlyManagement = Config.Desk.managementHereOnly,
         tuningEnabled = Config.CustomTuning.enabled,
         dynoEnabled = Config.Dyno.enabled,
         stanceLimits = { height = 0.30, camber = 0.35, track = 0.25 },
@@ -715,4 +717,9 @@ end)
 lib.callback.register('XS-Mechanic:jobs', function(src)
     if not Framework.IsAdmin(src) then return {} end
     return Framework.JobList()
+end)
+
+lib.callback.register('XS-Mechanic:holdingTablet', function(src)
+    if Config.Tablet.item == '' then return true end
+    return Inventory.Has(src, Config.Tablet.item, 1)
 end)

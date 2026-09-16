@@ -120,3 +120,75 @@ if Inventory.name ~= 'ox_inventory' then
         end
     end)
 end
+
+-- Everything the resource decided at startup, in one place. First thing to run
+-- when something is not behaving: it says what was detected, what is switched
+-- on, and what is missing, so nobody has to guess which layer is at fault.
+RegisterCommand('mechanicdebug', function(source)
+    if source ~= 0 and not Framework.IsAdmin(source) then return end
+
+    local out = {}
+
+    local function line(text)
+        out[#out + 1] = text
+    end
+
+    line(('XS-Mechanic %s'):format(GetResourceMetadata(GetCurrentResourceName(), 'version', 0) or '?'))
+    line(('  framework   %s'):format(Framework.name or 'NONE — nothing will work'))
+    line(('  inventory   %s'):format(Inventory.name or 'none detected'))
+    line(('  banking     %s'):format(Banking.name or 'own ledger'))
+    line(('  phone       %s'):format(Phone.name or 'none detected'))
+    line(('  database    %s'):format(DB.ready and 'ready' or 'NOT READY — nothing will save'))
+
+    local shops = Store.All()
+    line(('  shops       %d'):format(#shops))
+
+    for _, shop in ipairs(shops) do
+        local points = {}
+
+        for _, point in ipairs(shop.points or {}) do
+            points[point.kind] = (points[point.kind] or 0) + 1
+        end
+
+        local parts = {}
+        for kind, count in pairs(points) do parts[#parts + 1] = ('%s x%d'):format(kind, count) end
+        table.sort(parts)
+
+        line(('    #%d %s — %s, job %s, %s'):format(
+            shop.id, shop.name, shop.kind,
+            shop.job ~= '' and shop.job or 'none',
+            shop.enabled and 'ON' or 'OFF'))
+
+        line(('       points: %s'):format(#parts > 0 and table.concat(parts, ', ') or 'NONE — this shop does nothing'))
+
+        if shop.kind == 'owned' then
+            if shop.job == '' then
+                line('       WARNING: owned shop with no job')
+            elseif not Framework.JobExists(shop.job) then
+                line(('       WARNING: your framework has no job called "%s"'):format(shop.job))
+            else
+                line(('       staff online: %d'):format(Team.OnDuty(shop)))
+            end
+        end
+    end
+
+    line('  switched on:')
+    line(('    servicing %s · custom tuning %s · dyno %s'):format(
+        Config.Service.enabled and 'yes' or 'no',
+        Config.CustomTuning.enabled and 'yes' or 'no',
+        Config.Dyno.enabled and 'yes' or 'no'))
+    line(('    invoices %s · live car preview %s · tablet anim %s'):format(
+        Config.Invoices.enabled and 'yes' or 'no',
+        Config.Tablet.livePreview and 'yes' or 'no',
+        Config.Tablet.animation and 'yes' or 'no'))
+
+    line(('  tablet item %s'):format(Config.Tablet.item ~= '' and Config.Tablet.item or 'none (command only)'))
+
+    if Config.Tablet.item ~= '' and Inventory.name == 'ox_inventory' then
+        line('    ox_inventory: the item needs client = { export = \'XS-Mechanic.openTablet\' }')
+    end
+
+    for _, text in ipairs(out) do
+        if source == 0 then print(text) else TriggerClientEvent('chat:addMessage', source, { args = { '', text } }) end
+    end
+end, false)

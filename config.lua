@@ -5,10 +5,8 @@ Config.Bridges = {
     framework = 'auto',   -- auto | qbox | qbcore
     inventory = 'auto',   -- auto | ox_inventory | qb-inventory | qs-inventory | codem-inventory | core_inventory | ps-inventory
     target    = 'auto',   -- auto | ox_target | qb-target | builtin
-    keys      = 'auto',   -- auto | qbx | qb-vehiclekeys | qs-vehiclekeys | custom | none
     banking   = 'auto',   -- auto | qb-banking | Renewed-Banking | okokBanking | qbx | none
     phone     = 'auto',   -- auto | lb-phone | qs-smartphone | XS-Phone | qb-phone | none
-    fuel      = 'auto',   -- auto | LegacyFuel | ox_fuel | cdn-fuel | ps-fuel | none
 }
 
 -- No coordinates live in this file. Every shop, bay, parts counter and
@@ -355,10 +353,6 @@ Config.Invoices = {
 Config.SelfService = {
     -- A self-service shop pays from the customer's own account. Which one.
     account = 'bank',   -- bank | cash
-
-    -- Let an owned shop fall back to self-service when none of its staff are
-    -- online. Each shop can switch this off in the builder.
-    whenShopEmpty = true,
 }
 
 -- ── Notifications ────────────────────────────────────────────────────────────

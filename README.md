@@ -627,6 +627,7 @@ so if a bridge guessed wrong, that line is where it shows.
 | `/mechanic` | Admin | The shop builder |
 | `/invoices` | Anyone | Your unpaid invoices |
 | `/mechanicshops` | Admin | List every shop; `on` switches them all back on |
+| `/mechanicdebug` | Admin | What was detected, what is on, what is wrong |
 
 ## License
 

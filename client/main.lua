@@ -59,6 +59,11 @@ function XSM.Open(mode, shopId)
     if XSM.vehicle then XSM.PushVehicle() end
 end
 
+function XSM.Show(panel)
+    if not XSM.open then return end
+    XSM.Send('open', { mode = XSM.mode, state = XSM.state, panel = panel })
+end
+
 function XSM.Refresh()
     if not XSM.open then return end
 
@@ -196,4 +201,22 @@ end)
 
 RegisterNetEvent('XS-Mechanic:client:builder', function()
     XSM.Open('builder')
+end)
+
+-- The tablet is an item, so losing it while the panel is open should close the
+-- panel. Config.Tablet.checkSeconds = 0 checks only on opening.
+CreateThread(function()
+    while true do
+        local gap = Config.Tablet.checkSeconds or 0
+        Wait(gap > 0 and gap * 1000 or 5000)
+
+        if gap > 0 and XSM.open and XSM.mode ~= 'builder' and Config.Tablet.item ~= '' then
+            local holding = lib.callback.await('XS-Mechanic:holdingTablet', false)
+
+            if holding == false then
+                XSM.Notify('You no longer have the tablet.', 'error')
+                XSM.Close()
+            end
+        end
+    end
 end)

@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.4.1
+
+- Seven config options did nothing at all. Two named bridges that do not
+  exist and one duplicated a per-shop setting, so those are gone; the rest
+  now work: losing the tablet closes it, invoicing can be switched off,
+  management can be kept to the laptop, and fitting a tuning part takes
+  time instead of happening instantly.
+- `/mechanicdebug` prints what was detected, what is on, and what is wrong
+  with each shop.
+
 ## 0.4.0
 
 New interface.

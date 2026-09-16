@@ -208,6 +208,32 @@ RegisterNUICallback('replacePart', function(data, cb)
 end)
 
 RegisterNUICallback('fitTuning', function(data, cb)
+    -- An engine swap should take longer than a set of tyres, so the panel
+    -- steps aside and the mechanic works on the car for a bit.
+    local seconds = Config.CustomTuning.seconds[data.category] or Config.CustomTuning.seconds.default or 10
+
+    if seconds > 0 then
+        XSM.Close()
+
+        lib.requestAnimDict('mini@repair', 3000)
+        TaskPlayAnim(cache.ped, 'mini@repair', 'fixing_a_ped', 8.0, -8.0, -1, 1, 0.0, false, false, false)
+
+        local done = lib.progressCircle({
+            duration = seconds * 1000,
+            label = 'Fitting',
+            position = 'bottom',
+            canCancel = true,
+            disable = { move = true, car = true, combat = true },
+        })
+
+        ClearPedTasks(cache.ped)
+
+        if not done then
+            cb({ ok = false })
+            return
+        end
+    end
+
     local result = lib.callback.await('XS-Mechanic:fitTuning', false, {
         shop = XSM.shop and XSM.shop.id,
         plate = XSM.catalogue and XSM.catalogue.plate,
@@ -216,11 +242,18 @@ RegisterNUICallback('fitTuning', function(data, cb)
         option = data.option,
     })
 
-    if result and result.message then XSM.Toast(result.message, result.ok and 'good' or 'error')
-    elseif result and result.error then XSM.Toast(result.error, 'error') end
+    if result and result.message then XSM.Notify(result.message, result.ok and 'success' or 'error')
+    elseif result and result.error then XSM.Notify(result.error, 'error') end
 
     XSM.PushVehicle()
-    XSM.Refresh()
+
+    if seconds > 0 then
+        XSM.Open('tablet', XSM.shop and XSM.shop.id)
+        XSM.Show('performance')
+    else
+        XSM.Refresh()
+    end
+
     cb(result or { ok = false })
 end)
 
