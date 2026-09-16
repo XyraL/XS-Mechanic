@@ -2,56 +2,6 @@ Orders = {}
 
 Team = {}
 
-local CATEGORIES = {
-    { value = 'Cosmetics', label = 'Cosmetics' },
-    { value = 'Wheels', label = 'Wheels' },
-    { value = 'Performance', label = 'Performance' },
-    { value = 'Respray', label = 'Respray' },
-    { value = 'Repair', label = 'Repair' },
-    { value = 'Service', label = 'Service' },
-    { value = 'Interior', label = 'Interior' },
-    { value = 'Lights', label = 'Lights' },
-}
-
--- A customer leaves a job at the desk when nobody is around to ask in person.
-function Orders.Leave(shop)
-    local coords = GetEntityCoords(cache.ped)
-    local vehicle = lib.getClosestVehicle(coords, 20.0, true)
-
-    if not vehicle or vehicle == 0 then
-        XSM.Notify('Park the vehicle nearby first.', 'error')
-        return
-    end
-
-    local input = lib.inputDialog(('Work order · %s'):format(shop.name), {
-        {
-            type = 'multi-select', label = 'What needs doing', options = CATEGORIES,
-            required = true, description = 'Pick everything you want them to look at.',
-        },
-        {
-            type = 'textarea', label = 'Anything else', required = false, max = 300,
-            description = 'Tell them what is wrong, or how you want it to look.',
-        },
-    })
-
-    if not input then return end
-
-    local result = lib.callback.await('XS-Mechanic:leaveOrder', false, {
-        shop = shop.id,
-        plate = Util.Trim(GetVehicleNumberPlateText(vehicle) or ''),
-        model = string.lower(GetDisplayNameFromVehicleModel(GetEntityModel(vehicle)) or ''),
-        requested = input[1],
-        notes = input[2],
-    })
-
-    if not result or not result.ok then
-        XSM.Notify(result and result.error or 'That did not go through.', 'error')
-        return
-    end
-
-    XSM.Notify('Left with the shop. They will be in touch.', 'success')
-end
-
 -- Hiring needs a person stood in front of you, not a name typed into a box.
 function Team.NearestPlayer()
     local me = cache.ped

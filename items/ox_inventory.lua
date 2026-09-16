@@ -236,3 +236,62 @@
     description = 'Xenons and underglow, with the effects that make a meet worth turning up to.',
     client = { export = 'XS-Mechanic.use_lighting_remote' },
 },
+
+-- Parts the bench makes, and the work each one is used up by. A shop that
+-- runs out of body panels cannot fit one until somebody makes another.
+
+['body_part'] = {
+    label = 'Body Part',
+    weight = 2500,
+    stack = true,
+    close = false,
+    description = 'A panel, a bumper, a skirt. Whatever the car is missing.',
+},
+
+['wheel_set'] = {
+    label = 'Wheel Set',
+    weight = 6000,
+    stack = true,
+    close = false,
+    description = 'Four of them, boxed.',
+},
+
+['paint_can'] = {
+    label = 'Paint Can',
+    weight = 1200,
+    stack = true,
+    close = false,
+    description = 'Mixed to whatever the customer picks.',
+},
+
+['vinyl_wrap'] = {
+    label = 'Vinyl Wrap',
+    weight = 900,
+    stack = true,
+    close = false,
+    description = 'A roll of it. Bubbles are the fitter, not the vinyl.',
+},
+
+['light_kit'] = {
+    label = 'Light Kit',
+    weight = 1100,
+    stack = true,
+    close = false,
+    description = 'Housings, bulbs and the loom to run them.',
+},
+
+['interior_part'] = {
+    label = 'Interior Part',
+    weight = 1400,
+    stack = true,
+    close = false,
+    description = 'Trim, dials, a wheel. The bits you actually touch.',
+},
+
+['plate_blank'] = {
+    label = 'Plate Blank',
+    weight = 300,
+    stack = true,
+    close = false,
+    description = 'Pressed, unprinted, entirely legal until it is not.',
+},

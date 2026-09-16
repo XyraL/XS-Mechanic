@@ -11,6 +11,7 @@
             { id: 'service', label: 'Service', when: () => XS.state.serviceEnabled !== false, badge: () => XS.state.vehicle?.service?.due },
             { id: 'performance', label: 'Performance', when: () => XS.state.tuningEnabled !== false },
             { id: 'dyno', label: 'Dyno', when: () => XS.state.dynoEnabled !== false },
+            { id: 'orders', label: 'Orders', badge: () => XS.state.openOrders },
             { id: 'invoices', label: 'Invoices', badge: () => XS.state.unpaid, when: () => XS.state.invoicesEnabled !== false },
             { id: 'parts', label: 'Parts' },
             { id: 'home', label: 'Shop' },
@@ -19,7 +20,6 @@
         ],
         desk: [
             { id: 'invoices', label: 'Invoices', badge: () => XS.state.unpaid, when: () => XS.state.invoicesEnabled !== false },
-            { id: 'orders', label: 'Orders', badge: () => XS.state.openOrders },
             { id: 'parts', label: 'Parts' },
             { id: 'home', label: 'Shop' },
             { id: 'team', label: 'Team', boss: true },
@@ -31,6 +31,9 @@
         bay: [
             { id: 'tuning', label: 'Tuning' },
             { id: 'repairs', label: 'Repairs' },
+        ],
+        bench: [
+            { id: 'craft', label: 'Bench' },
         ],
         builder: [
             { id: 'builder', label: 'Shops' },
@@ -59,6 +62,10 @@
 
     XS.show = function (id) {
         XS.panel = id;
+
+        // Lua needs to know which screen is up: when it steps the panel aside
+        // to fit a part, it has to put the same one back.
+        XS.post('panel', { id });
 
         for (const panel of document.querySelectorAll('.panel')) {
             panel.classList.toggle('on', panel.dataset.panel === id);
@@ -100,7 +107,13 @@
         XS.panel = payload?.panel || (first ? first.id : 'vehicle');
 
         const device = document.querySelector('.device');
-        if (device) device.dataset.device = XS.mode === 'desk' ? 'laptop' : 'tablet';
+
+        if (device) {
+            device.dataset.device =
+                XS.mode === 'desk' ? 'laptop'
+                    : XS.mode === 'bench' ? 'holo'
+                        : 'tablet';
+        }
 
         root.classList.add('open');
         document.body.classList.add('open');
@@ -113,6 +126,7 @@
         root.classList.remove('open');
         document.body.classList.remove('open');
         XS.closeModal();
+        XS.subject.hide();
         XS.post('carView', { active: false });
         XS.post('close');
     };
@@ -140,6 +154,7 @@
                 root.classList.remove('open');
                 document.body.classList.remove('open');
                 XS.closeModal();
+                XS.subject.hide();
                 break;
 
             case 'state':

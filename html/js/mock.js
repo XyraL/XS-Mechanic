@@ -207,11 +207,11 @@
 
         counters: [
             { id: 'c1', label: 'Front counter', near: true, items: [
-                { item: 'repair_kit', label: 'Repair Kit', price: 850 },
-                { item: 'advanced_repair_kit', label: 'Advanced Repair Kit', price: 2200 },
-                { item: 'duct_tape', label: 'Duct Tape', price: 120 },
-                { item: 'tyre_kit', label: 'Tyre Kit', price: 1400 },
-                { item: 'performance_part', label: 'Performance Part', price: 3500 },
+                { item: 'repair_kit', label: 'Repair Kit', price: 850, stocked: 5 },
+                { item: 'advanced_repair_kit', label: 'Advanced Repair Kit', price: 2200, stocked: 1 },
+                { item: 'duct_tape', label: 'Duct Tape', price: 120, stocked: 12 },
+                { item: 'tyre_kit', label: 'Tyre Kit', price: 1400, stocked: 0 },
+                { item: 'performance_part', label: 'Performance Part', price: 3500, stocked: 2 },
             ] },
             { id: 'c2', label: 'Back store', near: false, items: [
                 { item: 'engine_oil', label: 'Engine Oil', price: 180 },
@@ -231,17 +231,88 @@
               requested: [
                   { category: 'cosmetics', categoryLabel: 'Cosmetics', label: 'Carbon Lip — Front Bumper', price: 2150 },
                   { category: 'cosmetics', categoryLabel: 'Cosmetics', label: 'GT Wing — Spoiler', price: 2750 },
-                  { category: 'performance', categoryLabel: 'Performance', label: 'Level 2 — Brakes', price: 1250 },
+                  { category: 'wheels', categoryLabel: 'Wheels', label: 'Endo v1', price: 1250 },
               ],
-              notes: 'Wants the front end done and the engine stepped up. Not fussed on colour.' },
+              notes: 'Wants the front end done. Not fussed on colour.' },
             { id: 411, status: 'open', customerName: 'Rosa Delgado', plate: 'KTM 8841',
-              requested: ['Wheels'], quote: 0, createdAt: NOW - 60 * 34,
+              quote: 1250, createdAt: NOW - 60 * 34,
+              requested: [
+                  { category: 'wheels', categoryLabel: 'Wheels', label: 'Dash VIP', price: 1250 },
+              ],
               notes: 'Bent rim on the nearside front.' },
             { id: 410, status: 'claimed', customerName: 'Aaron Pike', plate: 'LSV 2210',
-              requested: ['Respray', 'Livery'], quote: 5200, createdAt: NOW - 60 * 72, notes: '' },
+              quote: 1000, createdAt: NOW - 60 * 72,
+              requested: [
+                  { category: 'respray', categoryLabel: 'Respray', label: 'Respray — Racing Blue', price: 400 },
+                  { category: 'livery', categoryLabel: 'Livery', label: 'Stripes', price: 600 },
+              ],
+              notes: '' },
             { id: 409, status: 'done', customerName: 'Nina Brackley', plate: 'ZZR 0098',
-              requested: ['Service'], quote: 2100, createdAt: NOW - 60 * 210,
+              quote: 400, createdAt: NOW - 60 * 210,
+              requested: [
+                  { category: 'interior', categoryLabel: 'Interior', label: 'Carbon Dash', price: 400 },
+              ],
               notes: 'Overdue on everything.' },
+        ],
+
+        canPrice: true,
+        hasArea: true,
+
+        stock: {
+            shelf: true,
+            categories: {
+                cosmetics: 'body_part', wheels: 'wheel_set', respray: 'paint_can',
+                livery: 'vinyl_wrap', lights: 'light_kit', interior: 'interior_part',
+                extras: 'body_part', plate: 'plate_blank', performance: 'performance_part',
+            },
+            labels: {
+                body_part: 'Body Part', wheel_set: 'Wheel Set', paint_can: 'Paint Can',
+                vinyl_wrap: 'Vinyl Wrap', light_kit: 'Light Kit', interior_part: 'Interior Part',
+                plate_blank: 'Plate Blank', performance_part: 'Performance Part',
+            },
+            items: {
+                body_part: 6, wheel_set: 0, paint_can: 3, vinyl_wrap: 1,
+                light_kit: 2, interior_part: 0, plate_blank: 4, performance_part: 2,
+            },
+        },
+
+        crafting: [
+            { item: 'body_part', label: 'Body Part', category: 'cosmetics', onShelf: 6, canMake: true,
+              needs: [
+                  { key: 'metal', item: 'iron', label: 'Metal', need: 3, have: 9 },
+                  { key: 'scrap', item: 'metalscrap', label: 'Scrap', need: 5, have: 22 },
+                  { key: 'steel', item: 'steel', label: 'Steel', need: 2, have: 6 },
+              ] },
+            { item: 'wheel_set', label: 'Wheel Set', category: 'wheels', onShelf: 0, canMake: false,
+              needs: [
+                  { key: 'metal', item: 'iron', label: 'Metal', need: 2, have: 9 },
+                  { key: 'rubber', item: 'rubber', label: 'Rubber', need: 6, have: 1 },
+                  { key: 'steel', item: 'steel', label: 'Steel', need: 4, have: 6 },
+              ] },
+            { item: 'paint_can', label: 'Paint Can', category: 'respray', onShelf: 3, canMake: true,
+              needs: [
+                  { key: 'metal', item: 'iron', label: 'Metal', need: 1, have: 9 },
+                  { key: 'scrap', item: 'metalscrap', label: 'Scrap', need: 2, have: 22 },
+              ] },
+            { item: 'light_kit', label: 'Light Kit', category: 'lights', onShelf: 2, canMake: false,
+              needs: [
+                  { key: 'glass', item: 'glass', label: 'Glass', need: 4, have: 2 },
+                  { key: 'metal', item: 'iron', label: 'Metal', need: 2, have: 9 },
+                  { key: 'scrap', item: 'metalscrap', label: 'Scrap', need: 1, have: 22 },
+              ] },
+            { item: 'performance_part', label: 'Performance Part', category: 'performance', onShelf: 2, canMake: true,
+              needs: [
+                  { key: 'metal', item: 'iron', label: 'Metal', need: 5, have: 9 },
+                  { key: 'rubber', item: 'rubber', label: 'Rubber', need: 2, have: 3 },
+                  { key: 'scrap', item: 'metalscrap', label: 'Scrap', need: 4, have: 22 },
+                  { key: 'steel', item: 'steel', label: 'Steel', need: 6, have: 6 },
+              ] },
+            { item: 'repair_kit', label: 'Repair Kit', category: null, onShelf: 5, canMake: true,
+              needs: [
+                  { key: 'metal', item: 'iron', label: 'Metal', need: 3, have: 9 },
+                  { key: 'rubber', item: 'rubber', label: 'Rubber', need: 1, have: 1 },
+                  { key: 'scrap', item: 'metalscrap', label: 'Scrap', need: 4, have: 22 },
+              ] },
         ],
 
         invoices: [

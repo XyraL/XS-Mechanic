@@ -86,6 +86,55 @@ if IsDuplicityVersion() then
             exports.ox_inventory:RegisterStash(id, label, slots or 50, weight or 100000)
         end)
     end
+
+    --[[ Reading and writing a stash without anybody opening it.
+
+         Only ox_inventory answers this. The others keep stash contents in
+         shapes that differ per fork, and guessing wrong would silently eat
+         somebody's parts, so the caller is told no and falls back to the
+         mechanic's own pockets instead. ]]
+    function Inventory.StashReady()
+        return Inventory.name == 'ox_inventory'
+    end
+
+    function Inventory.StashCount(id, item)
+        if not Inventory.StashReady() or not item or item == '' then return 0 end
+
+        Inventory.RegisterStash(id, 'Shop storage', 60, 200000)
+
+        local count = 0
+
+        pcall(function()
+            count = exports.ox_inventory:GetItem(id, item, nil, true) or 0
+        end)
+
+        return tonumber(count) or 0
+    end
+
+    function Inventory.StashAdd(id, item, amount)
+        if not Inventory.StashReady() then return false end
+
+        Inventory.RegisterStash(id, 'Shop storage', 60, 200000)
+
+        local ok, added = pcall(function()
+            return exports.ox_inventory:AddItem(id, item, amount or 1)
+        end)
+
+        return ok and added and true or false
+    end
+
+    function Inventory.StashRemove(id, item, amount)
+        if not Inventory.StashReady() then return false end
+
+        amount = amount or 1
+        if Inventory.StashCount(id, item) < amount then return false end
+
+        local ok, removed = pcall(function()
+            return exports.ox_inventory:RemoveItem(id, item, amount)
+        end)
+
+        return ok and removed and true or false
+    end
 else
     function Inventory.OpenStash(id, label, slots, weight)
         if Inventory.name == 'ox_inventory' then

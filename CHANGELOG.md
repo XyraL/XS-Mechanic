@@ -1,5 +1,44 @@
 # Changelog
 
+## 0.5.0
+
+Four fixes and the shop actually being a shop.
+
+- **The live car never showed.** The window was transparent, but four layers
+  of the tablet were painted behind it, and a transparent box over an opaque
+  one is still opaque. The shell, the screen, the column and the card now cut
+  a hole through themselves where the window is.
+- **No animation when fitting a part.** The tablet pose was being stopped half
+  a second late, and the stop cleared every task the mechanic had — including
+  the fitting animation that had just started. Cosmetic work takes time now
+  too, rather than parts appearing out of nowhere.
+- **A preview you walked away from was a free respray.** Custom paint is not
+  cleared by putting the old colour back, so it stayed; extras, neon, xenons
+  and stance were never put back at all; and connecting to a second car handed
+  it the first car's settings. The whole lot is recorded per vehicle now and
+  put back when the panel closes, every time.
+- **Shops have a boundary.** Draw the walls in the builder and that is what "at
+  the shop" means — a mechanic can only work on a vehicle inside it, and has to
+  be inside it themselves. Checked on the server. Shops without one carry on as
+  before, and `/mechanicdebug` says which those are.
+- **Work orders changed shape.** The customer desk is gone. A customer drives
+  in, picks what they want, looks at it on their own car and sends it; it lands
+  on the tablet, and the mechanic who connects to that car sees it there. Staff
+  can take lines off an order, and the quote comes down with them.
+- **Stock.** A shop can only fit what it has on the shelf, which is its storage
+  point. What has run out is greyed out instead of offered. A customer can
+  still order something the shop has not got.
+- **A crafting bench.** Make parts out of scrap, metal, rubber, steel and
+  glass. Material from your pockets, part onto the shelf, no minigame. The
+  camera drops onto the bench and the panel is a sheet of light over it.
+- **Prices are staff-editable.** A grade set per shop can change what the
+  categories cost, what the counter sells and what a performance package costs
+  and is called.
+- The dyno needed a dyno bay. It ran from anywhere the tablet opened.
+- Performance parts are off the customer's screen. They ask the mechanic.
+- Seven new items, and a checker that every item name the resource uses exists
+  in both inventory blocks.
+
 ## 0.4.1
 
 - Seven config options did nothing at all. Two named bridges that do not

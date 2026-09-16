@@ -161,6 +161,30 @@ RegisterCommand('mechanicdebug', function(source)
 
         line(('       points: %s'):format(#parts > 0 and table.concat(parts, ', ') or 'NONE — this shop does nothing'))
 
+        if Util.HasArea(shop.area) then
+            line(('       boundary: %d corners, z %.1f to %.1f'):format(
+                #shop.area.points, shop.area.minZ or 0.0, shop.area.maxZ or 0.0))
+        elseif Config.Tablet.insideShopOnly then
+            line('       boundary: NONE — this shop can be used from anywhere on the map')
+        end
+
+        if Config.Parts.requireStock then
+            local shelf = Stock.StashOf(shop)
+            local short = {}
+
+            for category, item in pairs(Config.Parts.categoryItems) do
+                if item ~= '' and Stock.Count(shop, item, 0) < 1 then
+                    short[#short + 1] = category
+                end
+            end
+
+            table.sort(short)
+
+            line(('       stock: %s%s'):format(
+                shelf and 'read from the storage point' or 'no storage point — reads the mechanic',
+                #short > 0 and (', out of: ' .. table.concat(short, ', ')) or ', everything in'))
+        end
+
         if shop.kind == 'owned' then
             if shop.job == '' then
                 line('       WARNING: owned shop with no job')
@@ -181,6 +205,17 @@ RegisterCommand('mechanicdebug', function(source)
         Config.Invoices.enabled and 'yes' or 'no',
         Config.Tablet.livePreview and 'yes' or 'no',
         Config.Tablet.animation and 'yes' or 'no'))
+    line(('    crafting %s · stock %s · shop boundaries %s'):format(
+        Config.Crafting.enabled and 'yes' or 'no',
+        Config.Parts.requireStock and 'yes' or 'no',
+        Config.Tablet.insideShopOnly and 'enforced' or 'off'))
+
+    -- Stock read off a shelf needs an inventory that can be asked about one.
+    -- Without that every shop silently falls back to the mechanic's pockets.
+    if Config.Parts.requireStock and not Inventory.StashReady() then
+        line(('    NOTE: %s cannot be read without somebody opening it, so stock comes'):format(Inventory.name or 'your inventory'))
+        line('          off the mechanic instead of the shop shelf. ox_inventory can.')
+    end
 
     line(('  tablet item %s'):format(Config.Tablet.item ~= '' and Config.Tablet.item or 'none (command only)'))
 

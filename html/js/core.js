@@ -79,6 +79,34 @@ XS.ago = function (stamp) {
     return `${Math.floor(secs / 86400)}d ago`;
 };
 
+// The open order against a plate. A mechanic who has just connected to a car
+// wants to know this before anything else on the screen.
+XS.orderFor = function (plate) {
+    if (!plate) return null;
+
+    const want = String(plate).trim().toUpperCase();
+
+    return (XS.state.orders || []).find((order) =>
+        (order.status === 'open' || order.status === 'claimed')
+        && String(order.plate || '').trim().toUpperCase() === want) || null;
+};
+
+// What the shop has on the shelf for a kind of work. null means stock is
+// switched off, and everything is fittable.
+XS.stockFor = function (category) {
+    const stock = XS.state.stock;
+    if (!stock || !stock.items) return null;
+
+    const item = (stock.categories || {})[category];
+    if (!item) return null;
+
+    return {
+        item,
+        label: (stock.labels || {})[item] || item,
+        count: stock.items[item] || 0,
+    };
+};
+
 XS.clear = function (node) {
     while (node.firstChild) node.removeChild(node.firstChild);
     return node;
@@ -128,6 +156,40 @@ XS.modal = function ({ title, note, body, confirm, danger, onConfirm }) {
     host.onclick = (ev) => { if (ev.target === host) close(); };
 
     return { close };
+};
+
+// One dialog for every price a shop sets. What happens on save is left to the
+// caller, so the endpoint each one posts to is written where you can find it.
+XS.askPrice = function ({ title, note, price, label, naming }, done) {
+    const priceInput = XS.el('input', {
+        type: 'number', min: '0', value: String(Math.round(Number(price) || 0)),
+        style: 'width:100%',
+    });
+
+    const nameInput = naming ? XS.el('input', {
+        type: 'text', value: label || '', maxlength: '48', style: 'width:100%',
+    }) : null;
+
+    XS.modal({
+        title,
+        note,
+        confirm: 'Set it',
+        body: XS.el('div', { style: 'display:flex;flex-direction:column;gap:14px' }, [
+            nameInput ? XS.el('div', { class: 'field' }, [
+                XS.el('label', { text: 'What it is called' }),
+                nameInput,
+            ]) : null,
+            XS.el('div', { class: 'field' }, [
+                XS.el('label', { text: 'Price' }),
+                priceInput,
+                XS.el('div', { class: 'hint', text: 'What the customer is charged. Zero makes it free.' }),
+            ]),
+        ]),
+        onConfirm: () => done({
+            price: Math.max(0, Math.round(Number(priceInput.value) || 0)),
+            label: nameInput ? nameInput.value.trim() : undefined,
+        }),
+    });
 };
 
 XS.closeModal = function () {

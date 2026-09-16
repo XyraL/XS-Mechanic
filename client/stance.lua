@@ -87,6 +87,28 @@ function Stance.Preview(vehicle, stance)
     Stance.Apply(vehicle, stance)
 end
 
+-- Puts back exactly what was read, including all-zero. Apply cannot do this:
+-- it normalises, and a stance of nothing normalises to nil, which it reads as
+-- "leave the wheels alone" rather than "put the wheels back".
+function Stance.Restore(vehicle, stance)
+    if not vehicle or vehicle == 0 or not DoesEntityExist(vehicle) then return end
+    if type(stance) ~= 'table' then return end
+
+    SetVehicleHandlingFloat(vehicle, 'CHandlingData', 'fSuspensionRaise', stance.height or 0.0)
+
+    for _, wheel in ipairs(WHEELS) do
+        local entry = stance[wheel]
+        local index = INDEX[wheel]
+
+        if entry then
+            pcall(function()
+                SetVehicleWheelXOffset(vehicle, index, entry.track or 0.0)
+                SetVehicleWheelYRotation(vehicle, index, entry.camber or 0.0)
+            end)
+        end
+    end
+end
+
 function Stance.Read(vehicle)
     if not vehicle or vehicle == 0 then return Stance.Empty() end
 

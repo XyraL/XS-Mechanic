@@ -1,5 +1,6 @@
 (function () {
-    // Categories with nothing visual to show a customer.
+    // Categories a customer is not shown at all: there is nothing to look at,
+    // so there is nothing to pick. They ask the mechanic instead.
     const NO_PREVIEW = new Set(['performance']);
 
     XS.panels.tuning = function (host) {
@@ -58,6 +59,11 @@
 
         for (const [id, label, section] of ORDER) {
             if (enabled[id] === false) continue;
+
+            // Nobody picks a turbo off a menu because it looks nice. A
+            // customer asks the mechanic, and the mechanic fits it and bills
+            // for it — so performance is not on the customer's screen at all.
+            if (XS.mode === 'bay' && NO_PREVIEW.has(id)) continue;
 
             if (id === 'wheels') {
                 if (!cat.wheels) continue;
@@ -137,18 +143,17 @@
         if (group.id === 'wheels') return renderWheels(grid, group, prices);
         if (group.id === 'extras') return renderExtras(grid, group, prices);
 
-        // Performance changes nothing you can look at, and a customer already
-        // knows what a bigger engine does. In a bay it goes straight onto the
-        // order rather than pretending there is something to preview.
-        const blind = XS.mode === 'bay' && NO_PREVIEW.has(group.id);
+        const stock = XS.stockFor(group.id);
+        const dry = !!stock && stock.count < 1;
 
         for (const slot of group.slots) {
             grid.append(XS.el('div', { class: 'gh' }, [
                 XS.el('h2', { text: `${group.label} · ${slot.label}` }),
-                XS.el('div', {
-                    class: 'cap',
-                    text: blind ? 'nothing to see · goes straight on the order' : `${slot.options.length} read from model`,
-                }),
+                XS.el('div', { class: 'cap' }, [
+                    `${slot.options.length} read from model`,
+                    stockNote(stock),
+                ]),
+                pricer(group),
             ]));
 
             const cards = XS.el('div', { class: 'cards' });
@@ -158,22 +163,8 @@
                 const price = option.index === -1 ? null : priceFor(prices, group.id, option.index);
 
                 cards.append(XS.el('button', {
-                    class: `c ${XS.isPreviewing(slot.id, option.index) ? 'on' : ''}`,
-                    disabled: blind && option.index === -1,
-                    onclick: () => {
-                        if (blind) {
-                            XS.post('addPick', {
-                                category: group.id,
-                                slotId: slot.id,
-                                slot: slot.slot,
-                                index: option.index,
-                                label: `${option.label} — ${slot.label}`,
-                            });
-                            return;
-                        }
-
-                        XS.preview(slot, option, group.id, price);
-                    },
+                    class: `c ${XS.isPreviewing(slot.id, option.index) ? 'on' : ''} ${dry && option.index !== -1 ? 'dry' : ''}`,
+                    onclick: () => XS.preview(slot, option, group.id, price),
                 }, [
                     XS.el('div', { class: 'idx', text: option.index === -1 ? 'STOCK' : `IDX ${String(option.index).padStart(2, '0')}` }),
                     XS.el('div', { class: 'nm', text: option.label }),
@@ -193,13 +184,44 @@
         return grid;
     }
 
+    // What is on the shelf for this kind of work. Nothing is hidden when the
+    // shop is out: a customer can still ask for it, and somebody goes and
+    // makes one at the bench.
+    function stockNote(stock) {
+        if (!stock) return null;
+
+        return XS.el('span', {
+            class: 'stk',
+            text: stock.count > 0
+                ? ` · ${XS.num(stock.count)} ${stock.label} in stock`
+                : ` · no ${stock.label} — one has to be made`,
+        });
+    }
+
+    // A senior enough mechanic can change what the shop charges for a whole
+    // category without being handed the money and the staff list as well.
+    function pricer(group) {
+        if (!XS.state.canPrice) return null;
+
+        return XS.el('button', {
+            class: 'mini',
+            text: 'Price',
+            onclick: () => XS.askPrice({
+                title: `${group.label} price`,
+                note: 'Applies to everything in this category at this shop. Clear it to go back to the server default.',
+                price: (XS.state.prices || {})[group.id] || 0,
+            }, ({ price }) => XS.post('setCategoryPrice', { category: group.id, price })),
+        });
+    }
+
     function renderRespray(grid, group, prices) {
         const paint = group.paint || {};
         const price = prices.respray || 0;
 
         grid.append(XS.el('div', { class: 'gh' }, [
             XS.el('h2', { text: 'Respray · Primary' }),
-            XS.el('div', { class: 'cap', text: XS.money(price) }),
+            XS.el('div', { class: 'cap' }, [XS.money(price), stockNote(XS.stockFor('respray'))]),
+            pricer(group),
         ]));
 
         grid.append(swatchGrid('primary', paint.primary));
@@ -267,7 +289,8 @@
 
         grid.append(XS.el('div', { class: 'gh' }, [
             XS.el('h2', { text: 'Wheels · Type' }),
-            XS.el('div', { class: 'cap', text: `${wheels.types.length} fitted to model` }),
+            XS.el('div', { class: 'cap' }, [`${wheels.types.length} fitted to model`, stockNote(XS.stockFor('wheels'))]),
+            pricer(group),
         ]));
 
         const types = XS.el('div', { class: 'cards' });
@@ -326,7 +349,8 @@
 
         grid.append(XS.el('div', { class: 'gh' }, [
             XS.el('h2', { text: 'Extras' }),
-            XS.el('div', { class: 'cap', text: `${group.extras.length} on this model` }),
+            XS.el('div', { class: 'cap' }, [`${group.extras.length} on this model`, stockNote(XS.stockFor('extras'))]),
+            pricer(group),
         ]));
 
         const cards = XS.el('div', { class: 'cards' });

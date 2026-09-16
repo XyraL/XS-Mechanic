@@ -71,6 +71,9 @@ button{cursor:pointer;border:0;background:none}
 }
 #root.open{opacity:1;pointer-events:auto}
 
+/* The shell's paint lives on .skin, not on .device, because the live car
+   window is a HOLE: every layer stacked behind it has to be able to get out of
+   the way, and a mask on .device would take its children with it. */
 .device{
   --shell:#161a1f;
   position:relative;
@@ -78,15 +81,21 @@ button{cursor:pointer;border:0;background:none}
   height:min(940px,95vh);
   padding:20px 52px;
   border-radius:30px;
-  background:linear-gradient(180deg,#22262c 0%,var(--shell) 14%,#0d0f12 88%,#08090b 100%);
-  box-shadow:
-    0 50px 110px -34px rgba(0,0,0,.95),
-    0 2px 0 rgba(255,255,255,.07) inset,
-    0 -2px 0 rgba(0,0,0,.6) inset;
+  background:transparent;
+  box-shadow:0 50px 110px -34px rgba(0,0,0,.95);
   transform:scale(.982);
   transition:transform .26s var(--ease);
 }
 #root.open .device{transform:scale(1)}
+
+.device .skin{
+  position:absolute;inset:0;z-index:0;
+  border-radius:inherit;pointer-events:none;
+  background:linear-gradient(180deg,#22262c 0%,var(--shell) 14%,#0d0f12 88%,#08090b 100%);
+  box-shadow:
+    0 2px 0 rgba(255,255,255,.07) inset,
+    0 -2px 0 rgba(0,0,0,.6) inset;
+}
 
 .device::before,
 .device::after{
@@ -106,6 +115,8 @@ button{cursor:pointer;border:0;background:none}
   height:min(960px,96vh);
   padding:14px 16px 26px;
   border-radius:14px 14px 6px 6px;
+}
+.device[data-device="laptop"] .skin{
   background:linear-gradient(180deg,#2b2e33 0%,#1d2024 10%,#131518 92%,#0b0c0e 100%);
 }
 .device[data-device="laptop"]::before{
@@ -124,8 +135,8 @@ button{cursor:pointer;border:0;background:none}
 .device[data-device="laptop"] .port{display:none}
 
 .frame{
-  position:relative;height:100%;
-  background:var(--bg);
+  position:relative;height:100%;z-index:1;
+  background:transparent;
   border-radius:12px;
   overflow:hidden;
   display:grid;
@@ -133,9 +144,18 @@ button{cursor:pointer;border:0;background:none}
   box-shadow:
     0 0 0 1px #04070c,
     0 0 0 4px #17191d,
-    0 0 0 5px rgba(255,255,255,.04),
-    0 10px 30px rgba(0,0,0,.6) inset;
+    0 0 0 5px rgba(255,255,255,.04);
 }
+
+/* The screen's own paint, separated for the same reason .skin is. */
+.frame::before{
+  content:"";position:absolute;inset:0;z-index:0;pointer-events:none;
+  background:var(--bg);
+  box-shadow:0 10px 30px rgba(0,0,0,.6) inset;
+}
+
+.frame > .bar{position:relative;z-index:2}
+.frame > .split{position:relative;z-index:1}
 
 /* Glass, kept faint so it never touches legibility. */
 .frame::after{
@@ -223,9 +243,11 @@ button{cursor:pointer;border:0;background:none}
 .split{display:grid;grid-template-columns:392px minmax(0,1fr);min-height:0;overflow:hidden}
 .split.wide{grid-template-columns:minmax(0,1fr)}
 
+/* No background: the live car window is cut through this column, and a
+   gradient here would be one more thing painted over the hole. */
 .subject{
   border-right:1px solid var(--line);
-  background:linear-gradient(180deg,var(--panel),#070c14);
+  background:transparent;
   overflow-y:auto;padding:20px;
 }
 
@@ -234,12 +256,20 @@ button{cursor:pointer;border:0;background:none}
 .hero{
   border-radius:var(--r-xl);overflow:hidden;
   border:1px solid var(--line2);margin-bottom:16px;
+}
+.hero .art,
+.hero .meta{
   background:radial-gradient(120% 90% at 50% 0%,var(--raise),var(--panel2) 60%,var(--panel));
 }
 
-/* The live one. Nothing is painted here at all — the page is an overlay, so
-   a transparent box is a window onto the game, and a scripted camera puts the
-   real vehicle behind it. The frame and the fade are drawn on top. */
+/* The live one is a HOLE, not a picture. The page is an overlay, so where
+   nothing is painted the game shows through, and a scripted camera puts the
+   real vehicle behind it.
+
+   Nothing above it in the stack may paint either, which is what .cut is for.
+   Square across the top so the hole and the frame around it are the same
+   shape — a rounded corner over a square hole leaks daylight. */
+.hero.live{border-radius:0 0 var(--r-xl) var(--r-xl);border-top:0}
 .hero .view{
   position:relative;height:190px;
   background:transparent;
@@ -247,8 +277,28 @@ button{cursor:pointer;border:0;background:none}
 .hero .view::after{
   content:"";position:absolute;inset:0;pointer-events:none;
   background:
-    linear-gradient(180deg,rgba(7,12,20,.55),transparent 22%,transparent 72%,rgba(7,12,20,.7)),
-    radial-gradient(120% 80% at 50% 50%,transparent 45%,rgba(7,12,20,.55));
+    linear-gradient(180deg,rgba(7,12,20,.42),transparent 26%,transparent 74%,rgba(7,12,20,.55)),
+    radial-gradient(130% 85% at 50% 50%,transparent 58%,rgba(7,12,20,.4));
+}
+
+/* Cuts a rectangle out of a paint layer: one mask covering the whole box, a
+   second covering the window, and xor leaves everything but the overlap.
+   The rectangle is measured by the page and written in as pixels, so it
+   follows the panel across resolutions instead of being guessed at.
+   A zero-sized second layer composites to nothing, which is the no-hole
+   state — that is what the defaults are for. */
+.cut,
+.frame::before{
+  -webkit-mask-image:linear-gradient(#000,#000),linear-gradient(#000,#000);
+          mask-image:linear-gradient(#000,#000),linear-gradient(#000,#000);
+  -webkit-mask-size:100% 100%,var(--cw,0px) var(--ch,0px);
+          mask-size:100% 100%,var(--cw,0px) var(--ch,0px);
+  -webkit-mask-position:0 0,var(--cx,0px) var(--cy,0px);
+          mask-position:0 0,var(--cx,0px) var(--cy,0px);
+  -webkit-mask-repeat:no-repeat,no-repeat;
+          mask-repeat:no-repeat,no-repeat;
+  -webkit-mask-composite:xor;
+          mask-composite:exclude;
 }
 .hero .view .hint{
   position:absolute;left:0;right:0;bottom:9px;text-align:center;
@@ -698,3 +748,143 @@ body.open #hud{display:none}
   font-size:12.5px;color:var(--dim);
 }
 .placing b{color:var(--accent2)}
+
+/* ── The connected car's work order ────────────────────────────────────── */
+
+.callout{
+  display:block;width:100%;text-align:left;margin-bottom:14px;
+  padding:13px 15px;border-radius:var(--r-lg);
+  border:1px solid color-mix(in srgb,var(--warn) 45%,transparent);
+  background:color-mix(in srgb,var(--warn) 9%,var(--panel));
+  transition:.15s;
+}
+.callout:hover{border-color:var(--warn);background:color-mix(in srgb,var(--warn) 14%,var(--panel))}
+.callout.on{
+  border-color:color-mix(in srgb,var(--accent) 50%,transparent);
+  background:color-mix(in srgb,var(--accent) 10%,var(--panel));
+}
+.callout .k{font:9.5px/1 var(--mono);letter-spacing:.13em;text-transform:uppercase;color:var(--warn)}
+.callout.on .k{color:var(--accent2)}
+.callout .v{font:650 15px/1 var(--mono);margin:9px 0 7px}
+.callout .m{font:9.5px/1 var(--mono);letter-spacing:.07em;color:var(--faint);text-transform:uppercase}
+
+/* ── Work order lines ──────────────────────────────────────────────────── */
+
+.row.lit{border-color:color-mix(in srgb,var(--accent) 55%,transparent);background:color-mix(in srgb,var(--accent) 7%,var(--panel))}
+
+.tag{
+  display:inline-block;margin-left:9px;vertical-align:1px;
+  font:9px/1 var(--mono);letter-spacing:.11em;padding:4px 7px;border-radius:5px;
+  background:color-mix(in srgb,var(--accent) 22%,transparent);color:var(--accent2);
+}
+.tag.warn{background:color-mix(in srgb,var(--warn) 22%,transparent);color:var(--warn)}
+
+.ol{
+  display:grid;grid-template-columns:minmax(0,1fr) auto auto;gap:12px;align-items:center;
+  font-size:12px;padding:6px 10px;border-radius:6px;
+  background:var(--sunk);border:1px solid var(--line);
+}
+.ol .c{font:10px/1 var(--mono);letter-spacing:.08em;color:var(--faint);margin-right:8px}
+.ol .p{font:600 12px/1 var(--mono);color:var(--accent2)}
+.ol .del{
+  width:20px;height:20px;border-radius:5px;color:var(--faint);
+  display:grid;place-items:center;font-size:14px;line-height:1;transition:.15s;
+}
+.ol .del:hover{background:color-mix(in srgb,var(--bad) 22%,transparent);color:var(--bad)}
+
+/* ── The shop boundary, in the builder ─────────────────────────────────── */
+
+.zone{
+  display:grid;grid-template-columns:minmax(0,1fr) auto;gap:16px;align-items:center;
+  padding:15px 17px;border-radius:var(--r-lg);
+  border:1px dashed var(--line2);background:var(--panel);
+}
+.zone.on{border-style:solid;border-color:color-mix(in srgb,var(--good) 45%,transparent)}
+.zone .t{font-size:13px;font-weight:560;margin-bottom:7px}
+.zone .m{font-size:11.5px;color:var(--faint);line-height:1.5;max-width:520px}
+.zone .acts{display:flex;gap:8px}
+
+/* ── Out of stock ──────────────────────────────────────────────────────── */
+
+.c.dry{opacity:.62}
+.c.dry:hover{opacity:1}
+.dry .stk{color:var(--warn)}
+.stk{
+  font:9px/1 var(--mono);letter-spacing:.09em;text-transform:uppercase;
+  color:var(--faint);margin-left:8px;
+}
+
+/* ── The bench ─────────────────────────────────────────────────────────── */
+
+/* The bench is not the tablet: the shell drops away and what is left is a
+   sheet of light over the workbench, with the camera looking down at it. */
+.device[data-device="holo"]{
+  width:min(1080px,86vw);
+  height:min(720px,84vh);
+  padding:0;
+  border-radius:16px;
+  box-shadow:none;
+}
+.device[data-device="holo"] .skin,
+.device[data-device="holo"]::before,
+.device[data-device="holo"]::after,
+.device[data-device="holo"] .led,
+.device[data-device="holo"] .port{display:none}
+
+.device[data-device="holo"] .frame{
+  border-radius:16px;
+  box-shadow:
+    0 0 0 1px color-mix(in srgb,var(--cyan) 42%,transparent),
+    0 0 44px -6px color-mix(in srgb,var(--cyan) 34%,transparent),
+    0 0 90px -20px color-mix(in srgb,var(--cyan) 50%,transparent) inset;
+}
+.device[data-device="holo"] .frame::before{
+  background:
+    repeating-linear-gradient(180deg,
+      color-mix(in srgb,var(--cyan) 5%,transparent) 0 1px,
+      transparent 1px 3px),
+    linear-gradient(170deg,rgba(9,22,34,.9),rgba(4,11,19,.84));
+  box-shadow:none;
+}
+.device[data-device="holo"] .frame::after{
+  background:linear-gradient(118deg,
+    color-mix(in srgb,var(--cyan) 9%,transparent) 0%,
+    transparent 46%);
+}
+.device[data-device="holo"] .bar{background:rgba(8,20,31,.72)}
+
+.recipes{display:grid;grid-template-columns:repeat(auto-fill,minmax(264px,1fr));gap:12px}
+
+.rc{
+  padding:15px;border-radius:var(--r-lg);
+  border:1px solid color-mix(in srgb,var(--cyan) 26%,transparent);
+  background:linear-gradient(170deg,
+    color-mix(in srgb,var(--cyan) 7%,transparent),
+    rgba(6,14,23,.55));
+  transition:.15s;
+}
+.rc:hover{border-color:color-mix(in srgb,var(--cyan) 55%,transparent)}
+.rc.short{border-color:var(--line);background:rgba(6,14,23,.5)}
+
+.rc .rh{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:12px;align-items:start;margin-bottom:14px}
+.rc .nm{font-size:14px;font-weight:600;letter-spacing:-.01em}
+.rc .ct{font:9.5px/1 var(--mono);letter-spacing:.1em;text-transform:uppercase;color:var(--faint);margin-top:7px}
+.rc .shelf{text-align:right}
+.rc .shelf .n{display:block;font:650 20px/1 var(--mono);color:var(--cyan)}
+.rc .shelf .k{display:block;font:9px/1 var(--mono);letter-spacing:.09em;text-transform:uppercase;color:var(--faint);margin-top:6px}
+
+.rc .needs{display:flex;flex-direction:column;gap:9px;margin-bottom:15px}
+.rc .nd{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:10px;align-items:center}
+.rc .nd .l{font-size:11.5px;color:var(--dim)}
+.rc .nd .v{font:600 11px/1 var(--mono);color:var(--cyan)}
+.rc .nd.no .v{color:var(--bad)}
+.rc .nd .trk{grid-column:1 / -1;margin-top:0}
+
+.rc .ra{display:grid;grid-template-columns:auto minmax(0,1fr);gap:9px;align-items:center}
+.rc .qty{
+  display:flex;align-items:center;gap:2px;
+  border:1px solid var(--line2);border-radius:var(--r);background:var(--sunk);
+}
+.rc .qty button{width:26px;height:30px;color:var(--dim);font-size:14px;transition:.15s}
+.rc .qty button:hover{color:var(--accent2)}
+.rc .qty span{min-width:20px;text-align:center;font:600 12px/1 var(--mono)}

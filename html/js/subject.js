@@ -5,6 +5,37 @@ XS.subject = (function () {
     const host = document.querySelector('[data-subject]');
     const split = document.querySelector('[data-split]');
 
+    // Every layer of paint stacked behind the car window. The window itself is
+    // transparent, but a transparent box over an opaque one is still opaque —
+    // which is why the live preview showed a dark rectangle instead of a car.
+    function layers() {
+        return [
+            document.querySelector('.device .skin'),
+            document.querySelector('.frame'),
+        ];
+    }
+
+    // The hole is written into each layer in its own pixels, because each one
+    // sits somewhere different on screen.
+    function cut(rect) {
+        for (const layer of layers()) {
+            if (!layer) continue;
+
+            if (!rect) {
+                layer.style.setProperty('--cw', '0px');
+                layer.style.setProperty('--ch', '0px');
+                continue;
+            }
+
+            const box = layer.getBoundingClientRect();
+
+            layer.style.setProperty('--cx', `${rect.left - box.left}px`);
+            layer.style.setProperty('--cy', `${rect.top - box.top}px`);
+            layer.style.setProperty('--cw', `${rect.width}px`);
+            layer.style.setProperty('--ch', `${rect.height}px`);
+        }
+    }
+
     // Where the live-camera window sits on screen, as fractions of the
     // viewport. Lua needs this to frame the real vehicle inside it, and it has
     // to be measured rather than assumed — the panel scales with the screen.
@@ -12,6 +43,7 @@ XS.subject = (function () {
         const view = host.querySelector('[data-view]');
 
         if (!view) {
+            cut(null);
             XS.post('carView', { active: false });
             return;
         }
@@ -19,8 +51,10 @@ XS.subject = (function () {
         const r = view.getBoundingClientRect();
 
         // A hidden pane reports zeros; sending those would aim the camera at
-        // the corner of the screen.
+        // the corner of the screen and cut a hole in the corner of the shell.
         if (r.width < 10 || r.height < 10) return;
+
+        cut(r);
 
         XS.post('carView', {
             active: true,
@@ -31,10 +65,15 @@ XS.subject = (function () {
         });
     }
 
-    function car(vehicle) {
-        const hero = XS.el('div', { class: 'hero' });
+    function hide() {
+        cut(null);
+    }
 
-        if (XS.state.livePreview !== false) {
+    function car(vehicle) {
+        const live = XS.state.livePreview !== false;
+        const hero = XS.el('div', { class: live ? 'hero live' : 'hero' });
+
+        if (live) {
             hero.append(XS.el('div', { class: 'view', 'data-view': true }, [
                 XS.el('div', { class: 'hint', text: 'live' }),
             ]));
@@ -53,6 +92,23 @@ XS.subject = (function () {
         ]));
 
         host.append(hero);
+
+        // Walk up to a car, connect, and the first thing you see is whether
+        // somebody has already asked for something to be done to it.
+        const order = XS.mode === 'tablet' ? XS.orderFor(vehicle.plate) : null;
+
+        if (order) {
+            const parts = (order.requested || []).filter((p) => p && typeof p === 'object');
+
+            host.append(XS.el('button', {
+                class: `callout ${order.status === 'claimed' ? 'on' : ''}`,
+                onclick: () => XS.show('orders'),
+            }, [
+                XS.el('div', { class: 'k', text: order.status === 'claimed' ? 'Order in progress' : 'Open work order' }),
+                XS.el('div', { class: 'v', text: `${parts.length || 'No'} part${parts.length === 1 ? '' : 's'} · ${XS.money(order.quote)}` }),
+                XS.el('div', { class: 'm', text: `${order.customerName || 'a customer'} · ${XS.ago(order.createdAt)}` }),
+            ]));
+        }
 
         const engine = Math.round((vehicle.health?.engine || 0) / 10);
         const body = Math.round((vehicle.health?.body || 0) / 10);
@@ -149,9 +205,9 @@ XS.subject = (function () {
             return;
         }
 
-        // The laptop and the counter are not pointed at a car, so they get the
-        // whole width rather than an empty column.
-        if (XS.mode === 'desk' || XS.mode === 'counter') {
+        // The laptop, the counter and the bench are not pointed at a car, so
+        // they get the whole width rather than an empty column.
+        if (XS.mode === 'desk' || XS.mode === 'counter' || XS.mode === 'bench') {
             split.className = 'split wide';
             reportViewport();
             return;
@@ -197,5 +253,5 @@ XS.subject = (function () {
 
     window.addEventListener('resize', () => requestAnimationFrame(reportViewport));
 
-    return { redraw, reportViewport };
+    return { redraw, reportViewport, hide };
 })();

@@ -47,7 +47,7 @@ Config.Builder = {
         bays    = 8,
         shops   = 4,
         storage = 4,
-        desks   = 2,
+        benches = 2,
         duty    = 2,
         dynos   = 2,
     },
@@ -72,6 +72,11 @@ Config.Jobs = {
     -- Let a boss hire, fire and promote from the tablet's Team app. Turn it off
     -- if you already run a boss menu and want that to be the only way.
     manageFromTablet = true,
+
+    -- Grade needed to change what this shop charges — the category prices, the
+    -- performance list and what the parts counter sells. Each shop can raise or
+    -- lower it in the builder. 0 lets everybody price work.
+    priceGrade = 2,
 }
 
 -- ── The tablet ───────────────────────────────────────────────────────────────
@@ -90,6 +95,13 @@ Config.Tablet = {
 
     -- Metres. How close the tablet has to be to connect to a vehicle.
     connectDistance = 6.0,
+
+    -- Only connect to a vehicle that is inside the shop's boundary, with the
+    -- mechanic inside it too. Draw the boundary in the builder.
+    --
+    -- A shop with no boundary drawn is not restricted, so this changes nothing
+    -- until somebody draws one. /mechanicdebug says which shops have one.
+    insideShopOnly = true,
 
     -- Hold a tablet prop and stand like you are reading it while the panel is
     -- open. Cosmetic only; the interface works either way.
@@ -197,11 +209,20 @@ Config.Tuning = {
         'cyclone', 'tezeract', 'neon', 'raiden', 'imorgon', 'omnisegt', 'powersurge', 'virtue' },
 
     -- Let a customer look at a modification before paying for it.
+    --
+    -- Nothing previewed is ever kept. The vehicle is recorded before the first
+    -- change and put back the moment the panel closes, so looking at a respray
+    -- is not a way to get one.
     preview = true,
 
-    -- Put the vehicle back exactly as it was if the customer walks away
-    -- mid-preview. Turning this off is not advised.
-    restoreOnCancel = true,
+    -- Seconds to fit one thing, by category. Fitting is not instant: the
+    -- mechanic works on the car and the panel steps aside while they do.
+    -- 0 anywhere makes that category instant again.
+    seconds = {
+        cosmetics = 10, wheels = 12, respray = 14, livery = 8,
+        lights = 6, interior = 6, extras = 5, plate = 4,
+        performance = 12, default = 8,
+    },
 }
 
 -- ── Servicing ────────────────────────────────────────────────────────────────
@@ -326,6 +347,91 @@ Config.Parts = {
 
 -- Whether buying from a counter takes the shop's money or the employee's own.
 Config.Parts.paidBy = 'society'   -- society | player
+
+-- ── Stock ────────────────────────────────────────────────────────────────────
+-- A shop can only fit what it has on the shelf. The shelf is the shop's own
+-- storage point, so a mechanic stocks it the same way they stock anything else:
+-- put parts in, or craft them at the bench, and the tablet reads what is there.
+--
+-- Off, every option is fittable and nothing is ever consumed — which is how
+-- this resource behaved before, if that is what you want.
+--
+-- A shop with no storage point reads the mechanic's own pockets instead, so a
+-- one-room self service shop still works without building a stockroom.
+Config.Parts.requireStock = true
+
+-- Which item each kind of work uses up. One per category; set any of them to
+-- '' and that category stops needing anything.
+Config.Parts.categoryItems = {
+    cosmetics   = 'body_part',
+    wheels      = 'wheel_set',
+    respray     = 'paint_can',
+    livery      = 'vinyl_wrap',
+    lights      = 'light_kit',
+    interior    = 'interior_part',
+    extras      = 'body_part',
+    plate       = 'plate_blank',
+    performance = 'performance_part',
+}
+
+-- ── The crafting bench ───────────────────────────────────────────────────────
+-- Place one in the builder. Raw material comes out of the mechanic's own
+-- pockets and the finished part goes onto the shop's shelf, so crafting is how
+-- a shop restocks itself.
+--
+-- The item names below are the ones QBCore ships with. Point them at whatever
+-- your server already uses for raw material and nothing else has to change.
+Config.Crafting = {
+    enabled = true,
+
+    -- Seconds at the bench per part.
+    seconds = 8,
+
+    -- Metres. How close the bench has to be to use it.
+    useDistance = 1.8,
+
+    materials = {
+        scrap  = { item = 'metalscrap', label = 'Scrap' },
+        metal  = { item = 'iron',       label = 'Metal' },
+        rubber = { item = 'rubber',     label = 'Rubber' },
+        steel  = { item = 'steel',      label = 'Steel' },
+        glass  = { item = 'glass',      label = 'Glass' },
+    },
+
+    -- What the bench can make. `category` ties a part to the work it is used
+    -- for, which is what the tablet reads when it says a part is out of stock.
+    recipes = {
+        { item = 'body_part',       label = 'Body Part',      category = 'cosmetics',
+          needs = { scrap = 5, metal = 3, steel = 2 } },
+
+        { item = 'wheel_set',       label = 'Wheel Set',      category = 'wheels',
+          needs = { rubber = 6, steel = 4, metal = 2 } },
+
+        { item = 'paint_can',       label = 'Paint Can',      category = 'respray',
+          needs = { scrap = 2, metal = 1 } },
+
+        { item = 'vinyl_wrap',      label = 'Vinyl Wrap',     category = 'livery',
+          needs = { rubber = 3, scrap = 2 } },
+
+        { item = 'light_kit',       label = 'Light Kit',      category = 'lights',
+          needs = { glass = 4, metal = 2, scrap = 1 } },
+
+        { item = 'interior_part',   label = 'Interior Part',  category = 'interior',
+          needs = { rubber = 3, scrap = 3, glass = 1 } },
+
+        { item = 'plate_blank',     label = 'Plate Blank',    category = 'plate',
+          needs = { metal = 2, scrap = 1 } },
+
+        { item = 'performance_part', label = 'Performance Part', category = 'performance',
+          needs = { steel = 6, metal = 5, scrap = 4, rubber = 2 } },
+
+        { item = 'tyre_kit',        label = 'Tyre Kit',       category = nil,
+          needs = { rubber = 8, steel = 2 } },
+
+        { item = 'repair_kit',      label = 'Repair Kit',     category = nil,
+          needs = { scrap = 4, metal = 3, rubber = 1 } },
+    },
+}
 
 -- ── Invoices ─────────────────────────────────────────────────────────────────
 Config.Invoices = {

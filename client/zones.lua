@@ -10,12 +10,45 @@ local KIND_COLOUR = {
     counter = { 55, 211, 153 },
     storage = { 169, 139, 255 },
     laptop  = { 255, 196, 107 },
-    desk    = { 138, 148, 162 },
+    bench   = { 255, 213, 79 },
     duty    = { 47, 224, 189 },
     dyno    = { 109, 224, 255 },
 }
 
 Zones.Colour = KIND_COLOUR
+
+-- Is this spot inside the shop? A shop with no boundary drawn answers yes to
+-- everywhere, which is how every shop built before boundaries existed behaves.
+function Zones.InShop(shop, coords)
+    if not shop then return false end
+    if not Util.HasArea(shop.area) then return true end
+
+    return Util.InsideArea(coords, shop.area)
+end
+
+function Zones.ShopAt(coords)
+    for _, shop in ipairs(XSM.shops or {}) do
+        if Util.HasArea(shop.area) and Util.InsideArea(coords, shop.area) then
+            return shop
+        end
+    end
+
+    return nil
+end
+
+-- Whether a spot is stood on one of the shop's points of a given kind. The
+-- dyno uses it: a dyno run belongs on a dyno bay, not wherever you happen to
+-- have parked.
+function Zones.OnPoint(shop, kind, coords)
+    for _, point in ipairs(shop and shop.points or {}) do
+        if point.kind == kind then
+            local distance = #(coords - vector3(point.coords.x, point.coords.y, point.coords.z))
+            if distance <= (point.radius or 3.0) then return point end
+        end
+    end
+
+    return nil
+end
 
 local function jobMatches(shop)
     if shop.kind ~= 'owned' then return true end
@@ -136,12 +169,16 @@ local function optionsFor(shop, point)
         } }
     end
 
-    if point.kind == 'desk' then
+    if point.kind == 'bench' then
+        if not Config.Crafting.enabled then return {} end
+
         return { {
-            id = 'order',
-            label = 'Leave a work order',
-            icon = 'fa-solid fa-clipboard-list',
-            action = function() Orders.Leave(shop) end,
+            id = 'craft',
+            label = 'Crafting bench',
+            icon = 'fa-solid fa-hammer',
+            distance = Config.Crafting.useDistance,
+            canInteract = function() return jobMatches(shop) end,
+            action = function() Craft.Open(shop, point) end,
         } }
     end
 
@@ -244,6 +281,44 @@ CreateThread(function()
                 end
             else
                 lib.hideTextUI()
+            end
+        end
+
+        Wait(wait)
+    end
+end)
+
+-- Config.Debug draws every shop's boundary on the ground. Drawing a shape you
+-- cannot see is how a boundary ends up two metres short of the door.
+CreateThread(function()
+    while true do
+        local wait = 1000
+
+        if Config.Debug then
+            local coords = GetEntityCoords(cache.ped)
+
+            for _, shop in ipairs(XSM.shops or {}) do
+                local area = shop.area
+
+                if Util.HasArea(area) then
+                    local centre = Util.AreaCentre(area)
+
+                    if centre and #(coords - vector3(centre.x, centre.y, centre.z)) < 120.0 then
+                        wait = 0
+                        local inside = Util.InsideArea(coords, area)
+                        local r, g, b = 47, 224, 189
+                        if not inside then r, g, b = 255, 166, 41 end
+
+                        local corners = area.points
+
+                        for index, corner in ipairs(corners) do
+                            local next_ = corners[index + 1] or corners[1]
+
+                            DrawLine(corner.x, corner.y, corner.z, next_.x, next_.y, next_.z, r, g, b, 200)
+                            DrawLine(corner.x, corner.y, corner.z, corner.x, corner.y, corner.z + 3.0, r, g, b, 120)
+                        end
+                    end
+                end
             end
         end
 

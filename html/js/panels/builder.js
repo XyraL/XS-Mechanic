@@ -24,8 +24,8 @@
         { kind: 'repair', label: 'Repair bay', note: 'Repairs, priced off the vehicle' },
         { kind: 'counter', label: 'Parts counter', note: 'What this shop sells' },
         { kind: 'storage', label: 'Storage', note: 'A stash for employees' },
-        { kind: 'laptop', label: 'Office laptop', note: 'Billing, orders, staff and money' },
-        { kind: 'desk', label: 'Customer desk', note: 'Where work orders get left' },
+        { kind: 'laptop', label: 'Office laptop', note: 'Billing, staff and money' },
+        { kind: 'bench', label: 'Crafting bench', note: 'Where parts get made' },
         { kind: 'dyno', label: 'Dyno bay', note: 'Where a run is done' },
         { kind: 'duty', label: 'Duty point', note: 'Toggles on and off duty' },
     ];
@@ -82,6 +82,15 @@
                 ]),
             ]));
 
+            form.append(XS.el('div', { class: 'field' }, [
+                XS.el('label', { text: 'Pricing grade' }),
+                XS.el('input', {
+                    type: 'number', value: String(draft.priceGrade ?? 2), min: '0',
+                    onchange: (ev) => set('priceGrade', Number(ev.target.value) || 0),
+                }),
+                XS.el('div', { class: 'hint', text: 'This grade and above can change what the shop charges. The boss always can.' }),
+            ]));
+
             form.append(XS.el('label', { class: 'check' }, [
                 XS.el('input', {
                     type: 'checkbox', checked: draft.selfServiceWhenEmpty !== false,
@@ -95,6 +104,8 @@
         }
 
         grid.append(form);
+
+        grid.append(boundary(draft));
 
         grid.append(XS.el('div', { class: 'gh' }, [
             XS.el('h2', { text: 'Points' }),
@@ -157,6 +168,47 @@
                 }),
             }) : null,
         ]));
+    }
+
+    // Without a boundary the tablet connects to a car anywhere on the map. The
+    // shape drawn here is what "at the shop" means, and it is checked on the
+    // server as well as in the panel.
+    function boundary(draft) {
+        const corners = draft.area?.points || [];
+        const wrap = XS.el('div', { style: 'margin-bottom:22px' });
+
+        wrap.append(XS.el('div', { class: 'gh' }, [
+            XS.el('h2', { text: 'Boundary' }),
+            XS.el('div', {
+                class: 'cap',
+                text: corners.length ? `${corners.length} corners` : 'not drawn',
+            }),
+        ]));
+
+        wrap.append(XS.el('div', { class: `zone ${corners.length ? 'on' : ''}` }, [
+            XS.el('div', {}, [
+                XS.el('div', { class: 't', text: corners.length ? 'The shop is fenced off' : 'This shop has no boundary' }),
+                XS.el('div', {
+                    class: 'm',
+                    text: corners.length
+                        ? 'Mechanics can only work on a vehicle inside this shape, and they have to be inside it too.'
+                        : 'Anyone with the job can connect to a car anywhere on the map. Draw the walls of the workshop and that stops.',
+                }),
+            ]),
+            XS.el('div', { class: 'acts' }, [
+                XS.el('button', {
+                    class: 'mini hot',
+                    text: corners.length ? 'Draw it again' : 'Draw the boundary',
+                    onclick: () => XS.post('drawArea'),
+                }),
+                corners.length ? XS.el('button', {
+                    class: 'mini danger', text: 'Clear',
+                    onclick: () => XS.post('clearArea'),
+                }) : null,
+            ]),
+        ]));
+
+        return wrap;
     }
 
     // A dropdown of the framework's real jobs, so nobody has to remember how a

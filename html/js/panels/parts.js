@@ -33,7 +33,10 @@
 
         grid.append(XS.el('div', { class: 'gh' }, [
             XS.el('h2', { text: counter.label || 'Parts counter' }),
-            XS.el('div', { class: 'cap', text: XS.state.partsPaidBy === 'player' ? 'paid from your own pocket' : 'paid from shop funds' }),
+            XS.el('div', { class: 'cap' }, [
+                XS.state.partsPaidBy === 'player' ? 'paid from your own pocket' : 'paid from shop funds',
+                XS.state.canPrice ? XS.el('span', { class: 'stk', text: ' · right click to price' }) : null,
+            ]),
         ]));
 
         if (!counter.near) {
@@ -47,14 +50,21 @@
 
         for (const item of counter.items || []) {
             cards.append(XS.el('button', {
-                class: 'c', disabled: !counter.near,
+                class: `c ${item.stocked === 0 ? 'dry' : ''}`, disabled: !counter.near,
+                oncontextmenu: (ev) => {
+                    ev.preventDefault();
+                    if (XS.state.canPrice) price(item);
+                },
                 onclick: () => buy(item),
             }, [
                 XS.el('div', { class: 'idx', text: item.item.toUpperCase() }),
                 XS.el('div', { class: 'nm', text: item.label }),
                 XS.el('div', { class: 'fr' }, [
                     XS.el('span', { class: 'pr', text: XS.money(item.price) }),
-                    XS.el('span', { class: 'st', text: 'EACH' }),
+                    XS.el('span', {
+                        class: 'st',
+                        text: item.stocked === undefined ? 'EACH' : `${XS.num(item.stocked)} IN`,
+                    }),
                 ]),
             ]));
         }
@@ -66,6 +76,20 @@
         grid.append(cards);
         host.append(grid);
     };
+
+    // What the counter charges, and what it calls it. Removing a line takes
+    // the part off this shop's list entirely.
+    function price(item) {
+        XS.askPrice({
+            title: item.label,
+            note: 'What this shop sells it for. Set it to whatever you like — it is your counter.',
+            price: item.price,
+            label: item.label,
+            naming: true,
+        }, ({ price: amount, label }) => XS.post('setPartPrice', {
+            item: item.item, price: amount, label,
+        }));
+    }
 
     function buy(item) {
         let amount = 1;

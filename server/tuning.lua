@@ -13,6 +13,17 @@ local function electricOf(profile)
     return false
 end
 
+-- A shop can rename a package and change what it costs. Anything it has not
+-- touched falls through to the shipped name and price, so an untouched shop
+-- behaves exactly as before.
+function CustomTuning.Priced(shop, category, option)
+    local override = shop and shop.tuningPrices and shop.tuningPrices[('%s:%s'):format(category, option.id)]
+
+    if not override then return option.name, option.price, false end
+
+    return override.label or option.name, override.price or option.price, true
+end
+
 function CustomTuning.Sheet(profile, shop)
     if not Config.CustomTuning.enabled then return {} end
 
@@ -25,12 +36,16 @@ function CustomTuning.Sheet(profile, shop)
 
         for _, option in ipairs(Tuning.Options[category.id] or {}) do
             if Tuning.Allowed(option, profile.model, electric) then
+                local name, price, custom = CustomTuning.Priced(shop, category.id, option)
+
                 options[#options + 1] = {
                     id = option.id,
-                    name = option.name,
+                    name = name,
                     info = option.info,
                     item = option.item,
-                    price = option.price,
+                    price = price,
+                    priced = custom,
+                    stock = option.item,
                     fitted = fitted[category.id] == option.id,
                 }
             end
@@ -80,18 +95,21 @@ function CustomTuning.Fit(src, data)
         return { ok = false, error = 'Already fitted.' }
     end
 
+    local name, price = CustomTuning.Priced(shop, data.category, option)
     local usesItem = shop.tuningItems ~= false and Config.CustomTuning.requiresItem
 
     if usesItem then
-        if not Inventory.Has(src, option.item, 1) then
-            return { ok = false, error = ('The shop needs a %s.'):format(option.name) }
+        -- The shelf first, the mechanic's own pockets second. A shop that has
+        -- stocked its storage should not need every mechanic carrying parts.
+        if Stock.Count(shop, option.item, src) < 1 then
+            return { ok = false, error = ('The shop needs a %s.'):format(name) }
         end
 
-        if not Inventory.Remove(src, option.item, 1) then
+        if not Stock.Take(shop, option.item, 1, src) then
             return { ok = false, error = 'Could not take the part.' }
         end
     else
-        if not Banking.Remove(shop, option.price, ('Tuning — %s'):format(option.name), Framework.GetName(src), 'tuning') then
+        if not Banking.Remove(shop, price, ('Tuning — %s'):format(name), Framework.GetName(src), 'tuning') then
             return { ok = false, error = 'The shop cannot cover that.' }
         end
     end
@@ -109,10 +127,10 @@ function CustomTuning.Fit(src, data)
     end
 
     Discord.Send('tuning', 'Custom tuning fitted',
-        ('**%s** fitted %s to `%s` at %s'):format(Framework.GetName(src), option.name, plate, shop.name),
+        ('**%s** fitted %s to `%s` at %s'):format(Framework.GetName(src), name, plate, shop.name),
         Discord.Colour.info)
 
-    return { ok = true, message = ('%s fitted.'):format(option.name) }
+    return { ok = true, message = ('%s fitted.'):format(name) }
 end
 
 function CustomTuning.Remove(src, data)

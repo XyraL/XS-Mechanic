@@ -4,6 +4,7 @@
 
         const filter = XS.state.orderFilter || 'open';
         const all = XS.state.orders || [];
+        const connected = XS.state.vehicle?.plate || null;
 
         const counts = {
             open: all.filter((o) => o.status === 'open').length,
@@ -29,84 +30,108 @@
         host.append(tree);
 
         const grid = XS.el('section', { class: 'grid' });
-        const shown = all.filter((o) => filter === 'all' || o.status === filter);
 
         grid.append(XS.el('div', { class: 'gh' }, [
             XS.el('h2', { text: 'Work orders' }),
-            XS.el('div', { class: 'cap', text: 'left at the desk by customers' }),
+            XS.el('div', { class: 'cap', text: 'sent in from the bays' }),
         ]));
+
+        // The car in front of you comes first, whatever the filter says. That
+        // is the whole point of carrying the tablet to the car.
+        const shown = all
+            .filter((o) => filter === 'all' || o.status === filter)
+            .sort((a, b) => Number(isHere(b, connected)) - Number(isHere(a, connected)));
 
         if (!shown.length) {
             grid.append(XS.empty('Nothing waiting',
-                'Customers leave a job here when nobody is around to ask. Claim one and it is yours.'));
+                'A customer picks what they want in a bay and sends it over. It lands here, and on the car when you connect to it.'));
             host.append(grid);
             return;
         }
 
         const rows = XS.el('div', { class: 'rows' });
 
-        for (const order of shown) {
-            const tone = order.status === 'done' ? 'f' : order.status === 'claimed' ? 'p' : 'w';
-
-            rows.append(XS.el('div', { class: 'row' }, [
-                XS.el('div', {}, [
-                    XS.el('div', { class: 't', text: `${order.customerName || 'Unknown'} · ${order.plate || '——'}` }),
-                    XS.el('div', { class: 'm', text: summarise(order.requested) + ' · ' + XS.ago(order.createdAt) }),
-                    picks(order.requested),
-                    order.notes ? XS.el('div', { style: 'font-size:12px;color:var(--dim);margin-top:8px;line-height:1.5', text: order.notes }) : null,
-                ]),
-                XS.el('div', { class: 'acts' }, [
-                    order.quote ? XS.el('span', { class: 'a', text: XS.money(order.quote) }) : null,
-                    XS.el('span', { class: `st ${tone}`, text: order.status.toUpperCase() }),
-                    order.status === 'open' ? XS.el('button', {
-                        class: 'mini hot', text: 'Claim',
-                        onclick: () => XS.post('claimOrder', { id: order.id }),
-                    }) : null,
-                    order.status === 'claimed' ? XS.el('button', {
-                        class: 'mini', text: 'Finish',
-                        onclick: () => XS.post('finishOrder', { id: order.id }),
-                    }) : null,
-                ]),
-            ]));
-        }
+        for (const order of shown) rows.append(row(order, connected));
 
         grid.append(rows);
         host.append(grid);
     };
 
-    // An order arrives one of two ways: a list of categories ticked at the
-    // desk, or the actual parts a customer picked and looked at in a bay.
-    function summarise(requested) {
-        const list = requested || [];
-        if (!list.length) return 'nothing listed';
+    function isHere(order, plate) {
+        if (!plate || !order.plate) return false;
+        return String(order.plate).trim().toUpperCase() === String(plate).trim().toUpperCase();
+    }
 
-        if (typeof list[0] === 'string') return list.join(', ');
+    function row(order, connected) {
+        const here = isHere(order, connected);
+        const tone = order.status === 'done' ? 'f' : order.status === 'claimed' ? 'p' : 'w';
+        const parts = (order.requested || []).filter((entry) => entry && typeof entry === 'object');
+
+        return XS.el('div', { class: here ? 'row lit' : 'row' }, [
+            XS.el('div', {}, [
+                XS.el('div', { class: 't' }, [
+                    `${order.customerName || 'Unknown'} · ${order.plate || '——'}`,
+                    here ? XS.el('span', { class: 'tag', text: 'CONNECTED' }) : null,
+                ]),
+                XS.el('div', { class: 'm', text: `${summarise(parts)} · ${XS.ago(order.createdAt)}` }),
+                lines(order, parts),
+                order.notes ? XS.el('div', {
+                    style: 'font-size:12px;color:var(--dim);margin-top:8px;line-height:1.5',
+                    text: order.notes,
+                }) : null,
+            ]),
+            XS.el('div', { class: 'acts' }, [
+                order.quote ? XS.el('span', { class: 'a', text: XS.money(order.quote) }) : null,
+                XS.el('span', { class: `st ${tone}`, text: order.status.toUpperCase() }),
+                order.status === 'open' ? XS.el('button', {
+                    class: 'mini hot', text: 'Claim',
+                    onclick: () => XS.post('claimOrder', { id: order.id }),
+                }) : null,
+                order.status === 'claimed' ? XS.el('button', {
+                    class: 'mini', text: 'Finish',
+                    onclick: () => XS.post('finishOrder', { id: order.id }),
+                }) : null,
+            ]),
+        ]);
+    }
+
+    function summarise(parts) {
+        if (!parts.length) return 'nothing listed';
 
         const seen = [];
-        for (const pick of list) {
+
+        for (const pick of parts) {
             const label = pick.categoryLabel || pick.category;
             if (label && !seen.includes(label)) seen.push(label);
         }
 
-        return `${list.length} part${list.length === 1 ? '' : 's'} · ${seen.join(', ')}`;
+        return `${parts.length} part${parts.length === 1 ? '' : 's'} · ${seen.join(', ')}`;
     }
 
-    // Only a bay order has parts to show; a desk order has nothing to list.
-    function picks(requested) {
-        const list = (requested || []).filter((entry) => typeof entry === 'object' && entry.label);
-        if (!list.length) return null;
+    // Each line can be taken off. A part the shop cannot get hold of should
+    // come off the order rather than sit on it, and the quote follows it down.
+    function lines(order, parts) {
+        if (!parts.length) return null;
 
+        const open = order.status !== 'done';
         const wrap = XS.el('div', { style: 'margin-top:10px;display:flex;flex-direction:column;gap:5px' });
 
-        for (const pick of list) {
-            wrap.append(XS.el('div', {
-                style: 'display:flex;justify-content:space-between;gap:12px;font-size:12px;padding:5px 9px;background:var(--sunk);border:1px solid var(--line);border-radius:6px',
-            }, [
-                XS.el('span', {}, [
-                    XS.el('span', { style: 'color:var(--faint);font:10px/1 var(--mono);letter-spacing:.08em;margin-right:8px', text: (pick.categoryLabel || pick.category || '').toUpperCase() }),
+        for (const [index, pick] of parts.entries()) {
+            const stock = XS.stockFor(pick.category);
+
+            wrap.append(XS.el('div', { class: 'ol' }, [
+                XS.el('span', { class: 'n' }, [
+                    XS.el('span', { class: 'c', text: (pick.categoryLabel || pick.category || '').toUpperCase() }),
                     pick.label,
+                    stock && stock.count < 1
+                        ? XS.el('span', { class: 'tag warn', text: 'MAKE ONE' })
+                        : null,
                 ]),
-                XS.el('span', { style: 'font:600 12px/1 var(--mono);color:var(--accent2)', text: XS.money(pick.price) }),
+                XS.el('span', { class: 'p', text: XS.money(pick.price) }),
+                open ? XS.el('button', {
+                    class: 'del', text: '×', title: 'Take this off the order',
+                    onclick: () => XS.post('dropOrderLine', { id: order.id, line: index }),
+                }) : null,
             ]));
         }
 

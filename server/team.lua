@@ -5,6 +5,19 @@ function Team.IsBoss(src, shop)
     return Framework.IsBoss(src, shop.job, shop.bossGrade)
 end
 
+-- Who gets to decide what the shop charges. The boss always does; below that
+-- it is a grade the shop sets for itself, so a senior mechanic can price a job
+-- without being handed the money and the staff list as well.
+function Team.CanPrice(src, shop)
+    if not shop or shop.kind ~= 'owned' then return false end
+    if Team.IsBoss(src, shop) then return true end
+
+    local job, _, grade = Framework.GetJob(src)
+    if job ~= shop.job then return false end
+
+    return (tonumber(grade) or 0) >= (tonumber(shop.priceGrade) or Config.Jobs.priceGrade)
+end
+
 function Team.Staff(shop)
     if not shop or shop.job == '' then return {} end
     return Framework.JobPlayers(shop.job)

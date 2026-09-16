@@ -8,13 +8,13 @@ Builder = { draft = nil, dirty = false }
 
 local LIMITS = {
     tuning = 'bays', repair = 'bays', counter = 'shops',
-    storage = 'storage', laptop = 'shops', desk = 'desks', duty = 'duty',
+    storage = 'storage', laptop = 'shops', bench = 'benches', duty = 'duty',
     dyno = 'dynos',
 }
 
 local LABELS = {
     tuning = 'Tuning bay', repair = 'Repair bay', counter = 'Parts counter',
-    storage = 'Storage', laptop = 'Office laptop', desk = 'Customer desk', duty = 'Duty point',
+    storage = 'Storage', laptop = 'Office laptop', bench = 'Crafting bench', duty = 'Duty point',
     dyno = 'Dyno bay',
 }
 
@@ -44,21 +44,32 @@ local function drawPreview()
 end
 
 -- The footprint is worked out from what has been placed, so it moves as you
--- build and there is no radius to set too small by hand.
+-- build and there is no radius to set too small by hand. The boundary counts
+-- towards it, so a blip on a big yard sits in the middle of the yard.
 local function bounds(draft)
     local points = draft.points or {}
-    if #points == 0 then return nil end
+    local corners = draft.area and draft.area.points or {}
+
+    if #points == 0 and #corners == 0 then return nil end
 
     local minX, minY, minZ = math.huge, math.huge, math.huge
     local maxX, maxY, maxZ = -math.huge, -math.huge, -math.huge
 
+    local function take(x, y, z)
+        minX = math.min(minX, x)
+        minY = math.min(minY, y)
+        minZ = math.min(minZ, z)
+        maxX = math.max(maxX, x)
+        maxY = math.max(maxY, y)
+        maxZ = math.max(maxZ, z)
+    end
+
     for _, point in ipairs(points) do
-        minX = math.min(minX, point.coords.x)
-        minY = math.min(minY, point.coords.y)
-        minZ = math.min(minZ, point.coords.z)
-        maxX = math.max(maxX, point.coords.x)
-        maxY = math.max(maxY, point.coords.y)
-        maxZ = math.max(maxZ, point.coords.z)
+        take(point.coords.x, point.coords.y, point.coords.z)
+    end
+
+    for _, corner in ipairs(corners) do
+        take(corner.x, corner.y, corner.z or 0.0)
     end
 
     local cx, cy, cz = (minX + maxX) / 2, (minY + maxY) / 2, (minZ + maxZ) / 2
@@ -110,6 +121,7 @@ function Builder.New()
         kind = 'owned',
         job = '',
         bossGrade = Config.Jobs.defaultBossGrade,
+        priceGrade = Config.Jobs.priceGrade,
         commission = Config.Invoices.defaultCommission,
         accent = 'amber',
         enabled = true,
@@ -141,7 +153,7 @@ end
 function Builder.Set(key, value)
     if not Builder.draft then return end
 
-    if key == 'bossGrade' or key == 'commission' then
+    if key == 'bossGrade' or key == 'commission' or key == 'priceGrade' then
         value = math.max(0, math.floor(tonumber(value) or 0))
     end
 
@@ -235,6 +247,38 @@ function Builder.Move(id)
     found.heading = result.h
     found.radius = result.radius
 
+    touch()
+end
+
+--[[ The boundary.
+
+     Without one the tablet connects to anything, anywhere: a mechanic can work
+     on a car parked across the city. The shape an admin draws is what "at the
+     shop" means, and it is checked on both sides. ]]
+function Builder.Area()
+    if not Builder.draft then return end
+
+    SetNuiFocus(false, false)
+    XSM.Send('close')
+
+    local result = Placement.Area(Builder.draft.area and Builder.draft.area.points)
+
+    SetNuiFocus(true, true)
+    XSM.Send('open', { mode = 'builder', state = XSM.state, panel = 'builder' })
+
+    if not result then push() return end
+
+    Builder.draft.area = result
+    XSM.Toast(('Boundary set — %d corners.'):format(#result.points), 'good')
+
+    touch()
+end
+
+function Builder.ClearArea()
+    if not Builder.draft then return end
+
+    Builder.draft.area = nil
+    XSM.Toast('Boundary cleared. This shop can be used from anywhere again.', 'good')
     touch()
 end
 

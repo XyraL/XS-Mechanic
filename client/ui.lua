@@ -7,6 +7,11 @@ RegisterNUICallback('close', function(_, cb)
     cb({ ok = true })
 end)
 
+RegisterNUICallback('panel', function(data, cb)
+    if data and data.id then XSM.panel = data.id end
+    cb({ ok = true })
+end)
+
 RegisterNUICallback('connect', function(_, cb)
     XSM.Connect()
     cb({ ok = true })
@@ -29,7 +34,10 @@ end)
 
 RegisterNUICallback('preview', function(data, cb)
     if not Preview.Show(data) then
-        XSM.Toast('Nothing connected.', 'error')
+        -- Either nothing is connected, or the vehicle belongs to a client that
+        -- will not hand it over — in which case nothing would have happened at
+        -- all, quietly, which is worse than saying so.
+        XSM.Toast(XSM.vehicle and 'Cannot get hold of that vehicle.' or 'Nothing connected.', 'error')
         cb({ ok = false })
         return
     end
@@ -53,12 +61,32 @@ RegisterNUICallback('cancelPreview', function(_, cb)
     cb({ ok = true })
 end)
 
+-- Fitting is not instant. The panel steps aside, the mechanic works on the car
+-- for as long as the category is worth, and the part goes on at the end.
 RegisterNUICallback('apply', function(_, cb)
     local preview = XSM.preview
 
     if not preview or not XSM.vehicle then
         cb({ ok = false })
         return
+    end
+
+    local seconds = Config.Tuning.seconds[preview.category] or Config.Tuning.seconds.default or 0
+    local panel = XSM.panel or 'tuning'
+
+    if seconds > 0 then
+        XSM.Hide()
+
+        local done = Anim.Work(seconds, 'Fitting')
+
+        if not done then
+            XSM.Unhide(panel)
+            XSM.Toast('Left it as it was.', 'error')
+            cb({ ok = false })
+            return
+        end
+
+        XSM.Unhide(panel)
     end
 
     local result = lib.callback.await('XS-Mechanic:apply', false, {
@@ -130,6 +158,10 @@ RegisterNUICallback('dropLine', serverCall('dropLine'))
 RegisterNUICallback('buyPart', serverCall('buyPart'))
 RegisterNUICallback('claimOrder', serverCall('claimOrder'))
 RegisterNUICallback('finishOrder', serverCall('finishOrder'))
+RegisterNUICallback('dropOrderLine', serverCall('dropOrderLine'))
+RegisterNUICallback('setCategoryPrice', serverCall('setCategoryPrice'))
+RegisterNUICallback('setPartPrice', serverCall('setPartPrice'))
+RegisterNUICallback('setTuningPrice', serverCall('setTuningPrice'))
 RegisterNUICallback('shopMoney', serverCall('shopMoney'))
 RegisterNUICallback('setGrade', serverCall('setGrade'))
 
@@ -164,6 +196,16 @@ end)
 
 RegisterNUICallback('draftSet', function(data, cb)
     Builder.Set(data.key, data.value)
+    cb({ ok = true })
+end)
+
+RegisterNUICallback('drawArea', function(_, cb)
+    cb({ ok = true })
+    Builder.Area()
+end)
+
+RegisterNUICallback('clearArea', function(_, cb)
+    Builder.ClearArea()
     cb({ ok = true })
 end)
 
@@ -213,22 +255,10 @@ RegisterNUICallback('fitTuning', function(data, cb)
     local seconds = Config.CustomTuning.seconds[data.category] or Config.CustomTuning.seconds.default or 10
 
     if seconds > 0 then
-        XSM.Close()
+        XSM.Hide()
 
-        lib.requestAnimDict('mini@repair', 3000)
-        TaskPlayAnim(cache.ped, 'mini@repair', 'fixing_a_ped', 8.0, -8.0, -1, 1, 0.0, false, false, false)
-
-        local done = lib.progressCircle({
-            duration = seconds * 1000,
-            label = 'Fitting',
-            position = 'bottom',
-            canCancel = true,
-            disable = { move = true, car = true, combat = true },
-        })
-
-        ClearPedTasks(cache.ped)
-
-        if not done then
+        if not Anim.Work(seconds, 'Fitting') then
+            XSM.Unhide('performance')
             cb({ ok = false })
             return
         end
@@ -247,12 +277,9 @@ RegisterNUICallback('fitTuning', function(data, cb)
 
     XSM.PushVehicle()
 
-    if seconds > 0 then
-        XSM.Open('tablet', XSM.shop and XSM.shop.id)
-        XSM.Show('performance')
-    else
-        XSM.Refresh()
-    end
+    if seconds > 0 then XSM.Unhide('performance') end
+
+    XSM.Refresh()
 
     cb(result or { ok = false })
 end)
@@ -319,20 +346,11 @@ local function pushBasket()
     XSM.Send('state', { state = { basket = XSM.basket } })
 end
 
-RegisterNUICallback('addPick', function(data, cb)
+RegisterNUICallback('addPick', function(_, cb)
+    -- Whatever is on the car right now. A customer adds what they are looking
+    -- at, which is why performance is not on their screen: there is nothing to
+    -- look at, so there is nothing to add.
     local pick = XSM.preview
-
-    -- A blind category (performance) posts the pick with the payload instead
-    -- of previewing it first.
-    if data and data.category then
-        pick = {
-            category = data.category,
-            slotId = data.slotId,
-            slot = data.slot,
-            index = data.index,
-            label = data.label,
-        }
-    end
 
     if not pick then
         cb({ ok = false })

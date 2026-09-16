@@ -1,6 +1,7 @@
 XSM = {
     open = false,
     mode = 'tablet',
+    panel = 'vehicle',
     shops = {},
     shop = nil,
     vehicle = nil,
@@ -32,9 +33,10 @@ function XSM.Close()
     XSM.StopPreview(true)
     Anim.Stop()
     Showcase.Stop()
+    Craft.Close()
 end
 
--- mode is 'tablet', 'desk', 'bay' or 'builder'.
+-- mode is 'tablet', 'desk', 'bay', 'counter', 'bench' or 'builder'.
 function XSM.Open(mode, shopId)
     if XSM.open then return end
 
@@ -62,6 +64,30 @@ end
 function XSM.Show(panel)
     if not XSM.open then return end
     XSM.Send('open', { mode = XSM.mode, state = XSM.state, panel = panel })
+end
+
+--[[ Stepping the panel aside to do something in the world.
+
+     Not the same as closing it. Closing puts the vehicle back and lets go of
+     the connection, which is exactly wrong halfway through fitting the part
+     somebody is standing there paying for. ]]
+function XSM.Hide()
+    if not XSM.open then return end
+
+    XSM.Send('close')
+    SetNuiFocus(false, false)
+    Anim.Stop()
+    Showcase.Stop()
+end
+
+function XSM.Unhide(panel)
+    if not XSM.open then return end
+
+    SetNuiFocus(true, true)
+    XSM.Send('open', { mode = XSM.mode, state = XSM.state, panel = panel })
+
+    if XSM.mode == 'tablet' then Anim.Start() end
+    if XSM.vehicle then Showcase.Start(XSM.vehicle) end
 end
 
 function XSM.Refresh()
@@ -132,6 +158,18 @@ function XSM.PushVehicle()
     Hud.Update()
 end
 
+-- The full shop, with its boundary and points on it, rather than the trimmed
+-- copy the panel is given.
+function XSM.ShopById(id)
+    if not id then return nil end
+
+    for _, shop in ipairs(XSM.shops or {}) do
+        if shop.id == id then return shop end
+    end
+
+    return nil
+end
+
 function XSM.Connect()
     local ped = cache.ped
     local coords = GetEntityCoords(ped)
@@ -151,6 +189,25 @@ function XSM.Connect()
         end
     end
 
+    -- A tablet in your pocket is not a workshop. With a boundary drawn, both
+    -- the mechanic and the car have to be inside it.
+    if Config.Tablet.insideShopOnly then
+        local shop = XSM.ShopById(XSM.shop and XSM.shop.id)
+
+        if shop and Util.HasArea(shop.area) then
+            if not Util.InsideArea(coords, shop.area) then
+                XSM.Toast(('You have to be at %s to work on anything.'):format(shop.name), 'error')
+                return false
+            end
+
+            if not Util.InsideArea(GetEntityCoords(vehicle), shop.area) then
+                XSM.Toast('That vehicle is not in the shop. Bring it in.', 'error')
+                return false
+            end
+        end
+    end
+
+    XSM.StopPreview(false)
     XSM.vehicle = vehicle
     XSM.PushVehicle()
     if XSM.open then Showcase.Start(vehicle) end

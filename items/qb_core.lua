@@ -198,3 +198,55 @@
     shouldClose = true, combinable = nil,
     description = 'Xenons and underglow, with the effects that make a meet worth turning up to.',
 },
+
+-- Parts the bench makes, and the work each one is used up by. A shop that
+-- runs out of body panels cannot fit one until somebody makes another.
+
+['body_part'] = {
+    name = 'body_part', label = 'Body Part', weight = 2500,
+    type = 'item', image = 'body_part.png', unique = false, useable = false,
+    shouldClose = false, combinable = nil,
+    description = 'A panel, a bumper, a skirt. Whatever the car is missing.',
+},
+
+['wheel_set'] = {
+    name = 'wheel_set', label = 'Wheel Set', weight = 6000,
+    type = 'item', image = 'wheel_set.png', unique = false, useable = false,
+    shouldClose = false, combinable = nil,
+    description = 'Four of them, boxed.',
+},
+
+['paint_can'] = {
+    name = 'paint_can', label = 'Paint Can', weight = 1200,
+    type = 'item', image = 'paint_can.png', unique = false, useable = false,
+    shouldClose = false, combinable = nil,
+    description = 'Mixed to whatever the customer picks.',
+},
+
+['vinyl_wrap'] = {
+    name = 'vinyl_wrap', label = 'Vinyl Wrap', weight = 900,
+    type = 'item', image = 'vinyl_wrap.png', unique = false, useable = false,
+    shouldClose = false, combinable = nil,
+    description = 'A roll of it. Bubbles are the fitter, not the vinyl.',
+},
+
+['light_kit'] = {
+    name = 'light_kit', label = 'Light Kit', weight = 1100,
+    type = 'item', image = 'light_kit.png', unique = false, useable = false,
+    shouldClose = false, combinable = nil,
+    description = 'Housings, bulbs and the loom to run them.',
+},
+
+['interior_part'] = {
+    name = 'interior_part', label = 'Interior Part', weight = 1400,
+    type = 'item', image = 'interior_part.png', unique = false, useable = false,
+    shouldClose = false, combinable = nil,
+    description = 'Trim, dials, a wheel. The bits you actually touch.',
+},
+
+['plate_blank'] = {
+    name = 'plate_blank', label = 'Plate Blank', weight = 300,
+    type = 'item', image = 'plate_blank.png', unique = false, useable = false,
+    shouldClose = false, combinable = nil,
+    description = 'Pressed, unprinted, entirely legal until it is not.',
+},

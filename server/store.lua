@@ -11,6 +11,7 @@ local function decodeShop(row)
         kind = row.kind,
         job = row.job or '',
         bossGrade = row.boss_grade or Config.Jobs.defaultBossGrade,
+        priceGrade = data.priceGrade or Config.Jobs.priceGrade,
         accent = row.accent or 'blue',
         -- TINYINT(1) comes back as a boolean from oxmysql, never as 1.
         enabled = Util.Truthy(row.enabled),
@@ -23,6 +24,8 @@ local function decodeShop(row)
         selfServiceWhenEmpty = data.selfServiceWhenEmpty ~= false,
         blip = data.blip or { enabled = true, sprite = 446, colour = 47, scale = 0.7 },
         bounds = data.bounds,
+        area = data.area,
+        tuningPrices = data.tuningPrices or {},
     }
 end
 
@@ -34,8 +37,11 @@ local function encodeShop(shop)
         parts = shop.parts or {},
         commission = shop.commission,
         selfServiceWhenEmpty = shop.selfServiceWhenEmpty,
+        priceGrade = shop.priceGrade,
         blip = shop.blip,
         bounds = shop.bounds,
+        area = shop.area,
+        tuningPrices = shop.tuningPrices or {},
     })
 end
 
@@ -74,6 +80,7 @@ function Store.Public()
                 points = shop.points,
                 blip = shop.blip,
                 bounds = shop.bounds,
+                area = shop.area,
                 categories = shop.categories,
                 selfServiceWhenEmpty = shop.selfServiceWhenEmpty,
             })
@@ -168,6 +175,25 @@ function Store.PointsOfKind(kind)
     end
 
     return out
+end
+
+-- Whether a spot is stood on one of this shop's points of a given kind. The
+-- client checks the same thing to decide what to offer; this is the one that
+-- decides whether it happens.
+function Store.PointNear(shop, kind, coords, slack)
+    if not coords then return nil end
+
+    for _, point in ipairs(shop and shop.points or {}) do
+        if point.kind == kind then
+            local at = vector3(point.coords.x, point.coords.y, point.coords.z)
+
+            if #(coords - at) <= (point.radius or 3.0) + (slack or 2.0) then
+                return point
+            end
+        end
+    end
+
+    return nil
 end
 
 function Store.Broadcast()

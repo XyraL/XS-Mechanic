@@ -19,6 +19,22 @@ local function selfServiceAllowed(shop)
     return Team.OnDuty(shop) == 0
 end
 
+--[[ Where the player actually is.
+
+     Checked here and not only on the client, because a client that says it is
+     at the shop is precisely the client this exists for. A shop with no
+     boundary drawn answers yes to everywhere, which is how every shop built
+     before boundaries existed carries on working. ]]
+local function atShop(src, shop)
+    if not Config.Tablet.insideShopOnly then return true end
+    if not Util.HasArea(shop and shop.area) then return true end
+
+    local ped = GetPlayerPed(src)
+    if not ped or ped == 0 then return false end
+
+    return Util.InsideArea(GetEntityCoords(ped), shop.area)
+end
+
 local function settings(src)
     local citizenid = Framework.GetCitizenId(src)
     if not citizenid then return {} end
@@ -136,6 +152,38 @@ local function stateFor(src, mode, shopId)
     state.takesOrders = shop.kind == 'owned' and Team.OnDuty(shop) > 0
 
     state.ledger = Banking.Recent(shop, 25)
+    state.canPrice = Team.CanPrice(src, shop)
+    state.priceGrade = shop.priceGrade
+    state.hasArea = Util.HasArea(shop.area)
+
+    -- What is on the shelf. nil means stock is switched off and everything is
+    -- fittable, which is what the panel checks.
+    state.stock = Stock.Sheet(shop, src)
+
+    if mode == 'bench' then
+        state.crafting = Craft.Sheet(src, shop)
+    end
+
+    -- Config.Parts is an array with a few settings hung off it, so the list
+    -- the panel gets is built rather than passed straight through — otherwise
+    -- paidBy arrives looking like something the counter sells.
+    local catalogue = {}
+
+    if #(shop.parts or {}) > 0 then
+        for _, entry in ipairs(shop.parts) do
+            catalogue[#catalogue + 1] = { item = entry.item, label = entry.label, price = entry.price }
+        end
+    else
+        for _, entry in ipairs(Config.Parts) do
+            catalogue[#catalogue + 1] = { item = entry.item, label = entry.label, price = entry.price }
+        end
+    end
+
+    for _, entry in ipairs(catalogue) do
+        entry.stocked = Stock.Count(shop, entry.item, src)
+    end
+
+    state.partsList = catalogue
     state.counters = {}
 
     for _, point in ipairs(shop.points or {}) do
@@ -144,7 +192,7 @@ local function stateFor(src, mode, shopId)
                 id = point.id,
                 label = point.label or 'Parts counter',
                 near = true,
-                items = #(shop.parts or {}) > 0 and shop.parts or Config.Parts,
+                items = catalogue,
             }
         end
     end
@@ -164,7 +212,11 @@ lib.callback.register('XS-Mechanic:bootstrap', function(src, data)
         if Config.Tablet.item ~= '' and not Inventory.Has(src, Config.Tablet.item, 1) then
             return { ok = false, error = 'You need a mechanic tablet.' }
         end
+    end
 
+    -- The bench belongs to the shop rather than to the tablet, so it needs the
+    -- job and not the item.
+    if mode == 'tablet' or mode == 'desk' or mode == 'bench' or mode == 'counter' then
         local shop = shopFor(src, data and data.shop)
         if not shop then return { ok = false, error = 'You do not work at a shop.' } end
 
@@ -271,9 +323,21 @@ lib.callback.register('XS-Mechanic:apply', function(src, data)
     local shop = shopFor(src, data and data.shop)
     if not shop then return { ok = false, error = 'No shop.' } end
 
+    if not atShop(src, shop) then
+        return { ok = false, error = ('You have to be at %s.'):format(shop.name) }
+    end
+
     local category = tostring(data.category or '')
     if not Pricing.CategoryEnabled(shop, category) then
         return { ok = false, error = 'This shop does not do that.' }
+    end
+
+    -- The shelf. A shop that has run out of body panels cannot fit one, and
+    -- says so rather than fitting it anyway.
+    local short = Stock.Missing(shop, category, src)
+
+    if short then
+        return { ok = false, error = ('No %s left. Make one at the bench.'):format(string.lower(Parts.Label(short))) }
     end
 
     local price = Pricing.For(shop, category, data.model, data.class, data.index) or 0
@@ -288,6 +352,7 @@ lib.callback.register('XS-Mechanic:apply', function(src, data)
 
         Framework.RemoveMoney(src, account, price, 'Mechanic')
         Banking.Add(shop, price, ('Self service — %s'):format(label), Framework.GetName(src), 'selfservice')
+        Stock.Take(shop, Parts.ItemFor(category), 1, src)
 
         Discord.Send('tuning', 'Self service',
             ('**%s** fitted %s at %s for %s'):format(Framework.GetName(src), label, shop.name, Util.Money(price)),
@@ -300,6 +365,8 @@ lib.callback.register('XS-Mechanic:apply', function(src, data)
     if shop.kind == 'owned' and job ~= shop.job then
         return { ok = false, error = 'Not your shop.' }
     end
+
+    Stock.Take(shop, Parts.ItemFor(category), 1, src)
 
     if settings(src).autoDraft ~= false and Config.Invoices.autoDraft then
         Invoices.AddLine(src, label, price, Mods.CategoryLabel[category] or category)
@@ -446,16 +513,156 @@ lib.callback.register('XS-Mechanic:buyPart', function(src, data)
     return { ok = true, message = ('Bought %dx %s.'):format(amount, part.label) }
 end)
 
-lib.callback.register('XS-Mechanic:leaveOrder', function(src, data)
-    return Orders.Leave(src, data or {})
-end)
-
 lib.callback.register('XS-Mechanic:claimOrder', function(src, data)
     return Orders.Claim(src, data and data.id)
 end)
 
 lib.callback.register('XS-Mechanic:finishOrder', function(src, data)
     return Orders.Finish(src, data and data.id)
+end)
+
+lib.callback.register('XS-Mechanic:dropOrderLine', function(src, data)
+    return Orders.DropLine(src, data and data.id, data and data.line)
+end)
+
+lib.callback.register('XS-Mechanic:craft', function(src, data)
+    local shop = shopFor(src, data and data.shop)
+    if not shop then return { ok = false, error = 'No shop.' } end
+
+    local job = Framework.GetJob(src)
+    if shop.kind == 'owned' and job ~= shop.job then
+        return { ok = false, error = 'Not your shop.' }
+    end
+
+    if not atShop(src, shop) then
+        return { ok = false, error = ('You have to be at %s.'):format(shop.name) }
+    end
+
+    local ped = GetPlayerPed(src)
+    if not ped or ped == 0 then return { ok = false, error = 'Stand at the bench.' } end
+
+    if not Store.PointNear(shop, 'bench', GetEntityCoords(ped)) then
+        return { ok = false, error = 'Stand at the bench.' }
+    end
+
+    return Craft.Make(src, shop, data and data.item, data and data.amount)
+end)
+
+-- Pricing. A grade set per shop can change what the shop charges: the category
+-- prices, what the counter sells and what a performance part costs. Below it
+-- you can do the work and write the invoice, you just cannot decide what any of
+-- it is worth. Team.CanPrice is the one rule, used by all three.
+lib.callback.register('XS-Mechanic:setCategoryPrice', function(src, data)
+    local shop = shopFor(src, data and data.shop)
+    if not Team.CanPrice(src, shop) then return { ok = false, error = 'Not your call.' } end
+
+    local category = tostring(data and data.category or '')
+    if not Mods.CategoryLabel[category] and category ~= 'repair' and category ~= 'stance' then
+        return { ok = false, error = 'No such category.' }
+    end
+
+    shop.pricing = shop.pricing or {}
+
+    if data.clear then
+        shop.pricing[category] = nil
+    else
+        shop.pricing[category] = math.max(0, math.floor(tonumber(data.price) or 0))
+    end
+
+    Store.Update(shop.id, shop)
+    Store.Broadcast()
+
+    Discord.Send('money', 'Prices changed',
+        ('**%s** set %s at %s to %s'):format(
+            Framework.GetName(src), category, shop.name,
+            data.clear and 'the default' or Util.Money(shop.pricing[category])),
+        Discord.Colour.info)
+
+    return { ok = true, message = 'Price set.' }
+end)
+
+lib.callback.register('XS-Mechanic:setPartPrice', function(src, data)
+    local shop = shopFor(src, data and data.shop)
+    if not Team.CanPrice(src, shop) then return { ok = false, error = 'Not your call.' } end
+
+    local item = tostring(data and data.item or '')
+    if item == '' then return { ok = false, error = 'No such part.' } end
+
+    local known = false
+
+    for _, entry in ipairs(Config.Parts) do
+        if entry.item == item then known = true break end
+    end
+
+    if not known and not Parts.RecipeFor(item) then
+        return { ok = false, error = 'No such part.' }
+    end
+
+    -- A shop with no list of its own starts from the server's.
+    if #(shop.parts or {}) == 0 then
+        shop.parts = {}
+
+        for _, entry in ipairs(Config.Parts) do
+            shop.parts[#shop.parts + 1] = { item = entry.item, label = entry.label, price = entry.price }
+        end
+    end
+
+    local price = math.max(0, math.floor(tonumber(data.price) or 0))
+    local found
+
+    for _, entry in ipairs(shop.parts) do
+        if entry.item == item then found = entry break end
+    end
+
+    if data.remove then
+        for index, entry in ipairs(shop.parts) do
+            if entry.item == item then table.remove(shop.parts, index) break end
+        end
+    elseif found then
+        found.price = price
+        if data.label then found.label = Util.Trim(tostring(data.label)):sub(1, 48) end
+    else
+        shop.parts[#shop.parts + 1] = {
+            item = item,
+            label = Util.Trim(tostring(data.label or Parts.Label(item))):sub(1, 48),
+            price = price,
+        }
+    end
+
+    Store.Update(shop.id, shop)
+    Store.Broadcast()
+
+    return { ok = true, message = data.remove and 'Taken off the list.' or 'Price set.' }
+end)
+
+lib.callback.register('XS-Mechanic:setTuningPrice', function(src, data)
+    local shop = shopFor(src, data and data.shop)
+    if not Team.CanPrice(src, shop) then return { ok = false, error = 'Not your call.' } end
+
+    local category = tostring(data and data.category or '')
+    local option = tostring(data and data.option or '')
+
+    if not Tuning.Get(category, option) then
+        return { ok = false, error = 'No such part.' }
+    end
+
+    shop.tuningPrices = shop.tuningPrices or {}
+
+    local key = ('%s:%s'):format(category, option)
+
+    if data.clear then
+        shop.tuningPrices[key] = nil
+    else
+        shop.tuningPrices[key] = {
+            price = math.max(0, math.floor(tonumber(data.price) or 0)),
+            label = data.label and Util.Trim(tostring(data.label)):sub(1, 48) or nil,
+        }
+    end
+
+    Store.Update(shop.id, shop)
+    Store.Broadcast()
+
+    return { ok = true, message = data.clear and 'Back to the default.' or 'Price set.' }
 end)
 
 lib.callback.register('XS-Mechanic:hire', function(src, data)
@@ -593,6 +800,27 @@ lib.callback.register('XS-Mechanic:dynoCheck', function(src, data)
         return { ok = false, error = 'Not your shop.' }
     end
 
+    -- A dyno run belongs on a dyno bay. Without this the button worked from
+    -- anywhere the tablet opened, which is anywhere at all.
+    local ped = GetPlayerPed(src)
+    if not ped or ped == 0 then return { ok = false, error = 'Not on a dyno bay.' } end
+
+    local bay = Store.PointNear(shop, 'dyno', GetEntityCoords(ped))
+    if not bay then return { ok = false, error = 'Put the car on the dyno bay first.' } end
+
+    -- And so does the car.
+    local netId = tonumber(data and data.netId)
+
+    if netId then
+        local vehicle = NetworkGetEntityFromNetworkId(netId)
+
+        if vehicle and vehicle ~= 0 and DoesEntityExist(vehicle) then
+            if not Store.PointNear(shop, 'dyno', GetEntityCoords(vehicle)) then
+                return { ok = false, error = 'That vehicle is not on the dyno bay.' }
+            end
+        end
+    end
+
     return { ok = true }
 end)
 
@@ -664,7 +892,7 @@ lib.callback.register('XS-Mechanic:submitOrder', function(src, data)
 
     if #priced == 0 then return { ok = false, error = 'This shop does not do any of that.' } end
 
-    return Orders.Leave(src, {
+    return Orders.Create(src, {
         shop = shop.id,
         plate = data.plate,
         model = data.model,

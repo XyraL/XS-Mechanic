@@ -43,32 +43,51 @@ function readViaAlias(block, key) {
     return files.some((src) => alias.test(src) && bare.test(src));
 }
 
-// Config.Thing = { key = ..., nested = { key = ... } }
-const blocks = [...config.matchAll(/^Config\.([A-Za-z]+)\s*=\s*\{/gm)];
+function isRead(name, key) {
+    const patterns = [
+        `Config.${name}.${key}`,
+        `Config\\.${name}\\s*\\.\\s*${key}`,
+        `${name}\\.${key}`,
+    ];
+
+    return patterns.some((p) => new RegExp(p.replace(/\./g, '\\.')).test(sources))
+        || readViaAlias(name, key);
+}
+
+// Every top-level assignment, whether it opens a table or not. Both shapes
+// appear: `Config.Thing = { ... }` and `Config.Thing.key = value` written
+// underneath it, and the second one used to land INSIDE the first one's body
+// — so the contents of a lookup map read as nine dead switches.
+const statements = [...config.matchAll(/^Config\.([A-Za-z]+)((?:\.[A-Za-z][A-Za-z0-9]*)*)\s*=\s*(\{?)/gm)];
 const unused = [];
 let checked = 0;
 
-for (const [i, block] of blocks.entries()) {
-    const name = block[1];
-    const start = block.index;
-    const end = i + 1 < blocks.length ? blocks[i + 1].index : config.length;
-    const body = config.slice(start, end);
+for (const [i, statement] of statements.entries()) {
+    const name = statement[1];
+    const trail = statement[2];
+    const end = i + 1 < statements.length ? statements[i + 1].index : config.length;
 
-    // Only top-level keys of each block; nested tables are data, not switches.
+    // Config.Thing.key = ... — the key is the whole path, and whatever it
+    // holds is data rather than nine more switches.
+    if (trail) {
+        const key = trail.slice(1);
+        checked += 1;
+
+        if (!isRead(name, key)) unused.push(`Config.${name}.${key}`);
+        continue;
+    }
+
+    // Config.Thing = { ... } — its own keys, one level down. Nested tables
+    // are data, not switches.
+    if (!statement[3]) continue;
+
+    const body = config.slice(statement.index, end);
+
     for (const m of body.matchAll(/^    ([a-zA-Z][A-Za-z0-9]*)\s*=/gm)) {
         const key = m[1];
         checked += 1;
 
-        const patterns = [
-            `Config.${name}.${key}`,
-            `Config\\.${name}\\s*\\.\\s*${key}`,
-            `${name}\\.${key}`,
-        ];
-
-        const used = patterns.some((p) => new RegExp(p.replace(/\./g, '\\.')).test(sources))
-            || readViaAlias(name, key);
-
-        if (!used) unused.push(`Config.${name}.${key}`);
+        if (!isRead(name, key)) unused.push(`Config.${name}.${key}`);
     }
 }
 

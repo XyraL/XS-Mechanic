@@ -68,6 +68,56 @@ function Util.Distance(a, b)
     return #(vector3(a.x, a.y, a.z) - vector3(b.x, b.y, b.z))
 end
 
+-- Ray casting. A horizontal line is run out from the point and the crossings
+-- of the polygon's edges are counted: odd is inside, even is outside. Works on
+-- any shape an admin can draw, including one that bends back on itself.
+function Util.InsideArea(point, area)
+    if type(area) ~= 'table' then return false end
+
+    local corners = area.points
+    if type(corners) ~= 'table' or #corners < 3 then return false end
+
+    local x, y, z = point.x, point.y, point.z
+
+    if area.minZ and z < area.minZ then return false end
+    if area.maxZ and z > area.maxZ then return false end
+
+    local inside = false
+    local j = #corners
+
+    for i = 1, #corners do
+        local a, b = corners[i], corners[j]
+
+        if ((a.y > y) ~= (b.y > y))
+            and (x < (b.x - a.x) * (y - a.y) / ((b.y - a.y) ~= 0 and (b.y - a.y) or 1e-9) + a.x) then
+            inside = not inside
+        end
+
+        j = i
+    end
+
+    return inside
+end
+
+function Util.AreaCentre(area)
+    local corners = area and area.points
+    if type(corners) ~= 'table' or #corners == 0 then return nil end
+
+    local x, y, z = 0.0, 0.0, 0.0
+
+    for _, corner in ipairs(corners) do
+        x = x + corner.x
+        y = y + corner.y
+        z = z + (corner.z or 0.0)
+    end
+
+    return { x = x / #corners, y = y / #corners, z = z / #corners }
+end
+
+function Util.HasArea(area)
+    return type(area) == 'table' and type(area.points) == 'table' and #area.points >= 3
+end
+
 function Util.InList(list, value)
     for _, entry in ipairs(list or {}) do
         if entry == value then return true end

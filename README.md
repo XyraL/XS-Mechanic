@@ -37,7 +37,7 @@ The **tablet** is an item. It is the tool a mechanic takes to a car — plug int
 whatever is in front of you, read what is fitted, change it, repair it, bill it.
 
 The **laptop** is a prop you place in the shop. It runs the business: invoices,
-work orders, the parts counter, staff and the money. No car needed.
+the parts counter, staff and the money. No car needed.
 
 **Ownership is the job.** You build a shop over someone's interior, point it at
 a job, and give them that job. That is the whole ownership model — there is
@@ -47,8 +47,13 @@ money.
 
 **The builder.** `/mechanic` opens a free camera. Fly to the interior you
 actually own, drop the tuning bays, the parts counter, the storage, the laptop
-and the customer desk where they really are, and save. No restart, no config
+and the crafting bench where they really are, and save. No restart, no config
 editing, no coordinates to copy.
+
+**The boundary.** Draw the walls of the shop in the builder and that is what "at
+the shop" means: a mechanic can only connect to a vehicle inside it, and has to
+be inside it themselves. Without one a tablet works anywhere on the map, so draw
+one. Checked on the server, not just in the panel.
 
 **Pricing.** Fixed, a share of the vehicle's value, or both. Per category, and
 each shop can override the numbers. Higher mod levels cost more through one
@@ -59,9 +64,29 @@ fitted adds a line at the shop's price. Edit it, send it, save it for later,
 send it again. The customer gets a prompt and a phone notification, and
 `/invoices` holds anything unpaid. A share goes to the mechanic who wrote it.
 
-**Work orders.** A customer with nobody to talk to leaves the job at the desk —
-what they want looking at, and a note. It turns up on the laptop for whoever is
-next on.
+**Work orders.** A customer drives into a bay, picks what they want and looks at
+it on their own car, and sends the lot over with a note and an estimate. It
+lands on the tablet of whoever is working, and the mechanic who walks up to that
+car and connects to it sees the order on the screen. Lines can be taken off —
+a part the shop cannot get hold of comes off the order and off the quote.
+
+Performance is not on the customer's screen. There is nothing to look at, so
+they ask the mechanic, who fits it and bills for it.
+
+**Stock.** A shop can only fit what it has. Each kind of work uses up a part,
+the parts live in the shop's storage, and the tablet greys out what has run out
+instead of offering it anyway. A customer can still order something the shop has
+not got — somebody just has to go and make one.
+
+**The bench.** Place one in the builder and the shop can make its own parts out
+of scrap, metal, rubber, steel and glass. Material comes out of the mechanic's
+pockets, the finished part goes on the shelf. No minigame — pick the part, and
+if the material is there, it gets made.
+
+**Who sets the prices.** A grade you pick per shop can change what the shop
+charges: the categories, the parts counter, and what a performance package
+costs and is called. Below that grade you can do the work and write the invoice,
+you just cannot decide what any of it is worth.
 
 **Self service.** A shop can be open to anyone, or an owned shop can fall back
 to self service while none of its staff are online. Self service pays from the
@@ -96,8 +121,13 @@ you would rather import it by hand.
 
 ### 2. Add the items
 
-28 items. Copy the block for your inventory and paste it **inside** the
+35 items. Copy the block for your inventory and paste it **inside** the
 existing table, before its closing `}`.
+
+The crafting bench also needs raw material, and that is **not** in the blocks
+below — it uses what your server already has. Out of the box it looks for
+`metalscrap`, `iron`, `rubber`, `steel` and `glass`, which is what QBCore ships
+with. Point `Config.Crafting.materials` at your own names if they differ.
 
 <details>
 <summary><strong>ox_inventory</strong> — paste into <code>ox_inventory/data/items.lua</code></summary>
@@ -162,6 +192,8 @@ existing table, before its closing `}`.
     close = true,
     description = 'Whatever the tuning menu asked for.',
 },
+
+-- Phase 2: servicing parts, custom tuning parts, and the two pocket items.
 
 ['engine_oil'] = {
     label = 'Engine Oil',
@@ -332,6 +364,65 @@ existing table, before its closing `}`.
     description = 'Xenons and underglow, with the effects that make a meet worth turning up to.',
     client = { export = 'XS-Mechanic.use_lighting_remote' },
 },
+
+-- Parts the bench makes, and the work each one is used up by. A shop that
+-- runs out of body panels cannot fit one until somebody makes another.
+
+['body_part'] = {
+    label = 'Body Part',
+    weight = 2500,
+    stack = true,
+    close = false,
+    description = 'A panel, a bumper, a skirt. Whatever the car is missing.',
+},
+
+['wheel_set'] = {
+    label = 'Wheel Set',
+    weight = 6000,
+    stack = true,
+    close = false,
+    description = 'Four of them, boxed.',
+},
+
+['paint_can'] = {
+    label = 'Paint Can',
+    weight = 1200,
+    stack = true,
+    close = false,
+    description = 'Mixed to whatever the customer picks.',
+},
+
+['vinyl_wrap'] = {
+    label = 'Vinyl Wrap',
+    weight = 900,
+    stack = true,
+    close = false,
+    description = 'A roll of it. Bubbles are the fitter, not the vinyl.',
+},
+
+['light_kit'] = {
+    label = 'Light Kit',
+    weight = 1100,
+    stack = true,
+    close = false,
+    description = 'Housings, bulbs and the loom to run them.',
+},
+
+['interior_part'] = {
+    label = 'Interior Part',
+    weight = 1400,
+    stack = true,
+    close = false,
+    description = 'Trim, dials, a wheel. The bits you actually touch.',
+},
+
+['plate_blank'] = {
+    label = 'Plate Blank',
+    weight = 300,
+    stack = true,
+    close = false,
+    description = 'Pressed, unprinted, entirely legal until it is not.',
+},
 ```
 
 </details>
@@ -388,6 +479,8 @@ existing table, before its closing `}`.
     shouldClose = true, combinable = nil,
     description = 'Whatever the tuning menu asked for.',
 },
+
+-- Phase 2: servicing parts, custom tuning parts, and the two pocket items.
 
 ['engine_oil'] = {
     name = 'engine_oil', label = 'Engine Oil', weight = 1200,
@@ -535,6 +628,58 @@ existing table, before its closing `}`.
     shouldClose = true, combinable = nil,
     description = 'Xenons and underglow, with the effects that make a meet worth turning up to.',
 },
+
+-- Parts the bench makes, and the work each one is used up by. A shop that
+-- runs out of body panels cannot fit one until somebody makes another.
+
+['body_part'] = {
+    name = 'body_part', label = 'Body Part', weight = 2500,
+    type = 'item', image = 'body_part.png', unique = false, useable = false,
+    shouldClose = false, combinable = nil,
+    description = 'A panel, a bumper, a skirt. Whatever the car is missing.',
+},
+
+['wheel_set'] = {
+    name = 'wheel_set', label = 'Wheel Set', weight = 6000,
+    type = 'item', image = 'wheel_set.png', unique = false, useable = false,
+    shouldClose = false, combinable = nil,
+    description = 'Four of them, boxed.',
+},
+
+['paint_can'] = {
+    name = 'paint_can', label = 'Paint Can', weight = 1200,
+    type = 'item', image = 'paint_can.png', unique = false, useable = false,
+    shouldClose = false, combinable = nil,
+    description = 'Mixed to whatever the customer picks.',
+},
+
+['vinyl_wrap'] = {
+    name = 'vinyl_wrap', label = 'Vinyl Wrap', weight = 900,
+    type = 'item', image = 'vinyl_wrap.png', unique = false, useable = false,
+    shouldClose = false, combinable = nil,
+    description = 'A roll of it. Bubbles are the fitter, not the vinyl.',
+},
+
+['light_kit'] = {
+    name = 'light_kit', label = 'Light Kit', weight = 1100,
+    type = 'item', image = 'light_kit.png', unique = false, useable = false,
+    shouldClose = false, combinable = nil,
+    description = 'Housings, bulbs and the loom to run them.',
+},
+
+['interior_part'] = {
+    name = 'interior_part', label = 'Interior Part', weight = 1400,
+    type = 'item', image = 'interior_part.png', unique = false, useable = false,
+    shouldClose = false, combinable = nil,
+    description = 'Trim, dials, a wheel. The bits you actually touch.',
+},
+
+['plate_blank'] = {
+    name = 'plate_blank', label = 'Plate Blank', weight = 300,
+    type = 'item', image = 'plate_blank.png', unique = false, useable = false,
+    shouldClose = false, combinable = nil,
+    description = 'Pressed, unprinted, entirely legal until it is not.',
+},
 ```
 
 </details>
@@ -616,6 +761,11 @@ shop in the builder, or `Config.Jobs.defaultBossGrade` for new ones.
 
 Restart, run `/mechanic`, and place your points. It needs at least one point
 before it will save. Give the job to whoever owns the place and you are done.
+
+**Draw the boundary while you are in there.** Fly round the walls dropping a
+corner at each one, press E, and save. Until you do, anyone with the job can
+work on a car anywhere on the map. `/mechanicdebug` tells you which shops are
+still missing one.
 
 The console prints what it detected on start — framework, inventory, banking —
 so if a bridge guessed wrong, that line is where it shows.

@@ -56,25 +56,59 @@
             return;
         }
 
+        const held = XS.stockFor('performance');
+
         grid.append(XS.el('div', { class: 'gh' }, [
             XS.el('h2', { text: category.label }),
-            XS.el('div', {
-                class: 'cap',
-                text: category.requiresItem ? 'the shop supplies the part' : 'paid from shop funds',
-            }),
+            XS.el('div', { class: 'cap' }, [
+                category.requiresItem ? 'the shop supplies the part' : 'paid from shop funds',
+                category.requiresItem && held
+                    ? XS.el('span', {
+                        class: 'stk',
+                        text: held.count > 0
+                            ? ` · ${XS.num(held.count)} ${held.label} in stock`
+                            : ` · no ${held.label} — one has to be made`,
+                    })
+                    : null,
+                XS.state.canPrice
+                    ? XS.el('span', { class: 'stk', text: ' · right click to price' })
+                    : null,
+            ]),
         ]));
 
         const cards = XS.el('div', { class: 'cards' });
 
         for (const option of category.options) {
+            const stock = XS.stockFor('performance');
+            const dry = category.requiresItem && !!stock && stock.count < 1;
+
             cards.append(XS.el('button', {
-                class: `c ${option.fitted ? 'on' : ''}`,
+                class: `c ${option.fitted ? 'on' : ''} ${dry ? 'dry' : ''}`,
+                oncontextmenu: (ev) => {
+                    ev.preventDefault();
+                    if (!XS.state.canPrice) return;
+
+                    // Right click is the price. The left one fits the part,
+                    // which is what you are here to do nine times in ten.
+                    XS.askPrice({
+                        title: option.name,
+                        note: 'What this package is called and what it costs this shop. Everybody at this shop sees the change.',
+                        price: option.price,
+                        label: option.name,
+                        naming: true,
+                    }, ({ price, label }) => XS.post('setTuningPrice', {
+                        category: category.id, option: option.id, price, label,
+                    }));
+                },
                 onclick: () => {
                     if (option.fitted) XS.post('removeTuning', { category: category.id });
                     else XS.post('fitTuning', { category: category.id, option: option.id });
                 },
             }, [
-                XS.el('div', { class: 'idx', text: category.requiresItem ? option.item.toUpperCase() : 'PACKAGE' }),
+                XS.el('div', { class: 'idx' }, [
+                    category.requiresItem ? option.item.toUpperCase() : 'PACKAGE',
+                    option.priced ? XS.el('span', { class: 'stk', text: ' · SHOP PRICE' }) : null,
+                ]),
                 XS.el('div', { class: 'nm', text: option.name }),
                 option.info
                     ? XS.el('div', {

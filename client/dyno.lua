@@ -57,6 +57,7 @@ function Dyno.Run()
 
     local allowed = lib.callback.await('XS-Mechanic:dynoCheck', false, {
         shop = XSM.shop and XSM.shop.id,
+        netId = VehToNet(vehicle),
     })
 
     if not allowed or not allowed.ok then

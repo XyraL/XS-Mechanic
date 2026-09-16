@@ -1,6 +1,17 @@
 Preview = {}
 
-local original = nil
+--[[ Looking at work before paying for it.
+
+     Everything a preview can touch is recorded off the vehicle before the first
+     change, and put back the moment the panel closes. Nothing previewed is ever
+     kept: a respray you looked at and walked away from is a respray you did not
+     have.
+
+     The record is tied to the ENTITY it came from, not to whatever the tablet
+     happens to be pointed at later. Connecting to a second car while the first
+     one is mid-preview used to hand the first car's settings to the second. ]]
+
+local snapshot = nil
 local camera = nil
 
 local ANGLES = {
@@ -15,11 +26,40 @@ local ANGLES = {
     extras      = { pitch = -8.0,  yaw = 215.0, dist = 5.6 },
 }
 
--- Everything that can be put back is recorded before the first change, so
--- walking away leaves the car exactly as it arrived.
-local function remember(vehicle)
-    if original then return end
+-- Changing anything on a vehicle somebody else owns does nothing at all, and
+-- says nothing about it either.
+local function control(vehicle)
+    if NetworkHasControlOfEntity(vehicle) then return true end
 
+    NetworkRequestControlOfEntity(vehicle)
+
+    for _ = 1, 20 do
+        if NetworkHasControlOfEntity(vehicle) then return true end
+        Wait(25)
+        NetworkRequestControlOfEntity(vehicle)
+    end
+
+    return NetworkHasControlOfEntity(vehicle)
+end
+
+Preview.Control = control
+
+local function readExtras(vehicle)
+    local out = {}
+
+    for id = 0, 20 do
+        if DoesExtraExist(vehicle, id) then
+            out[id] = IsVehicleExtraTurnedOn(vehicle, id)
+        end
+    end
+
+    return out
+end
+
+-- Cosmetic only. Body and engine health are deliberately left out: a mechanic
+-- can repair a car mid-preview, and putting back what the car looked like must
+-- never put back what it was worth fixing.
+local function read(vehicle)
     SetVehicleModKit(vehicle, 0)
 
     local mods = {}
@@ -27,24 +67,140 @@ local function remember(vehicle)
         mods[entry.slot] = GetVehicleMod(vehicle, entry.slot)
     end
 
+    local toggles = {}
+    for _, slot in ipairs({ 17, 18, 19, 20, 21, 22 }) do
+        toggles[slot] = IsToggleModOn(vehicle, slot)
+    end
+
     local primary, secondary = GetVehicleColours(vehicle)
     local pearl, wheelColour = GetVehicleExtraColours(vehicle)
 
-    original = {
+    local customPrimary, customSecondary
+
+    if GetIsVehiclePrimaryColourCustom(vehicle) then
+        local r, g, b = GetVehicleCustomPrimaryColour(vehicle)
+        customPrimary = { r, g, b }
+    end
+
+    if GetIsVehicleSecondaryColourCustom(vehicle) then
+        local r, g, b = GetVehicleCustomSecondaryColour(vehicle)
+        customSecondary = { r, g, b }
+    end
+
+    local neon = {}
+    for index = 0, 3 do
+        neon[index] = IsVehicleNeonLightEnabled(vehicle, index)
+    end
+
+    local nr, ng, nb = GetVehicleNeonLightsColour(vehicle)
+    local sr, sg, sb = GetVehicleTyreSmokeColor(vehicle)
+
+    return {
         mods = mods,
+        toggles = toggles,
         wheelType = GetVehicleWheelType(vehicle),
         wheelVariation = GetVehicleModVariation(vehicle, 23),
         primary = primary, secondary = secondary,
         pearl = pearl, wheelColour = wheelColour,
+        customPrimary = customPrimary,
+        customSecondary = customSecondary,
         livery = GetVehicleLivery(vehicle),
         plate = GetVehicleNumberPlateTextIndex(vehicle),
         tint = GetVehicleWindowTint(vehicle),
-        xenon = GetVehicleXenonLightsColour and GetVehicleXenonLightsColour(vehicle) or -1,
+        xenon = GetVehicleXenonLightsColour(vehicle),
+        neon = neon,
+        neonColour = { nr, ng, nb },
+        smoke = { sr, sg, sb },
+        extras = readExtras(vehicle),
+        chameleon = Catalogue.SupportsChameleon() and GetVehicleModColor_1(vehicle) or nil,
+        stance = Stance.Read(vehicle),
     }
 end
 
+local function restore(vehicle, was)
+    SetVehicleModKit(vehicle, 0)
+
+    SetVehicleWheelType(vehicle, was.wheelType)
+
+    for slot, index in pairs(was.mods) do
+        if index == -1 then
+            RemoveVehicleMod(vehicle, slot)
+        else
+            SetVehicleMod(vehicle, slot, index, slot == 23 and was.wheelVariation or false)
+        end
+    end
+
+    for slot, on in pairs(was.toggles or {}) do
+        ToggleVehicleMod(vehicle, slot, on)
+    end
+
+    -- A custom colour outranks the indexed one, so putting the indexed colour
+    -- back over a custom respray changes nothing at all until it is cleared.
+    -- This is what made a free paint job stick.
+    if was.customPrimary then
+        SetVehicleCustomPrimaryColour(vehicle, was.customPrimary[1], was.customPrimary[2], was.customPrimary[3])
+    else
+        ClearVehicleCustomPrimaryColour(vehicle)
+    end
+
+    if was.customSecondary then
+        SetVehicleCustomSecondaryColour(vehicle, was.customSecondary[1], was.customSecondary[2], was.customSecondary[3])
+    else
+        ClearVehicleCustomSecondaryColour(vehicle)
+    end
+
+    SetVehicleColours(vehicle, was.primary, was.secondary)
+    SetVehicleExtraColours(vehicle, was.pearl, was.wheelColour)
+    SetVehicleLivery(vehicle, was.livery)
+    SetVehicleNumberPlateTextIndex(vehicle, was.plate)
+    SetVehicleWindowTint(vehicle, was.tint)
+
+    if was.xenon then SetVehicleXenonLightsColour(vehicle, was.xenon) end
+
+    for index, on in pairs(was.neon or {}) do
+        SetVehicleNeonLightEnabled(vehicle, index, on)
+    end
+
+    if was.neonColour then
+        SetVehicleNeonLightsColour(vehicle, was.neonColour[1], was.neonColour[2], was.neonColour[3])
+    end
+
+    if was.smoke then
+        SetVehicleTyreSmokeColor(vehicle, was.smoke[1], was.smoke[2], was.smoke[3])
+    end
+
+    for id, on in pairs(was.extras or {}) do
+        SetVehicleExtra(vehicle, id, on and 0 or 1)
+    end
+
+    if was.chameleon then SetVehicleModColor_1(vehicle, was.chameleon, 0, 0) end
+
+    Stance.Restore(vehicle, was.stance)
+end
+
+local function remember(vehicle)
+    if snapshot and snapshot.entity == vehicle then return end
+
+    -- A different car. Put the last one back before letting go of it.
+    if snapshot then Preview.Restore() end
+
+    snapshot = { entity = vehicle, was = read(vehicle) }
+end
+
 function Preview.Snapshot(vehicle)
+    if not vehicle or not DoesEntityExist(vehicle) then return end
     remember(vehicle)
+end
+
+-- Puts the recorded vehicle back, whatever the tablet is pointed at now.
+function Preview.Restore()
+    local held = snapshot
+    snapshot = nil
+
+    if not held then return end
+    if not held.entity or not DoesEntityExist(held.entity) then return end
+
+    restore(held.entity, held.was)
 end
 
 local function startCam(vehicle, category)
@@ -80,11 +236,19 @@ function Preview.StopCam()
     camera = nil
 end
 
+-- The live window already shows the car from a camera of its own. A second one
+-- swinging round on every click would fight it.
+local function framing(vehicle, category)
+    if Showcase.active then return end
+    startCam(vehicle, category)
+end
+
 -- Applies a change for looking at only. Nothing is paid for and nothing is
 -- saved until the panel says apply.
 function Preview.Show(data)
     local vehicle = XSM.vehicle
     if not vehicle or not DoesEntityExist(vehicle) then return false end
+    if not control(vehicle) then return false end
 
     remember(vehicle)
     SetVehicleModKit(vehicle, 0)
@@ -93,7 +257,7 @@ function Preview.Show(data)
     local index = tonumber(data.index)
 
     if data.slotId == 'wheels' then
-        SetVehicleWheelType(vehicle, tonumber(data.wheelType) or original.wheelType)
+        SetVehicleWheelType(vehicle, tonumber(data.wheelType) or snapshot.was.wheelType)
         SetVehicleMod(vehicle, 23, index, GetVehicleModVariation(vehicle, 23))
         if GetVehicleClass(vehicle) == 8 then SetVehicleMod(vehicle, 24, index, false) end
     elseif data.slotId == 'plate' then
@@ -109,7 +273,7 @@ function Preview.Show(data)
     end
 
     XSM.preview = data
-    startCam(vehicle, data.category)
+    framing(vehicle, data.category)
 
     return true
 end
@@ -117,6 +281,7 @@ end
 function Preview.Respray(data)
     local vehicle = XSM.vehicle
     if not vehicle or not DoesEntityExist(vehicle) then return false end
+    if not control(vehicle) then return false end
 
     remember(vehicle)
 
@@ -134,13 +299,15 @@ function Preview.Respray(data)
             SetVehicleCustomSecondaryColour(vehicle, r, g, b)
         end
     elseif data.part == 'primary' then
+        ClearVehicleCustomPrimaryColour(vehicle)
         SetVehicleColours(vehicle, tonumber(data.index) or primary, secondary)
     else
+        ClearVehicleCustomSecondaryColour(vehicle)
         SetVehicleColours(vehicle, primary, tonumber(data.index) or secondary)
     end
 
     XSM.preview = { category = 'respray', slotId = 'respray', label = 'Respray', price = data.price }
-    startCam(vehicle, 'respray')
+    framing(vehicle, 'respray')
 
     return true
 end
@@ -148,6 +315,7 @@ end
 function Preview.Extra(id, on)
     local vehicle = XSM.vehicle
     if not vehicle or not DoesEntityExist(vehicle) then return false end
+    if not control(vehicle) then return false end
 
     remember(vehicle)
     SetVehicleExtra(vehicle, tonumber(id) or 0, on and 0 or 1)
@@ -158,29 +326,7 @@ end
 -- Puts the vehicle back the way it was found. `full` also drops the camera,
 -- which is what closing the panel wants.
 function XSM.StopPreview(full)
-    local vehicle = XSM.vehicle
-
-    if original and vehicle and DoesEntityExist(vehicle) and Config.Tuning.restoreOnCancel then
-        SetVehicleModKit(vehicle, 0)
-
-        SetVehicleWheelType(vehicle, original.wheelType)
-
-        for slot, index in pairs(original.mods) do
-            if index == -1 then
-                RemoveVehicleMod(vehicle, slot)
-            else
-                SetVehicleMod(vehicle, slot, index, slot == 23 and original.wheelVariation or false)
-            end
-        end
-
-        SetVehicleColours(vehicle, original.primary, original.secondary)
-        SetVehicleExtraColours(vehicle, original.pearl, original.wheelColour)
-        SetVehicleLivery(vehicle, original.livery)
-        SetVehicleNumberPlateTextIndex(vehicle, original.plate)
-        SetVehicleWindowTint(vehicle, original.tint)
-    end
-
-    original = nil
+    Preview.Restore()
     XSM.preview = nil
 
     if full then Preview.StopCam() end
@@ -189,7 +335,7 @@ end
 -- Called once the server has taken the money: what is on the car right now
 -- becomes the truth, so there is nothing to put back.
 function Preview.Commit()
-    original = nil
+    snapshot = nil
     XSM.preview = nil
     Preview.StopCam()
 
@@ -217,4 +363,11 @@ RegisterNetEvent('XS-Mechanic:client:readMods', function(netId)
     if not ok or not props then return end
 
     TriggerServerEvent('XS-Mechanic:server:storeMods', plate, props)
+end)
+
+-- Last resort. A resource restart mid-preview must not leave somebody with a
+-- respray they never paid for.
+AddEventHandler('onResourceStop', function(resource)
+    if resource ~= GetCurrentResourceName() then return end
+    Preview.Restore()
 end)
