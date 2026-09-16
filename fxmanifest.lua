@@ -88,6 +88,7 @@ files {
     'html/js/app.js',
     'html/js/hud.js',
     'html/js/subject.js',
+    'html/js/panels/apps.js',
     'html/js/panels/vehicle.js',
     'html/js/panels/tuning.js',
     'html/js/panels/repairs.js',

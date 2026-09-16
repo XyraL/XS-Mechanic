@@ -540,6 +540,18 @@ RegisterNUICallback('checkout', function(_, cb)
     cb({ ok = true })
 end)
 
+-- Dragging across the car turns it. The panel owns the mouse while it is open,
+-- so the drag is caught there and arrives here as a number of degrees.
+RegisterNUICallback('spinCar', function(data, cb)
+    if data and data.reset then
+        Showcase.Spin(-Showcase.Spun())
+    else
+        Showcase.Spin(tonumber(data and data.by) or 0)
+    end
+
+    cb({ ok = true })
+end)
+
 -- The page measures where its transparent window is and posts it; the camera
 -- frames the real vehicle into that rectangle.
 RegisterNUICallback('carView', function(data, cb)

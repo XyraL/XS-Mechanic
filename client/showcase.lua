@@ -11,58 +11,74 @@ Showcase = { active = false }
      the panel scales with the screen and a hardcoded rect would only be right
      on one resolution.
 
-     Two things have to be worked out from that rectangle, not guessed:
+     Three things are worked out from that rectangle rather than guessed:
 
-     Framing. Aiming the camera AT the car puts the car in the middle of the
+     WHERE THE CAMERA STANDS. `alpha` is degrees around the car measured from
+     its nose, and it has to mean the same thing whatever direction the car is
+     parked in. In GTA V an entity at heading h has forward (-sin h, cos h), so
+     a camera on the line at angle alpha from the nose is at
+
+         forward(h + alpha) = (-sin(h + alpha), cos(h + alpha))
+
+     because the signed angle between forward(A) and forward(B) is always
+     A - B. The heading cancels algebraically rather than by luck.
+
+     alpha = 0 stands off the nose, 90 off the driver's side, 180 off the boot,
+     270 off the passenger side. Increasing alpha walks anticlockwise seen from
+     above, the same sense as heading, which is why it adds.
+
+     FRAMING. Aiming the camera AT the car puts the car in the middle of the
      SCREEN. To move it into a window off to one side the aim point is pushed
      sideways instead — aim to the right of the car and the car sits to the
      left. That is sign-safe, which rotating the camera is not.
 
-     Size. The window is a small fraction of the screen, so a camera framed for
-     the whole screen shows a close-up of one wing through it. The distance has
-     to be worked out from how much of the screen the window actually covers
-     and how big this particular vehicle is. Get that wrong and the framing
-     maths is still perfect — it just frames a door handle. ]]
+     SIZE. The window is a fraction of the screen, so a camera framed for the
+     whole screen shows a close-up of one wing through it. The distance comes
+     from how much of the screen the window covers and how big this particular
+     vehicle is. Get that wrong and the framing maths is still perfect — it
+     just frames a door handle. ]]
 
 local cam = nil
 local target = nil
 local rect = nil
-local orbit = 0.0
+local spin = 0.0
 
-local PITCH = -11.0
 local FOV = 50.0
 
 --[[ Where the camera stands to look at each part of the car.
 
-     `orbit` is degrees around the car from the resting three-quarter view,
-     `pitch` is how far down it looks, `zoom` scales the distance the window
-     asked for, and `lift` moves the aim point up or down the car's height.
+     `alpha` is the angle around the car from its nose as above, `pitch` is how
+     far down it looks, `zoom` scales the distance the window asked for, `lift`
+     moves the aim point up or down the car's height and `along` moves it fore
+     or aft as a fraction of the car's half length.
 
-     The window shows one part of a car at a time, so it goes and looks at that
-     part: click a spoiler and it walks round the back. ]]
+     `along` is what makes a tight shot useful: an engine bay framed on the
+     car's centre is a shot of the roof. ]]
 local VIEWS = {
-    full      = { orbit = 0.0,    pitch = -11.0, zoom = 1.0,  lift = 0.0 },
-    front     = { orbit = -40.0,  pitch = -9.0,  zoom = 0.82, lift = 0.0 },
-    rear      = { orbit = 140.0,  pitch = -9.0,  zoom = 0.82, lift = 0.0 },
-    side      = { orbit = -130.0, pitch = -6.0,  zoom = 0.92, lift = 0.0 },
-    wheel     = { orbit = -118.0, pitch = -8.0,  zoom = 0.44, lift = -0.55 },
-    roof      = { orbit = -25.0,  pitch = -34.0, zoom = 0.86, lift = 0.35 },
-    interior  = { orbit = -152.0, pitch = -22.0, zoom = 0.40, lift = 0.30 },
-    engineBay = { orbit = -30.0,  pitch = -30.0, zoom = 0.52, lift = 0.30 },
-    plate     = { orbit = 160.0,  pitch = -12.0, zoom = 0.38, lift = -0.25 },
+    full      = { alpha = 35.0,  pitch = -12.0, zoom = 1.00, lift = 0.00, along = 0.00 },
+    front     = { alpha = 0.0,   pitch = -8.0,  zoom = 0.78, lift = -0.10, along = 0.70 },
+    rear      = { alpha = 180.0, pitch = -8.0,  zoom = 0.78, lift = -0.05, along = -0.70 },
+    side      = { alpha = 90.0,  pitch = -4.0,  zoom = 0.95, lift = 0.00, along = 0.00 },
+    wheel     = { alpha = 68.0,  pitch = -5.0,  zoom = 0.42, lift = -0.55, along = 0.55 },
+    roof      = { alpha = 35.0,  pitch = -52.0, zoom = 0.85, lift = 0.40, along = 0.00 },
+    interior  = { alpha = 105.0, pitch = -20.0, zoom = 0.40, lift = 0.35, along = 0.10 },
+    engineBay = { alpha = 18.0,  pitch = -34.0, zoom = 0.50, lift = 0.30, along = 0.65 },
+    plate     = { alpha = 180.0, pitch = -10.0, zoom = 0.34, lift = -0.20, along = -0.85 },
 }
 
 -- Where each slot lives on the car. Anything not named here gets the whole car.
 local SLOT_VIEW = {
-    frontBumper = 'front', grille = 'front', hood = 'engineBay', xenon = 'front',
-    engine = 'engineBay', engineBlock = 'engineBay', airFilter = 'engineBay',
-    turbo = 'engineBay', struts = 'engineBay', tank = 'engineBay',
+    frontBumper = 'front', grille = 'front', xenon = 'front', lights = 'front',
+    hood = 'engineBay', engine = 'engineBay', engineBlock = 'engineBay',
+    airFilter = 'engineBay', turbo = 'engineBay', struts = 'engineBay', tank = 'engineBay',
 
     rearBumper = 'rear', spoiler = 'rear', exhaust = 'rear', trunk = 'rear',
     plateHolder = 'plate', plate = 'plate',
 
     sideSkirt = 'side', fender = 'side', rightFender = 'side', archCover = 'side',
     windows = 'side', aerials = 'side', livery = 'side', respray = 'side',
+    cosmetics = 'full', extras = 'full',
+
     brakes = 'wheel', suspension = 'wheel', wheels = 'wheel',
     frontWheels = 'wheel', backWheels = 'wheel', tyreSmoke = 'wheel',
     hydraulics = 'wheel', stance = 'side',
@@ -73,10 +89,13 @@ local SLOT_VIEW = {
     seats = 'interior', steeringWheel = 'interior', shifter = 'interior',
     plaques = 'interior', speakers = 'interior', trimDesign = 'interior',
     ornaments = 'interior', trim = 'interior', horn = 'interior',
+    interior = 'interior',
 }
 
+local KEYS = { 'alpha', 'pitch', 'zoom', 'lift', 'along' }
+
 local view = VIEWS.full
-local shown = { orbit = 0.0, pitch = PITCH, zoom = 1.0, lift = 0.0 }
+local shown = { alpha = 35.0, pitch = -12.0, zoom = 1.0, lift = 0.0, along = 0.0 }
 local moving = false
 
 -- How much of the window the car should fill across its longest axis.
@@ -84,7 +103,7 @@ local FILL = 0.85
 
 -- The camera cannot always stand where the maths wants it — a lock-up is four
 -- metres deep. Below this it widens the lens instead of backing further off.
-local MIN_DISTANCE = 3.2
+local MIN_DISTANCE = 2.6
 local MAX_DISTANCE = 26.0
 local MAX_FOV = 92.0
 
@@ -99,21 +118,21 @@ local function drop()
     Showcase.active = false
 end
 
--- Half the vehicle across its widest horizontal diagonal, and half its height.
--- The diagonal because the camera looks at a corner of it, never square on.
+-- Half the vehicle across its widest horizontal diagonal, half its height, and
+-- half its length. The diagonal because the camera looks at a corner of it,
+-- never square on.
 local function spanOf(vehicle)
     local min, max = GetModelDimensions(GetEntityModel(vehicle))
 
     local size = max - min
     local flat = math.sqrt((size.x * size.x) + (size.y * size.y)) * 0.5
 
-    return math.max(flat, 1.2), math.max(size.z * 0.5, 0.6)
+    return math.max(flat, 1.2), math.max(size.z * 0.5, 0.6), math.max(size.y * 0.5, 1.4)
 end
 
 -- Somewhere the camera can actually stand. A wall between it and the car is
 -- worse than a car that is slightly too big for the window.
-local function reachable(centre, direction, want)
-    local from = centre + vector3(0.0, 0.0, 1.0)
+local function reachable(from, direction, want)
     local to = from + (direction * want)
 
     local ray = StartShapeTestCapsule(from.x, from.y, from.z, to.x, to.y, to.z,
@@ -123,7 +142,7 @@ local function reachable(centre, direction, want)
 
     if hit ~= 1 then return want end
 
-    local reached = #(vector3(coords.x, coords.y, coords.z) - from) - 0.6
+    local reached = #(vector3(coords.x, coords.y, coords.z) - from) - 0.5
 
     return math.max(MIN_DISTANCE, math.min(want, reached))
 end
@@ -133,13 +152,13 @@ end
 local function ease()
     local done = true
 
-    for _, key in ipairs({ 'orbit', 'pitch', 'zoom', 'lift' }) do
+    for _, key in ipairs(KEYS) do
         local from = shown[key]
         local to = view[key]
         local gap = to - from
 
         -- The long way round the car is never the nicer way to watch.
-        if key == 'orbit' then
+        if key == 'alpha' then
             while gap > 180.0 do gap = gap - 360.0 end
             while gap < -180.0 do gap = gap + 360.0 end
         end
@@ -159,13 +178,16 @@ local function frame()
     if not cam or not target or not DoesEntityExist(target) then return end
 
     local centre = GetEntityCoords(target)
-    local heading = GetEntityHeading(target) + 220.0 + shown.orbit + orbit
-    local rad = math.rad(heading)
+    local heading = GetEntityHeading(target)
+
+    local spanH, spanV, spanL = spanOf(target)
+
+    -- The point on the car this shot is about, which is not always its middle.
+    local nose = vector3(-math.sin(math.rad(heading)), math.cos(math.rad(heading)), 0.0)
+    local look = centre + (nose * (spanL * shown.along)) + vector3(0.0, 0.0, spanV * shown.lift)
 
     local width, height = GetActiveScreenResolution()
     local aspect = (width or 1920) / math.max(height or 1080, 1)
-
-    local spanH, spanV = spanOf(target)
 
     -- The window, as a fraction of the screen. Nothing measured yet means the
     -- whole screen, which is what the very first frame gets.
@@ -182,8 +204,11 @@ local function frame()
 
     want = math.max(MIN_DISTANCE, math.min(MAX_DISTANCE, want * shown.zoom))
 
-    local flat = vector3(math.sin(rad) * -1.0, math.cos(rad) * -1.0, 0.0)
-    local distance = reachable(centre, flat, want)
+    -- Around the car from its nose, independent of where the car is pointing.
+    local around = math.rad(heading + shown.alpha + spin)
+    local flat = vector3(-math.sin(around), math.cos(around), 0.0)
+
+    local distance = reachable(look + vector3(0.0, 0.0, 0.4), flat, want)
 
     -- Whatever room there turned out to be, the lens opens up until the car
     -- fits the window at that distance.
@@ -193,12 +218,10 @@ local function frame()
     local fov = math.deg(math.atan(math.max(needH, needV))) * 2
     fov = math.max(FOV, math.min(MAX_FOV, fov))
 
-    local look = centre + vector3(0.0, 0.0, spanV * shown.lift)
-
     local pos = vector3(
-        centre.x + flat.x * distance,
-        centre.y + flat.y * distance,
-        look.z + (distance * -math.sin(math.rad(shown.pitch))) + 0.35)
+        look.x + flat.x * distance,
+        look.y + flat.y * distance,
+        look.z + (distance * -math.sin(math.rad(shown.pitch))) + 0.30)
 
     SetCamCoord(cam, pos.x, pos.y, pos.z)
 
@@ -234,8 +257,8 @@ local function frame()
     SetCamFov(cam, fov)
 
     if Config.Debug then
-        print(('^3[XS-Mechanic]^0 showcase: window %.2f x %.2f, distance %.1fm, fov %.0f')
-            :format(windowW, windowH, distance, fov))
+        print(('^3[XS-Mechanic]^0 showcase: window %.2f x %.2f · alpha %.0f · %.1fm · fov %.0f')
+            :format(windowW, windowH, shown.alpha, distance, fov))
     end
 end
 
@@ -248,7 +271,7 @@ function Showcase.Start(vehicle)
     if not cam then
         -- A fresh camera starts where it is meant to be rather than easing in
         -- from wherever the last car left it.
-        shown = { orbit = view.orbit, pitch = view.pitch, zoom = view.zoom, lift = view.lift }
+        for _, key in ipairs(KEYS) do shown[key] = view[key] end
 
         cam = CreateCam('DEFAULT_SCRIPTED_CAMERA', true)
         SetCamActive(cam, true)
@@ -262,7 +285,7 @@ end
 function Showcase.Stop()
     target = nil
     rect = nil
-    orbit = 0.0
+    spin = 0.0
     view = VIEWS.full
     moving = false
     drop()
@@ -300,8 +323,14 @@ function Showcase.Focus(what)
 end
 
 function Showcase.Spin(amount)
-    orbit = (orbit + amount) % 360
+    spin = (spin + (tonumber(amount) or 0)) % 360
+    moving = true
     frame()
+end
+
+-- How far the car has been turned by hand, so a double click can put it back.
+function Showcase.Spun()
+    return spin
 end
 
 -- The car can move, and the panel can be dragged around by a resize, so the

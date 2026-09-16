@@ -5,6 +5,7 @@
 
     const TABS = {
         tablet: [
+            { id: 'apps', label: 'Home' },
             { id: 'vehicle', label: 'Vehicle' },
             { id: 'tuning', label: 'Tuning' },
             { id: 'repairs', label: 'Repairs' },
@@ -36,12 +37,20 @@
         ],
     };
 
+    // The tabs this player can actually reach, in this mode, right now. The nav
+    // bar and the home screen both need the same list.
+    XS.apps = function () {
+        return (TABS[XS.mode] || []).filter((tab) => {
+            if (tab.boss && !XS.state.isBoss) return false;
+            if (tab.when && !tab.when()) return false;
+            return true;
+        });
+    };
+
     function renderNav() {
         XS.clear(nav);
 
-        for (const tab of TABS[XS.mode] || []) {
-            if (tab.boss && !XS.state.isBoss) continue;
-            if (tab.when && !tab.when()) continue;
+        for (const tab of XS.apps()) {
 
             const count = tab.badge ? tab.badge() : 0;
 
@@ -55,8 +64,35 @@
         }
     }
 
+    //[[ Which shell the screen is wearing.
+    //
+    //   Tuning is not a page with a picture of a car on it — the car IS the
+    //   screen and the panel is a sheet over it. Everything else is a tablet,
+    //   a laptop or the bench. ]]
+    const SHEET = new Set(['tuning']);
+
+    function layout() {
+        if (SHEET.has(XS.panel)) return 'sheet';
+        if (XS.mode === 'desk') return 'laptop';
+        if (XS.mode === 'bench') return 'bench';
+        return 'tablet';
+    }
+
+    function dress() {
+        const shell = layout();
+
+        document.body.dataset.layout = shell;
+
+        const device = document.querySelector('.device');
+        if (device) device.dataset.device = shell === 'sheet' ? 'tablet' : shell;
+
+        const stage = document.querySelector('[data-stage]');
+        if (stage) stage.hidden = shell !== 'sheet';
+    }
+
     XS.show = function (id) {
         XS.panel = id;
+        dress();
 
         // Lua needs to know which screen is up: when it steps the panel aside
         // to fit a part, it has to put the same one back.
@@ -99,14 +135,7 @@
         const first = (TABS[XS.mode] || []).find((t) => !t.when || t.when());
         XS.panel = payload?.panel || (first ? first.id : 'vehicle');
 
-        const device = document.querySelector('.device');
-
-        if (device) {
-            device.dataset.device =
-                XS.mode === 'desk' ? 'laptop'
-                    : XS.mode === 'bench' ? 'bench'
-                        : 'tablet';
-        }
+        dress();
 
         root.classList.add('open');
         document.body.classList.add('open');
@@ -125,6 +154,31 @@
     };
 
     document.querySelector('[data-close]').addEventListener('click', XS.close);
+
+    // Drag anywhere on the car to turn it. The panel has the mouse while it is
+    // open, so the game cannot be given the drag — it is caught here and the
+    // camera is told how far to walk round.
+    (function turnable() {
+        const stage = document.querySelector('[data-stage]');
+        if (!stage) return;
+
+        let from = null;
+
+        stage.addEventListener('mousedown', (ev) => { from = ev.clientX; });
+        window.addEventListener('mouseup', () => { from = null; });
+
+        window.addEventListener('mousemove', (ev) => {
+            if (from === null) return;
+
+            const by = ev.clientX - from;
+            if (Math.abs(by) < 2) return;
+
+            from = ev.clientX;
+            XS.post('spinCar', { by: by * -0.45 });
+        });
+
+        stage.addEventListener('dblclick', () => XS.post('spinCar', { reset: true }));
+    })();
 
     document.addEventListener('keydown', (ev) => {
         if (ev.key !== 'Escape') return;

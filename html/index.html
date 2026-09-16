@@ -17,6 +17,12 @@
 </div>
 
 <div id="root">
+  <!-- Catches a drag to turn the car. Only in the sheet layout, where the car
+       is the whole screen and the panel is a sidebar over it. -->
+  <div class="stage" data-stage hidden>
+    <div class="hint">Drag to turn the car</div>
+  </div>
+
   <div class="device" data-device="tablet">
     <i class="skin cut"></i>
     <span class="led" data-led></span>
@@ -51,6 +57,7 @@
         <aside class="subject" data-subject></aside>
 
         <div class="work" data-work>
+          <section class="panel" data-panel="apps"></section>
           <section class="panel" data-panel="vehicle"></section>
           <section class="panel" data-panel="tuning"></section>
           <section class="panel" data-panel="repairs"></section>
@@ -77,6 +84,7 @@
 <script src="js/mock.js"></script>
 <script src="js/core.js"></script>
 <script src="js/subject.js"></script>
+<script src="js/panels/apps.js"></script>
 <script src="js/panels/vehicle.js"></script>
 <script src="js/panels/tuning.js"></script>
 <script src="js/panels/repairs.js"></script>

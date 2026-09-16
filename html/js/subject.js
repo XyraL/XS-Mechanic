@@ -40,6 +40,29 @@ XS.subject = (function () {
     // viewport. Lua needs this to frame the real vehicle inside it, and it has
     // to be measured rather than assumed — the panel scales with the screen.
     function reportViewport() {
+        //[[ In the sheet layout the whole screen is the car and the panel is a
+        //   sheet over one edge of it. There is no window to punch — the
+        //   "window" is everything the sheet is not standing on, and the same
+        //   framing maths puts the car in the middle of that. ]]
+        if (document.body.dataset.layout === 'sheet') {
+            cut(null);
+
+            const sheet = document.querySelector('.device');
+            const edge = sheet ? sheet.getBoundingClientRect().right + 24 : 0;
+            const width = Math.max(window.innerWidth - edge, 200);
+
+            XS.post('carView', {
+                active: true,
+                x: (edge + width / 2) / window.innerWidth,
+                y: 0.5,
+                w: width / window.innerWidth,
+                h: 1,
+                focus: XS.focus || 'full',
+            });
+
+            return;
+        }
+
         const view = host.querySelector('[data-view]');
 
         if (!view) {
