@@ -79,32 +79,44 @@ function Stock.Sheet(shop, src)
     if not Stock.Enabled() then return nil end
 
     local categories = {}
+    local slots = {}
     local items = {}
     local labels = {}
+
+    local function take(item)
+        if items[item] ~= nil then return end
+
+        items[item] = Stock.Count(shop, item, src)
+        labels[item] = Parts.Label(item)
+    end
 
     for category, item in pairs(Config.Stock.categoryItems) do
         if item and item ~= '' then
             categories[category] = item
+            take(item)
+        end
+    end
 
-            if items[item] == nil then
-                items[item] = Stock.Count(shop, item, src)
-                labels[item] = Parts.Label(item)
-            end
+    for slot, item in pairs(Config.Stock.slotItems) do
+        if item and item ~= '' then
+            slots[slot] = item
+            take(item)
         end
     end
 
     return {
         categories = categories,
+        slots = slots,
         items = items,
         labels = labels,
         shelf = Stock.StashOf(shop) ~= nil,
     }
 end
 
-function Stock.Missing(shop, category, src)
+function Stock.Missing(shop, category, src, slotId)
     if not Stock.Enabled() then return nil end
 
-    local item = Parts.ItemFor(category)
+    local item = Parts.ItemFor(category, slotId)
     if not item then return nil end
 
     if Stock.Count(shop, item, src) > 0 then return nil end

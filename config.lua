@@ -359,6 +359,18 @@ Config.Stock = {
         plate       = 'plate_blank',
         performance = 'performance_part',
     },
+
+    -- And where a single slot deserves its own part rather than the category's.
+    -- An engine upgrade is not a brake upgrade, so the shop stocks them apart
+    -- and the bench makes them apart. Anything not listed falls back to the
+    -- category above.
+    slotItems = {
+        engine       = 'engine_parts',
+        brakes       = 'brake_parts',
+        transmission = 'transmission_parts',
+        suspension   = 'suspension_parts',
+        turbo        = 'turbo_kit',
+    },
 }
 
 -- ── The crafting bench ───────────────────────────────────────────────────────
@@ -390,38 +402,86 @@ Config.Crafting = {
     -- What the bench can make. `category` ties a part to the work it is used
     -- for, which is what the tablet reads when it says a part is out of stock.
     recipes = {
-        { item = 'body_part',       label = 'Body Part',      category = 'cosmetics',
+        { item = 'body_part',       label = 'Body Part',      category = 'cosmetics', group = 'Parts',
           needs = { scrap = 6, steel = 4 } },
 
-        { item = 'wheel_set',       label = 'Wheel Set',      category = 'wheels',
+        { item = 'wheel_set',       label = 'Wheel Set',      category = 'wheels', group = 'Parts',
           needs = { rubber = 6, steel = 5 } },
 
-        { item = 'paint_can',       label = 'Paint Can',      category = 'respray',
+        { item = 'paint_can',       label = 'Paint Can',      category = 'respray', group = 'Parts',
           needs = { scrap = 3 } },
 
-        { item = 'vinyl_wrap',      label = 'Vinyl Wrap',     category = 'livery',
+        { item = 'vinyl_wrap',      label = 'Vinyl Wrap',     category = 'livery', group = 'Parts',
           needs = { rubber = 3, scrap = 2 } },
 
-        { item = 'light_kit',       label = 'Light Kit',      category = 'lights',
+        { item = 'light_kit',       label = 'Light Kit',      category = 'lights', group = 'Parts',
           needs = { glass = 4, scrap = 3 } },
 
-        { item = 'interior_part',   label = 'Interior Part',  category = 'interior',
+        { item = 'interior_part',   label = 'Interior Part',  category = 'interior', group = 'Parts',
           needs = { rubber = 3, scrap = 3, glass = 1 } },
 
-        { item = 'plate_blank',     label = 'Plate Blank',    category = 'plate',
+        { item = 'plate_blank',     label = 'Plate Blank',    category = 'plate', group = 'Parts',
           needs = { steel = 2, scrap = 1 } },
 
-        { item = 'performance_part', label = 'Performance Part', category = 'performance',
+        { item = 'performance_part', label = 'Performance Part', category = 'performance', group = 'Upgrades',
           needs = { steel = 8, scrap = 6, rubber = 2 } },
 
-        { item = 'tyre_kit',        label = 'Tyre Kit',
+        { item = 'tyre_kit',        label = 'Tyre Kit',       group = 'Supplies',
           needs = { rubber = 8, steel = 2 } },
 
-        { item = 'repair_kit',      label = 'Repair Kit',
+        { item = 'repair_kit',      label = 'Repair Kit',     group = 'Supplies',
           needs = { scrap = 5, steel = 3, rubber = 1 } },
 
-        { item = 'cleaning_kit',    label = 'Cleaning Kit',
+        { item = 'cleaning_kit',    label = 'Cleaning Kit',   group = 'Supplies',
           needs = { rubber = 2, glass = 1 } },
+
+        -- The modkit upgrades, one part per slot rather than one part for all
+        -- of them. Level four costs the same as level one to make; what a
+        -- level is worth to the customer is a price, not a recipe.
+        { item = 'engine_parts',       label = 'Engine Parts',       group = 'Upgrades',
+          needs = { steel = 7, scrap = 5 } },
+
+        { item = 'brake_parts',        label = 'Brake Parts',        group = 'Upgrades',
+          needs = { steel = 5, scrap = 3 } },
+
+        { item = 'transmission_parts', label = 'Transmission Parts', group = 'Upgrades',
+          needs = { steel = 6, scrap = 4, rubber = 1 } },
+
+        { item = 'suspension_parts',   label = 'Suspension Parts',   group = 'Upgrades',
+          needs = { steel = 6, rubber = 3 } },
+
+        -- The engine swaps. Each one is its own build, and a V12 is not a
+        -- weekend's work.
+        { item = 'i4_engine',       label = 'I4 Turbo 2.0',   group = 'Engines',
+          needs = { steel = 10, scrap = 8, rubber = 2 } },
+
+        { item = 'v6_engine',       label = 'V6 3.5',         group = 'Engines',
+          needs = { steel = 14, scrap = 11, rubber = 3 } },
+
+        { item = 'v8_engine',       label = 'V8 6.2',         group = 'Engines',
+          needs = { steel = 20, scrap = 15, rubber = 4 } },
+
+        { item = 'v12_engine',      label = 'V12 6.5',        group = 'Engines',
+          needs = { steel = 30, scrap = 22, rubber = 5 } },
+
+        { item = 'electric_motor',  label = 'Electric Motor', group = 'Engines',
+          needs = { steel = 16, scrap = 14, glass = 4, rubber = 3 } },
+
+        -- Everything that bolts to the engine or the floor.
+        { item = 'turbo_kit',       label = 'Turbo Kit',      group = 'Drivetrain',
+          needs = { steel = 9, scrap = 6 } },
+
+        { item = 'drivetrain_kit',  label = 'Drivetrain Kit', group = 'Drivetrain',
+          needs = { steel = 11, scrap = 7, rubber = 2 } },
+
+        { item = 'gearbox_kit',     label = 'Gearbox Kit',    group = 'Drivetrain',
+          needs = { steel = 12, scrap = 8, rubber = 2 } },
+
+        { item = 'brake_kit',       label = 'Brake Kit',      group = 'Drivetrain',
+          needs = { steel = 8, scrap = 5 } },
+
+        { item = 'drift_kit',       label = 'Drift Kit',      group = 'Drivetrain',
+          needs = { steel = 7, rubber = 6, scrap = 4 } },
     },
 }
 

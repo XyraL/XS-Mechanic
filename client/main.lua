@@ -170,6 +170,34 @@ function XSM.ShopById(id)
     return nil
 end
 
+--[[ The car on the bay.
+
+     A customer drives in, gets out and uses the bay. There is nobody to press
+     "connect nearest vehicle" for them, and the panel opening onto "nothing
+     connected — drive into a bay" when they have just driven into the bay is
+     the least helpful thing it could say.
+
+     Measured from the BAY, not from the player: they may have walked round the
+     front of it by the time they reach the marker. ]]
+function XSM.ConnectAt(coords, radius)
+    local vehicle = lib.getClosestVehicle(vector3(coords.x, coords.y, coords.z), radius or 6.0, true)
+
+    if not vehicle or vehicle == 0 then return false, 'Drive your vehicle onto the bay first.' end
+
+    local model = string.lower(GetDisplayNameFromVehicleModel(GetEntityModel(vehicle)) or '')
+
+    for _, blocked in ipairs(Config.Tuning.blockedModels or {}) do
+        if string.lower(blocked) == model then return false, 'That vehicle cannot be worked on.' end
+    end
+
+    XSM.StopPreview(false)
+    XSM.vehicle = vehicle
+
+    -- Not pushed here: whoever opens the panel next pushes it, and building the
+    -- catalogue twice for one click is a lot of natives for nothing.
+    return true
+end
+
 function XSM.Connect()
     local ped = cache.ped
     local coords = GetEntityCoords(ped)

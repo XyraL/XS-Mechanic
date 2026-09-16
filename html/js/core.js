@@ -92,12 +92,13 @@ XS.orderFor = function (plate) {
 };
 
 // What the shop has on the shelf for a kind of work. null means stock is
-// switched off, and everything is fittable.
-XS.stockFor = function (category) {
+// switched off, and everything is fittable. A slot with a part of its own wins
+// over its category's.
+XS.stockFor = function (category, slotId) {
     const stock = XS.state.stock;
     if (!stock || !stock.items) return null;
 
-    const item = (stock.categories || {})[category];
+    const item = (slotId && (stock.slots || {})[slotId]) || (stock.categories || {})[category];
     if (!item) return null;
 
     return {

@@ -244,49 +244,92 @@
                 livery: 'vinyl_wrap', lights: 'light_kit', interior: 'interior_part',
                 extras: 'body_part', plate: 'plate_blank', performance: 'performance_part',
             },
+            slots: {
+                engine: 'engine_parts', brakes: 'brake_parts',
+                transmission: 'transmission_parts', suspension: 'suspension_parts',
+                turbo: 'turbo_kit',
+            },
             labels: {
                 body_part: 'Body Part', wheel_set: 'Wheel Set', paint_can: 'Paint Can',
                 vinyl_wrap: 'Vinyl Wrap', light_kit: 'Light Kit', interior_part: 'Interior Part',
                 plate_blank: 'Plate Blank', performance_part: 'Performance Part',
+                engine_parts: 'Engine Parts', brake_parts: 'Brake Parts',
+                transmission_parts: 'Transmission Parts', suspension_parts: 'Suspension Parts',
+                turbo_kit: 'Turbo Kit',
             },
             items: {
                 body_part: 6, wheel_set: 0, paint_can: 3, vinyl_wrap: 1,
                 light_kit: 2, interior_part: 0, plate_blank: 4, performance_part: 2,
+                engine_parts: 1, brake_parts: 0, transmission_parts: 3, suspension_parts: 4,
+                turbo_kit: 2,
             },
         },
 
 
+
         crafting: [
-            { item: 'body_part', label: 'Body Part', category: 'cosmetics', onShelf: 6, canMake: true,
+            { item: 'body_part', label: 'Body Part', group: 'Parts', category: 'cosmetics', onShelf: 6, canMake: true,
               needs: [
                   { key: 'scrap', item: 'metalscrap', label: 'Scrap', need: 6, have: 22 },
                   { key: 'steel', item: 'steel', label: 'Steel', need: 4, have: 9 },
               ] },
-            { item: 'wheel_set', label: 'Wheel Set', category: 'wheels', onShelf: 0, canMake: false,
+            { item: 'wheel_set', label: 'Wheel Set', group: 'Parts', category: 'wheels', onShelf: 0, canMake: false,
               needs: [
                   { key: 'rubber', item: 'rubber', label: 'Rubber', need: 6, have: 1 },
                   { key: 'steel', item: 'steel', label: 'Steel', need: 5, have: 9 },
               ] },
-            { item: 'paint_can', label: 'Paint Can', category: 'respray', onShelf: 3, canMake: true,
+            { item: 'paint_can', label: 'Paint Can', group: 'Parts', category: 'respray', onShelf: 3, canMake: true,
               needs: [
                   { key: 'scrap', item: 'metalscrap', label: 'Scrap', need: 3, have: 22 },
               ] },
-            { item: 'light_kit', label: 'Light Kit', category: 'lights', onShelf: 2, canMake: false,
+            { item: 'light_kit', label: 'Light Kit', group: 'Parts', category: 'lights', onShelf: 2, canMake: false,
               needs: [
                   { key: 'glass', item: 'glass', label: 'Glass', need: 4, have: 2 },
                   { key: 'scrap', item: 'metalscrap', label: 'Scrap', need: 3, have: 22 },
               ] },
-            { item: 'performance_part', label: 'Performance Part', category: 'performance', onShelf: 2, canMake: true,
+            { item: 'engine_parts', label: 'Engine Parts', group: 'Upgrades', onShelf: 1, canMake: true,
               needs: [
-                  { key: 'rubber', item: 'rubber', label: 'Rubber', need: 2, have: 1 },
-                  { key: 'scrap', item: 'metalscrap', label: 'Scrap', need: 6, have: 22 },
-                  { key: 'steel', item: 'steel', label: 'Steel', need: 8, have: 9 },
+                  { key: 'steel', item: 'steel', label: 'Steel', need: 7, have: 9 },
+                  { key: 'scrap', item: 'metalscrap', label: 'Scrap', need: 5, have: 22 },
               ] },
-            { item: 'repair_kit', label: 'Repair Kit', onShelf: 5, canMake: true,
+            { item: 'brake_parts', label: 'Brake Parts', group: 'Upgrades', onShelf: 0, canMake: true,
               needs: [
-                  { key: 'rubber', item: 'rubber', label: 'Rubber', need: 1, have: 1 },
+                  { key: 'steel', item: 'steel', label: 'Steel', need: 5, have: 9 },
+                  { key: 'scrap', item: 'metalscrap', label: 'Scrap', need: 3, have: 22 },
+              ] },
+            { item: 'suspension_parts', label: 'Suspension Parts', group: 'Upgrades', onShelf: 4, canMake: false,
+              needs: [
+                  { key: 'steel', item: 'steel', label: 'Steel', need: 6, have: 9 },
+                  { key: 'rubber', item: 'rubber', label: 'Rubber', need: 3, have: 1 },
+              ] },
+            { item: 'v8_engine', label: 'V8 6.2', group: 'Engines', onShelf: 0, canMake: false,
+              needs: [
+                  { key: 'steel', item: 'steel', label: 'Steel', need: 20, have: 9 },
+                  { key: 'scrap', item: 'metalscrap', label: 'Scrap', need: 15, have: 22 },
+                  { key: 'rubber', item: 'rubber', label: 'Rubber', need: 4, have: 1 },
+              ] },
+            { item: 'i4_engine', label: 'I4 Turbo 2.0', group: 'Engines', onShelf: 1, canMake: false,
+              needs: [
+                  { key: 'steel', item: 'steel', label: 'Steel', need: 10, have: 9 },
+                  { key: 'scrap', item: 'metalscrap', label: 'Scrap', need: 8, have: 22 },
+                  { key: 'rubber', item: 'rubber', label: 'Rubber', need: 2, have: 1 },
+              ] },
+            { item: 'turbo_kit', label: 'Turbo Kit', group: 'Drivetrain', onShelf: 2, canMake: true,
+              needs: [
+                  { key: 'steel', item: 'steel', label: 'Steel', need: 9, have: 9 },
+                  { key: 'scrap', item: 'metalscrap', label: 'Scrap', need: 6, have: 22 },
+              ] },
+            { item: 'gearbox_kit', label: 'Gearbox Kit', group: 'Drivetrain', onShelf: 0, canMake: false,
+              needs: [
+                  { key: 'steel', item: 'steel', label: 'Steel', need: 12, have: 9 },
+                  { key: 'scrap', item: 'metalscrap', label: 'Scrap', need: 8, have: 22 },
+                  { key: 'rubber', item: 'rubber', label: 'Rubber', need: 2, have: 1 },
+              ] },
+            { item: 'repair_kit', label: 'Repair Kit', group: 'Supplies', onShelf: 5, canMake: true,
+              needs: [
                   { key: 'scrap', item: 'metalscrap', label: 'Scrap', need: 5, have: 22 },
                   { key: 'steel', item: 'steel', label: 'Steel', need: 3, have: 9 },
+                  { key: 'rubber', item: 'rubber', label: 'Rubber', need: 1, have: 1 },
               ] },
         ],
 

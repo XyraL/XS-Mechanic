@@ -295,3 +295,38 @@
     close = false,
     description = 'Pressed, unprinted, entirely legal until it is not.',
 },
+
+-- The modkit upgrades. One part per slot, so a shop stocks engine work and
+-- brake work apart and the bench makes them apart.
+
+['engine_parts'] = {
+    label = 'Engine Parts',
+    weight = 4000,
+    stack = true,
+    close = false,
+    description = 'Cams, pistons and a gasket set.',
+},
+
+['brake_parts'] = {
+    label = 'Brake Parts',
+    weight = 2200,
+    stack = true,
+    close = false,
+    description = 'Discs, pads and the lines to feed them.',
+},
+
+['transmission_parts'] = {
+    label = 'Transmission Parts',
+    weight = 3200,
+    stack = true,
+    close = false,
+    description = 'Ratios, synchros and a clutch.',
+},
+
+['suspension_parts'] = {
+    label = 'Suspension Parts',
+    weight = 3600,
+    stack = true,
+    close = false,
+    description = 'Coilovers, bushes and drop links.',
+},

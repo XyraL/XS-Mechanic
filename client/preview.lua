@@ -342,6 +342,22 @@ function XSM.StopPreview(full)
     if full then Preview.StopCam() end
 end
 
+-- One part of the list is paid for and fitted. What is on the car now becomes
+-- the new "as it arrived", so the rest of the list can still be taken back off
+-- without taking the fitted one with it.
+function Preview.Accept()
+    if not snapshot then return end
+
+    local entity = snapshot.entity
+
+    if not entity or not DoesEntityExist(entity) then
+        snapshot = nil
+        return
+    end
+
+    snapshot = { entity = entity, was = read(entity) }
+end
+
 -- Called once the server has taken the money: what is on the car right now
 -- becomes the truth, so there is nothing to put back.
 function Preview.Commit()

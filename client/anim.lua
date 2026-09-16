@@ -66,6 +66,14 @@ end
 local function cleanup()
     dropProp()
     stopPose()
+
+    -- The pose is played with flag 49, which makes it a SECONDARY task, and a
+    -- secondary task does not always come off with StopAnimTask alone. This is
+    -- safe here and nowhere else: anything the mechanic does next is started
+    -- after the panel has already gone.
+    local ped = cache and cache.ped or PlayerPedId()
+    if ped and DoesEntityExist(ped) then ClearPedSecondaryTask(ped) end
+
     Anim.holding = false
 end
 
@@ -125,6 +133,25 @@ end
 function Anim.Stop()
     Anim.holding = false
     cleanup()
+
+    --[[ And asked again for a moment afterwards.
+
+         A stop that lands while the pose is still blending in does not always
+         take, and the pose is a loop with no duration — so when it does not
+         take, it never ends. Only the tablet pose is touched, so whatever the
+         mechanic starts doing next is left alone. ]]
+    CreateThread(function()
+        for _ = 1, 8 do
+            Wait(250)
+
+            if Anim.holding then return end
+
+            local ped = cache and cache.ped or PlayerPedId()
+            if not ped or not DoesEntityExist(ped) then return end
+
+            if IsEntityPlayingAnim(ped, DICT, CLIP, 3) then stopPose() end
+        end
+    end)
 end
 
 -- A dictionary that will not load leaves ox_lib waiting on one that never

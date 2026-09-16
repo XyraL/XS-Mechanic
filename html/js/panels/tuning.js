@@ -143,10 +143,10 @@
         if (group.id === 'wheels') return renderWheels(grid, group, prices);
         if (group.id === 'extras') return renderExtras(grid, group, prices);
 
-        const stock = XS.stockFor(group.id);
-        const dry = !!stock && stock.count < 1;
-
         for (const slot of group.slots) {
+            const stock = XS.stockFor(group.id, slot.id);
+            const dry = !!stock && stock.count < 1;
+
             grid.append(XS.el('div', { class: 'gh' }, [
                 XS.el('h2', { text: `${group.label} · ${slot.label}` }),
                 XS.el('div', { class: 'cap' }, [
@@ -172,7 +172,7 @@
                         XS.el('span', { class: 'pr', text: price === null ? '—' : XS.money(price) }),
                         XS.el('span', {
                             class: `st ${fitted ? 'f' : XS.isPreviewing(slot.id, option.index) ? 'p' : ''}`,
-                            text: fitted ? 'FITTED' : XS.isPreviewing(slot.id, option.index) ? 'PREVIEW' : 'STOCK',
+                            text: fitted ? 'FITTED' : XS.isPreviewing(slot.id, option.index) ? 'PICKED' : 'STOCK',
                         }),
                     ]),
                 ]));
@@ -389,13 +389,10 @@
         return `#${to(rgb.r)}${to(rgb.g)}${to(rgb.b)}`;
     }
 
+    // Picked, whoever is doing the picking. A mechanic builds the same kind of
+    // list a customer does; the difference is what happens at the end of it.
     XS.isPreviewing = function (slotId, index) {
-        if (XS.mode === 'bay') {
-            return (XS.state.basket || []).some((p) => p.slotId === slotId && p.index === index);
-        }
-
-        const p = XS.state.previewing;
-        return !!p && p.slot === slotId && p.index === index;
+        return (XS.state.basket || []).some((p) => p.slotId === slotId && p.index === index);
     };
 
     function payload(slot, option, category, price) {
@@ -411,49 +408,24 @@
         };
     }
 
-    // A mechanic is looking at one thing at a time and then fitting it.
-    XS.preview = function (slot, option, category, price) {
-        XS.state.previewing = { slot: slot.id, index: option.index, label: option.label, category, price };
-
-        XS.post('preview', payload(slot, option, category, price));
-
-        XS.panels.tuning(document.querySelector('[data-panel="tuning"]'));
-    };
-
-    // A customer is building a list. Clicking puts it on the car AND on the
-    // list, and it stays on the car, so the total adds up in front of them.
-    XS.pick = function (slot, option, category, price) {
-        XS.post('pickPart', payload(slot, option, category, price));
-    };
-
+    // Clicking a part puts it on the car AND on the list, and leaves it there.
+    // One per slot: a second front bumper replaces the first, a rear bumper
+    // does not.
     function choose(slot, option, category, price) {
-        if (XS.mode === 'bay') XS.pick(slot, option, category, price);
-        else XS.preview(slot, option, category, price);
+        XS.post('pickPart', payload(slot, option, category, price));
     }
 
-    // Paint and extras take the same two routes as everything else: a mechanic
-    // is previewing, a customer is picking.
     function paint(data) {
-        if (XS.mode === 'bay') {
-            XS.post('pickPart', Object.assign({
-                paint: true, slotId: 'respray', category: 'respray',
-            }, data));
-            return;
-        }
-
-        XS.post('respray', data);
+        XS.post('pickPart', Object.assign({
+            paint: true, slotId: 'respray', category: 'respray',
+        }, data));
     }
 
     function toggleExtra(extra) {
-        if (XS.mode === 'bay') {
-            XS.post('pickPart', {
-                extra: extra.id, on: !extra.on, category: 'extras',
-                slotId: `extra_${extra.id}`, label: `Extra ${extra.id}`,
-            });
-            return;
-        }
-
-        XS.post('extra', { id: extra.id, on: !extra.on });
+        XS.post('pickPart', {
+            extra: extra.id, on: !extra.on, category: 'extras',
+            slotId: `extra_${extra.id}`, label: `Extra ${extra.id}`,
+        });
     }
 
     // A customer in a bay is building an ORDER, not paying a bill. Clicking a
@@ -537,13 +509,13 @@
 
     function renderDraft() {
         if (XS.mode === 'bay') return renderBasket();
+        if ((XS.state.basket || []).length) return renderQueue();
 
         const side = XS.el('aside', { class: 'side' });
         const draft = XS.state.invoice || { items: [], total: 0 };
-        const preview = XS.state.previewing;
 
         side.append(XS.el('div', { class: 'sh' }, [
-            XS.el('span', { class: 't', text: XS.mode === 'bay' ? 'Your basket' : 'Invoice draft' }),
+            XS.el('span', { class: 't', text: 'Invoice draft' }),
             XS.el('span', { class: 'n', text: draft.id ? `#${draft.id}` : 'NEW' }),
         ]));
 
@@ -579,29 +551,81 @@
                 : null,
             XS.el('div', { class: 'tr big' }, [XS.el('span', { text: 'TOTAL' }), XS.el('span', { text: XS.money(draft.total) })]),
 
-            preview
-                ? XS.el('button', {
-                    class: 'go',
-                    text: XS.mode === 'bay' ? `Fit for ${XS.money(preview.price || 0)}` : 'Fit and add to invoice',
-                    onclick: () => XS.post('apply'),
-                })
-                : XS.el('button', {
-                    class: 'go',
-                    text: XS.mode === 'bay' ? 'Pay and finish' : 'Send to customer',
-                    disabled: !(draft.items || []).length,
-                    // Spelled out rather than picked with a ternary so every
-                    // endpoint the page uses stays greppable.
-                    onclick: () => {
-                        if (XS.mode === 'bay') XS.post('checkout');
-                        else XS.post('sendInvoice');
-                    },
-                }),
+            XS.el('button', {
+                class: 'go',
+                text: 'Send to customer',
+                disabled: !(draft.items || []).length,
+                onclick: () => XS.post('sendInvoice'),
+            }),
 
-            preview
-                ? XS.el('button', { class: 'sub', text: 'Discard preview', onclick: () => XS.post('cancelPreview') })
-                : XS.mode === 'tablet'
-                    ? XS.el('button', { class: 'sub', text: 'Save for later', disabled: !(draft.items || []).length, onclick: () => XS.post('saveInvoice') })
-                    : null,
+            XS.el('button', {
+                class: 'sub', text: 'Save for later',
+                disabled: !(draft.items || []).length,
+                onclick: () => XS.post('saveInvoice'),
+            }),
+        ]));
+
+        return side;
+    }
+
+    // What the mechanic has picked but not fitted yet. Clicking parts builds a
+    // list the same way a customer's does — a front bumper and a rear bumper
+    // are two things to fit, not one choice between them — and fitting runs
+    // through the lot, one job at a time, adding a line each.
+    function renderQueue() {
+        const side = XS.el('aside', { class: 'side' });
+        const queue = XS.state.basket || [];
+        const total = queue.reduce((sum, item) => sum + (item.price || 0), 0);
+
+        side.append(XS.el('div', { class: 'sh' }, [
+            XS.el('span', { class: 't', text: 'To fit' }),
+            XS.el('button', {
+                class: 'sub', style: 'padding:4px 9px;font-size:11px',
+                text: 'Clear',
+                onclick: () => XS.post('clearPicks'),
+            }),
+        ]));
+
+        const lines = XS.el('div', { class: 'lines' });
+
+        for (const [i, item] of queue.entries()) {
+            const stock = XS.stockFor(item.category, item.slotId);
+            const short = !!stock && stock.count < 1;
+
+            lines.append(XS.el('div', { class: 'ln' }, [
+                XS.el('div', {}, [
+                    XS.el('div', { class: 'd' }, [
+                        item.label,
+                        short ? XS.el('span', { class: 'tag warn', text: 'NONE LEFT' }) : null,
+                    ]),
+                    XS.el('div', { class: 'm', text: item.categoryLabel || item.category }),
+                ]),
+                XS.el('div', { class: 'a', text: XS.money(item.price) }),
+                XS.el('button', {
+                    class: 'del', text: '×', title: 'Take it off',
+                    onclick: () => XS.post('dropPick', { index: i }),
+                }),
+            ]));
+        }
+
+        side.append(lines);
+
+        side.append(XS.el('div', { class: 'tot' }, [
+            XS.el('div', { class: 'tr big' }, [
+                XS.el('span', { text: 'PARTS' }),
+                XS.el('span', { text: XS.money(total) }),
+            ]),
+
+            XS.el('button', {
+                class: 'go',
+                text: `Fit ${queue.length === 1 ? 'it' : `all ${queue.length}`}`,
+                onclick: () => XS.post('fitAll'),
+            }),
+
+            XS.el('div', {
+                style: 'font-size:11px;color:var(--faint);line-height:1.5;margin-top:10px;text-align:center',
+                text: 'Each one is fitted in turn and goes on the invoice at the shop price.',
+            }),
         ]));
 
         return side;

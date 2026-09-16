@@ -250,3 +250,34 @@
     shouldClose = false, combinable = nil,
     description = 'Pressed, unprinted, entirely legal until it is not.',
 },
+
+-- The modkit upgrades. One part per slot, so a shop stocks engine work and
+-- brake work apart and the bench makes them apart.
+
+['engine_parts'] = {
+    name = 'engine_parts', label = 'Engine Parts', weight = 4000,
+    type = 'item', image = 'engine_parts.png', unique = false, useable = false,
+    shouldClose = false, combinable = nil,
+    description = 'Cams, pistons and a gasket set.',
+},
+
+['brake_parts'] = {
+    name = 'brake_parts', label = 'Brake Parts', weight = 2200,
+    type = 'item', image = 'brake_parts.png', unique = false, useable = false,
+    shouldClose = false, combinable = nil,
+    description = 'Discs, pads and the lines to feed them.',
+},
+
+['transmission_parts'] = {
+    name = 'transmission_parts', label = 'Transmission Parts', weight = 3200,
+    type = 'item', image = 'transmission_parts.png', unique = false, useable = false,
+    shouldClose = false, combinable = nil,
+    description = 'Ratios, synchros and a clutch.',
+},
+
+['suspension_parts'] = {
+    name = 'suspension_parts', label = 'Suspension Parts', weight = 3600,
+    type = 'item', image = 'suspension_parts.png', unique = false, useable = false,
+    shouldClose = false, combinable = nil,
+    description = 'Coilovers, bushes and drop links.',
+},

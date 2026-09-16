@@ -122,7 +122,24 @@ local function optionsFor(shop, point)
             icon = 'fa-solid fa-screwdriver-wrench',
             canInteract = function() return canUseBay(shop) end,
             action = function()
-                if jobMatches(shop) then XSM.Open('tablet', shop.id) else XSM.Open('bay', shop.id) end
+                -- Whatever is sat on the bay is what this is about, so it is
+                -- connected before the panel opens rather than waiting to be
+                -- asked for.
+                local connected, why = XSM.ConnectAt(point.coords, (point.radius or 5.0) + 2.0)
+
+                -- A mechanic gets the tablet either way: they may be coming to
+                -- look at an invoice rather than at a car.
+                if jobMatches(shop) then
+                    XSM.Open('tablet', shop.id)
+                    return
+                end
+
+                if not connected then
+                    XSM.Notify(why or 'Drive your vehicle onto the bay first.', 'error')
+                    return
+                end
+
+                XSM.Open('bay', shop.id)
             end,
         } }
     end
@@ -155,7 +172,11 @@ local function optionsFor(shop, point)
             label = 'Use the dyno',
             icon = 'fa-solid fa-gauge-high',
             canInteract = function() return jobMatches(shop) end,
-            action = function() XSM.Open('tablet', shop.id) end,
+            action = function()
+                XSM.ConnectAt(point.coords, (point.radius or 5.0) + 2.0)
+                XSM.Open('tablet', shop.id)
+                XSM.Show('dyno')
+            end,
         } }
     end
 

@@ -287,7 +287,7 @@ lib.callback.register('XS-Mechanic:apply', function(src, data)
 
     -- The shelf. A shop that has run out of body panels cannot fit one, and
     -- says so rather than fitting it anyway.
-    local short = Stock.Missing(shop, category, src)
+    local short = Stock.Missing(shop, category, src, data.slotId)
 
     if short then
         return { ok = false, error = ('No %s left. Make one at the bench.'):format(string.lower(Parts.Label(short))) }
@@ -305,7 +305,7 @@ lib.callback.register('XS-Mechanic:apply', function(src, data)
 
         Framework.RemoveMoney(src, account, price, 'Mechanic')
         Banking.Add(shop, price, ('Self service — %s'):format(label), Framework.GetName(src), 'selfservice')
-        Stock.Take(shop, Parts.ItemFor(category), 1, src)
+        Stock.Take(shop, Parts.ItemFor(category, data.slotId), 1, src)
 
         Discord.Send('tuning', 'Self service',
             ('**%s** fitted %s at %s for %s'):format(Framework.GetName(src), label, shop.name, Util.Money(price)),
@@ -319,7 +319,7 @@ lib.callback.register('XS-Mechanic:apply', function(src, data)
         return { ok = false, error = 'Not your shop.' }
     end
 
-    Stock.Take(shop, Parts.ItemFor(category), 1, src)
+    Stock.Take(shop, Parts.ItemFor(category, data.slotId), 1, src)
 
     if settings(src).autoDraft ~= false and Config.Invoices.autoDraft then
         Invoices.AddLine(src, label, price, Mods.CategoryLabel[category] or category)

@@ -1,5 +1,27 @@
 # Changelog
 
+## 0.5.2
+
+- **A customer driving into a bay was told to drive into a bay.** Nothing ever
+  connected the car — the bay opened the panel and waited to be told which
+  vehicle it was about. Whatever is sat on the bay is connected before the
+  panel opens now, measured from the bay rather than from wherever the customer
+  walked to. The dyno does the same and opens straight onto the dyno screen.
+- **A mechanic can pick more than one thing.** Clicking a front bumper and then
+  a rear bumper used to be a choice between them. Both sides of the counter now
+  build a list the same way: click parts, they go on the car and stay there,
+  and the list adds up. **Fit all** works through it one job at a time, each
+  with its own animation and its own invoice line, and says how far it got if
+  something stops it.
+- **The tablet pose is stopped harder.** It is played as a secondary task, and
+  a secondary task does not always come off with `StopAnimTask` alone, so it is
+  cleared as well and asked again for two seconds afterwards.
+- **The bench makes real parts.** Every engine swap, turbo, gearbox, brake kit,
+  drivetrain, drift setup and tyre kit is its own build, and the four modkit
+  upgrades — engine, brakes, transmission, suspension — are separate parts a
+  shop stocks apart rather than one generic performance part. Twenty-one
+  recipes, grouped into Parts, Upgrades, Engines, Drivetrain and Supplies.
+
 ## 0.5.1
 
 - **Stancing broke cars and would not reset.** Ride height was read back off

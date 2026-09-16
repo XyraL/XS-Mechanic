@@ -6,9 +6,15 @@ Parts = {}
      at the item names they already use. This file is only the lookups, shared
      so the panel and the server agree on what is short. ]]
 
-function Parts.ItemFor(category)
+-- A slot with a part of its own wins over its category's: an engine upgrade
+-- and a brake upgrade are both "performance", and a shop stocks them apart.
+function Parts.ItemFor(category, slotId)
+    local slot = slotId and Config.Stock.slotItems[slotId]
+    if slot and slot ~= '' then return slot end
+
     local item = Config.Stock.categoryItems[category or '']
     if not item or item == '' then return nil end
+
     return item
 end
 

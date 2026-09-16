@@ -7,27 +7,63 @@
         XS.clear(host);
 
         const recipes = XS.state.crafting || [];
+
+        if (!recipes.length) {
+            const empty = XS.el('section', { class: 'grid' });
+            empty.append(XS.empty('Nothing to make here', 'No recipes are set up on this server.'));
+            host.append(empty);
+            return;
+        }
+
+        // Twenty-odd recipes is a wall of cards. They come grouped so the bench
+        // reads as a workshop rather than a list.
+        const groups = [];
+
+        for (const recipe of recipes) {
+            const name = recipe.group || 'Parts';
+            let group = groups.find((g) => g.name === name);
+
+            if (!group) { group = { name, recipes: [] }; groups.push(group); }
+
+            group.recipes.push(recipe);
+        }
+
+        if (!groups.some((g) => g.name === XS.state.craftGroup)) {
+            XS.state.craftGroup = groups[0].name;
+        }
+
+        const tree = XS.el('aside', { class: 'tree' }, [XS.el('div', { class: 'grp', text: 'Bench' })]);
+
+        for (const group of groups) {
+            const ready = group.recipes.filter((r) => r.canMake).length;
+
+            tree.append(XS.el('button', {
+                class: `tn ${XS.state.craftGroup === group.name ? 'on' : ''}`,
+                onclick: () => { XS.state.craftGroup = group.name; XS.panels.craft(host); },
+            }, [
+                XS.el('span', { class: 'n', text: group.name }),
+                XS.el('span', { class: `b ${ready ? 'good' : ''}`, text: `${ready}/${group.recipes.length}` }),
+            ]));
+        }
+
+        host.append(tree);
+
+        const shown = groups.find((g) => g.name === XS.state.craftGroup);
         const grid = XS.el('section', { class: 'grid' });
 
         grid.append(XS.el('div', { class: 'gh' }, [
-            XS.el('h2', { text: 'Bench' }),
+            XS.el('h2', { text: shown.name }),
             XS.el('div', {
                 class: 'cap',
                 text: XS.state.stock?.shelf ? 'material off the shelf, part back on it' : 'material out of your pockets',
             }),
         ]));
 
-        if (!recipes.length) {
-            grid.append(XS.empty('Nothing to make here', 'No recipes are set up on this server.'));
-            host.append(grid);
-            return;
-        }
-
         grid.append(materials(recipes));
 
         const cards = XS.el('div', { class: 'recipes' });
 
-        for (const recipe of recipes) cards.append(card(recipe));
+        for (const recipe of shown.recipes) cards.append(card(recipe));
 
         grid.append(cards);
         host.append(grid);

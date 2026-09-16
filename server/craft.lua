@@ -47,6 +47,7 @@ function Craft.Sheet(src, shop)
             item = recipe.item,
             label = recipe.label,
             category = recipe.category,
+            group = recipe.group or 'Parts',
             needs = needs,
             canMake = canMake,
             onShelf = Stock.Count(shop, recipe.item, src),

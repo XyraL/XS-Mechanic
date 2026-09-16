@@ -79,10 +79,12 @@ instead of offering it anyway. A customer can still order something the shop has
 not got — somebody just has to go and make one.
 
 **The bench.** Place one in the builder and the shop makes its own parts out of
-scrap, steel, rubber and glass. The material comes off the shelf and the
-finished part goes back onto it, so a shop that keeps its storage stocked keeps
-itself supplied. No minigame — pick the part, and if the material is there, it
-gets made.
+scrap, steel, rubber and glass. Everything it fits, it can build: body panels,
+wheels, paint and lights, the engine and brake and suspension upgrades, and
+every engine swap, turbo, gearbox and brake kit as its own job. The material
+comes off the shelf and the finished part goes back onto it, so a shop that
+keeps its storage stocked keeps itself supplied. No minigame — pick the part,
+and if the material is there, it gets made.
 
 **Who sets the prices.** A grade you pick per shop can change what the shop
 charges: what each category costs, and what a performance package costs and is
@@ -124,7 +126,7 @@ you would rather import it by hand.
 
 ### 2. Add the items
 
-35 items. Copy the block for your inventory and paste it **inside** the
+39 items. Copy the block for your inventory and paste it **inside** the
 existing table, before its closing `}`.
 
 The crafting bench also needs raw material, and that is **not** in the blocks
@@ -425,6 +427,41 @@ below — it uses what your server already has. Out of the box it looks for
     close = false,
     description = 'Pressed, unprinted, entirely legal until it is not.',
 },
+
+-- The modkit upgrades. One part per slot, so a shop stocks engine work and
+-- brake work apart and the bench makes them apart.
+
+['engine_parts'] = {
+    label = 'Engine Parts',
+    weight = 4000,
+    stack = true,
+    close = false,
+    description = 'Cams, pistons and a gasket set.',
+},
+
+['brake_parts'] = {
+    label = 'Brake Parts',
+    weight = 2200,
+    stack = true,
+    close = false,
+    description = 'Discs, pads and the lines to feed them.',
+},
+
+['transmission_parts'] = {
+    label = 'Transmission Parts',
+    weight = 3200,
+    stack = true,
+    close = false,
+    description = 'Ratios, synchros and a clutch.',
+},
+
+['suspension_parts'] = {
+    label = 'Suspension Parts',
+    weight = 3600,
+    stack = true,
+    close = false,
+    description = 'Coilovers, bushes and drop links.',
+},
 ```
 
 </details>
@@ -681,6 +718,37 @@ below — it uses what your server already has. Out of the box it looks for
     type = 'item', image = 'plate_blank.png', unique = false, useable = false,
     shouldClose = false, combinable = nil,
     description = 'Pressed, unprinted, entirely legal until it is not.',
+},
+
+-- The modkit upgrades. One part per slot, so a shop stocks engine work and
+-- brake work apart and the bench makes them apart.
+
+['engine_parts'] = {
+    name = 'engine_parts', label = 'Engine Parts', weight = 4000,
+    type = 'item', image = 'engine_parts.png', unique = false, useable = false,
+    shouldClose = false, combinable = nil,
+    description = 'Cams, pistons and a gasket set.',
+},
+
+['brake_parts'] = {
+    name = 'brake_parts', label = 'Brake Parts', weight = 2200,
+    type = 'item', image = 'brake_parts.png', unique = false, useable = false,
+    shouldClose = false, combinable = nil,
+    description = 'Discs, pads and the lines to feed them.',
+},
+
+['transmission_parts'] = {
+    name = 'transmission_parts', label = 'Transmission Parts', weight = 3200,
+    type = 'item', image = 'transmission_parts.png', unique = false, useable = false,
+    shouldClose = false, combinable = nil,
+    description = 'Ratios, synchros and a clutch.',
+},
+
+['suspension_parts'] = {
+    name = 'suspension_parts', label = 'Suspension Parts', weight = 3600,
+    type = 'item', image = 'suspension_parts.png', unique = false, useable = false,
+    shouldClose = false, combinable = nil,
+    description = 'Coilovers, bushes and drop links.',
 },
 ```
 
