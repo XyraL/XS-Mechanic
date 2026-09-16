@@ -19,15 +19,15 @@
         const accents = XS.el('div', { class: 'cards' });
 
         for (const [id, label, hex] of [
-            ['amber', 'Amber', '#ffa629'],
-            ['blue', 'Blue', '#4d9fff'],
+            ['blue', 'Blue', '#2f81f7'],
+            ['cyan', 'Cyan', '#35d6f0'],
             ['teal', 'Teal', '#2fe0bd'],
             ['violet', 'Violet', '#a98bff'],
-            ['red', 'Red', '#ff6b6b'],
+            ['amber', 'Amber', '#ffa629'],
             ['green', 'Green', '#4ade80'],
         ]) {
             accents.append(XS.el('button', {
-                class: `c ${(settings.accent || 'amber') === id ? 'on' : ''}`,
+                class: `c ${(settings.accent || 'blue') === id ? 'on' : ''}`,
                 onclick: () => save('accent', id),
             }, [
                 XS.el('div', { style: `height:26px;border-radius:6px;background:${hex};margin-bottom:11px` }),

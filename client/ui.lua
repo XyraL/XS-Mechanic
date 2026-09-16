@@ -406,3 +406,10 @@ RegisterNUICallback('checkout', function(_, cb)
 
     cb({ ok = true })
 end)
+
+-- The page measures where its transparent window is and posts it; the camera
+-- frames the real vehicle into that rectangle.
+RegisterNUICallback('carView', function(data, cb)
+    Showcase.SetRect(data)
+    cb({ ok = true })
+end)

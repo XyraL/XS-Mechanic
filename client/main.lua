@@ -31,6 +31,7 @@ function XSM.Close()
     XSM.Send('close')
     XSM.StopPreview(true)
     Anim.Stop()
+    Showcase.Stop()
 end
 
 -- mode is 'tablet', 'desk', 'bay' or 'builder'.
@@ -53,6 +54,7 @@ function XSM.Open(mode, shopId)
     XSM.Send('open', { mode = mode, state = payload.state })
 
     if mode == 'tablet' then Anim.Start() end
+    if XSM.vehicle then Showcase.Start(XSM.vehicle) end
 
     if XSM.vehicle then XSM.PushVehicle() end
 end
@@ -146,11 +148,13 @@ function XSM.Connect()
 
     XSM.vehicle = vehicle
     XSM.PushVehicle()
+    if XSM.open then Showcase.Start(vehicle) end
     XSM.Toast('Connected to ' .. (XSM.catalogue and XSM.catalogue.name or 'the vehicle') .. '.', 'good')
     return true
 end
 
 function XSM.Disconnect()
+    Showcase.Stop()
     XSM.StopPreview(true)
     XSM.vehicle = nil
     XSM.catalogue = nil

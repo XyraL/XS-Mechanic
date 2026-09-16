@@ -96,6 +96,14 @@ Config.Tablet = {
     -- Hold a tablet prop and stand like you are reading it while the panel is
     -- open. Cosmetic only; the interface works either way.
     animation = true,
+
+    -- Show the REAL vehicle in the panel, live, with its current paint and
+    -- parts. The panel leaves a transparent window and a scripted camera puts
+    -- the car behind it.
+    --
+    -- The camera takes over the screen while the tablet is open, the same way
+    -- the tuning preview does. Off falls back to a drawn card.
+    livePreview = true,
 }
 
 -- ── The office laptop ────────────────────────────────────────────────────────

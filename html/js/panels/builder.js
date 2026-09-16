@@ -5,25 +5,6 @@
         const shops = XS.state.shops || [];
         const draft = XS.state.draft;
 
-        const tree = XS.el('aside', { class: 'tree' }, [XS.el('div', { class: 'grp', text: 'Shops' })]);
-
-        for (const shop of shops) {
-            tree.append(XS.el('button', {
-                class: `tn ${draft && draft.id === shop.id ? 'on' : ''}`,
-                onclick: () => XS.post('editShop', { id: shop.id }),
-            }, [
-                XS.el('span', { class: 'n', text: shop.name }),
-                XS.el('span', { class: `b ${shop.enabled ? 'good' : 'warn'}`, text: shop.enabled ? 'ON' : 'OFF' }),
-            ]));
-        }
-
-        tree.append(XS.el('div', { class: 'grp', text: 'New' }));
-        tree.append(XS.el('button', { class: 'tn', onclick: () => XS.post('newShop') }, [
-            XS.el('span', { class: 'n', text: 'Build a shop' }),
-            XS.el('span', { class: 'b', text: '+' }),
-        ]));
-
-        host.append(tree);
 
         const grid = XS.el('section', { class: 'grid' });
 

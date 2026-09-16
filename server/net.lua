@@ -64,6 +64,7 @@ local function stateFor(src, mode, shopId)
         pricingMode = Config.Pricing.mode,
         partsPaidBy = Config.Parts.paidBy,
         serviceEnabled = Config.Service.enabled,
+        livePreview = Config.Tablet.livePreview,
         tuningEnabled = Config.CustomTuning.enabled,
         dynoEnabled = Config.Dyno.enabled,
         stanceLimits = { height = 0.30, camber = 0.35, track = 0.25 },

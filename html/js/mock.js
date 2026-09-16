@@ -168,7 +168,7 @@
         tuningEnabled: true,
         dynoEnabled: true,
         stanceLimits: { height: 0.30, camber: 0.35, track: 0.25 },
-        settings: { accent: 'amber', hud: true, sounds: true, autoDraft: true },
+        settings: { accent: 'blue', hud: true, sounds: true, autoDraft: true },
         colours: COLOURS,
 
         shop: { id: 1, name: 'Hayes Autoworks', kind: 'owned', job: 'mechanic' },

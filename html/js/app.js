@@ -1,14 +1,10 @@
 (function () {
     const root = document.getElementById('root');
     const nav = document.querySelector('[data-nav]');
-    const strip = document.querySelector('[data-strip]');
     const led = document.querySelector('[data-led]');
 
-    // Which tabs each mode gets, and how wide the work area is for each panel.
     const TABS = {
         tablet: [
-            // Vehicle first: the tablet is carried by a mechanic working on a
-            // car, so connecting one is the first thing it should offer.
             { id: 'vehicle', label: 'Vehicle' },
             { id: 'tuning', label: 'Tuning' },
             { id: 'repairs', label: 'Repairs' },
@@ -35,18 +31,11 @@
         bay: [
             { id: 'tuning', label: 'Tuning' },
             { id: 'repairs', label: 'Repairs' },
-            { id: 'settings', label: 'Settings' },
         ],
         builder: [
             { id: 'builder', label: 'Shops' },
             { id: 'settings', label: 'Settings' },
         ],
-    };
-
-    const LAYOUT = {
-        home: 'one', vehicle: 'one', tuning: 'three', repairs: 'two',
-        invoices: 'two', parts: 'two', team: 'two', settings: 'one', builder: 'two', orders: 'two',
-        service: 'two', performance: 'two', dyno: 'one',
     };
 
     function renderNav() {
@@ -68,97 +57,6 @@
         }
     }
 
-    // The readout strip. With no vehicle connected it collapses to one line
-    // that says so, rather than showing a row of dashes.
-    function renderStrip() {
-        XS.clear(strip);
-
-        const car = XS.state.vehicle;
-
-        // The laptop never leaves the office, so it summarises the shop where
-        // the handheld would be showing the car it is plugged into.
-        if (XS.mode === 'desk' || XS.mode === 'counter') {
-            const s = XS.state.summary || {};
-
-            strip.className = 'strip';
-            strip.append(XS.el('div', { class: 'nocar' }, [
-                XS.el('b', { text: XS.state.shop?.name || 'Shop' }),
-                `${s.unpaid || 0} unpaid · ${s.orders || 0} open orders · ${XS.money(s.funds || 0)} in the account`,
-            ]));
-            return;
-        }
-
-        if (XS.mode === 'builder') {
-            strip.className = 'strip';
-            strip.append(XS.el('div', { class: 'nocar' }, [
-                XS.el('b', { text: `${(XS.state.shops || []).length} shops` }),
-                'on this server. Place points with the free camera, then save.',
-            ]));
-            return;
-        }
-
-        if (!car) {
-            strip.className = 'strip';
-            strip.append(XS.el('div', { class: 'nocar' }, [
-                XS.el('b', { text: 'No vehicle connected.' }),
-                XS.mode === 'bay'
-                    ? 'Drive into the bay to begin.'
-                    : 'Stand next to one and press Connect on the Vehicle tab.',
-            ]));
-            return;
-        }
-
-        strip.className = 'strip';
-
-        const service = car.service || {};
-        const due = service.due || 0;
-
-        strip.append(XS.el('div', { class: 'cell ident' }, [
-            XS.el('span', { class: 'plate', text: car.plate || '——' }),
-            XS.el('div', {}, [
-                XS.el('div', { class: 'nm', text: car.name || car.model || 'Vehicle' }),
-                XS.el('div', {
-                    class: 'sub',
-                    text: [car.className, car.drive, car.electric ? 'Electric' : 'Petrol']
-                        .filter(Boolean).join(' · '),
-                }),
-            ]),
-        ]));
-
-        const engine = Math.round((car.health?.engine || 0) / 10);
-        const body = Math.round((car.health?.body || 0) / 10);
-
-        strip.append(XS.cell('Engine', engine, '%', engine,
-            engine < 40 ? 't-bad' : engine < 70 ? 't-warn' : '', engine < 40 ? 'danger' : ''));
-        strip.append(XS.cell('Body', body, '%', body,
-            body < 40 ? 't-bad' : body < 70 ? 't-warn' : '', body < 40 ? 'danger' : ''));
-        strip.append(XS.cell('Odometer', XS.num(car.odometer), 'km', null));
-
-        if (XS.state.serviceEnabled !== false) {
-            strip.append(XS.cell(
-                'Service',
-                due > 0 ? `${due} DUE` : 'OK',
-                null,
-                due > 0 ? 18 : 100,
-                due > 0 ? 't-bad' : '',
-                due > 0 ? 'alert' : '',
-            ));
-        }
-
-        if (car.output) {
-            strip.append(XS.cell('Output', XS.num(car.output), 'hp', car.outputPercent || 0, 't-cool'));
-        }
-
-        if (XS.mode === 'tablet') {
-            strip.append(XS.el('div', { class: 'stripact' }, [
-                XS.el('button', {
-                    class: 'mini hot', text: 'Disconnect',
-                    onclick: () => XS.post('disconnect'),
-                }),
-            ]));
-        }
-    }
-
     XS.show = function (id) {
         XS.panel = id;
 
@@ -166,30 +64,28 @@
             panel.classList.toggle('on', panel.dataset.panel === id);
         }
 
-        const work = document.querySelector('[data-work]');
-        work.className = `work ${LAYOUT[id] || 'one'}`;
-
         renderNav();
 
         const render = XS.panels[id];
         if (render) render(document.querySelector(`[data-panel="${id}"]`));
+
+        // The pane can change shape between panels, so the camera is told
+        // again rather than assuming the window has not moved.
+        requestAnimationFrame(XS.subject.reportViewport);
     };
 
     XS.redraw = function () {
         document.querySelector('[data-shop-name]').textContent =
             XS.state.shop?.name || (XS.mode === 'builder' ? 'Builder' : 'No shop');
 
-        document.querySelector('[data-who]').textContent =
-            XS.state.name || '—';
-
-        document.querySelector('[data-duty]').className =
-            XS.state.onDuty === false ? 'off' : '';
+        document.querySelector('[data-who]').textContent = XS.state.name || '—';
+        document.querySelector('[data-duty]').className = XS.state.onDuty === false ? 'off' : '';
 
         if (led) led.className = XS.state.vehicle ? 'led' : 'led off';
 
-        document.body.setAttribute('data-accent', XS.state.settings?.accent || 'amber');
+        document.body.setAttribute('data-accent', XS.state.settings?.accent || 'blue');
 
-        renderStrip();
+        XS.subject.redraw();
         renderNav();
 
         const render = XS.panels[XS.panel];
@@ -200,14 +96,15 @@
         Object.assign(XS.state, payload?.state || {});
         XS.mode = payload?.mode || 'tablet';
 
-        const first = (TABS[XS.mode] || [])[0];
-        XS.panel = payload?.panel || (first ? first.id : 'home');
+        const first = (TABS[XS.mode] || []).find((t) => !t.when || t.when());
+        XS.panel = payload?.panel || (first ? first.id : 'vehicle');
 
         const device = document.querySelector('.device');
         if (device) device.dataset.device = XS.mode === 'desk' ? 'laptop' : 'tablet';
 
         root.classList.add('open');
         document.body.classList.add('open');
+
         XS.redraw();
         XS.show(XS.panel);
     };
@@ -216,6 +113,7 @@
         root.classList.remove('open');
         document.body.classList.remove('open');
         XS.closeModal();
+        XS.post('carView', { active: false });
         XS.post('close');
     };
 
@@ -240,7 +138,7 @@
 
             case 'close':
                 root.classList.remove('open');
-        document.body.classList.remove('open');
+                document.body.classList.remove('open');
                 XS.closeModal();
                 break;
 

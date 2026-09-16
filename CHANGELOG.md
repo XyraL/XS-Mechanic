@@ -1,5 +1,20 @@
 # Changelog
 
+## 0.4.0
+
+New interface.
+
+- Black and blue, and laid out around the car instead of around a menu.
+  The vehicle sits down the left the whole time you are working on it, with
+  its condition and everything fitted; the parts get the width; the bill
+  runs along the bottom.
+- **The car in the panel is the actual car.** The panel leaves a hole and a
+  camera puts the real vehicle behind it, with its current paint and parts.
+  Turn it off with `Config.Tablet.livePreview` and you get a drawn card.
+- Six accent colours, blue out of the box.
+- The builder shares the layout: shops down the left, the one you are
+  editing on the right.
+
 ## 0.3.1
 
 - Orders can only be sent while somebody is actually working. With the shop
