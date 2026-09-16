@@ -78,6 +78,12 @@ the parts live in the shop's storage, and the tablet greys out what has run out
 instead of offering it anyway. A customer can still order something the shop has
 not got — somebody just has to go and make one.
 
+A shop with no storage point placed does not run on stock at all, so nothing is
+rationed until there is a shelf to ration it from.
+
+**Work happens on a bay.** Fitting anything needs the mechanic stood on a tuning
+bay with the car on it. Reading an invoice or a work order does not.
+
 **The bench.** Place one in the builder and the shop makes its own parts out of
 scrap, steel, rubber and glass. Everything it fits, it can build: body panels,
 wheels, paint and lights, the engine and brake and suspension upgrades, and

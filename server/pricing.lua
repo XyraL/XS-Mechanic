@@ -20,16 +20,30 @@ function Pricing.VehicleValue(model, class)
     return price
 end
 
+--[[ A shop's override for one category.
+
+     It is a table — price, percent, enabled — and a plain number is accepted
+     as well because that is what an earlier version of the price editor wrote
+     into the shop's saved data. Those rows are in people's databases; reading
+     them as a table is `attempt to index a number value` on the next tablet
+     that opens, and every shop that has ever had a price changed is broken
+     until it is read back the way it was written. ]]
 local function categoryConfig(shop, category)
-    local shopOverride = shop and shop.pricing and shop.pricing[category]
+    local override = shop and shop.pricing and shop.pricing[category]
     local base = Config.Pricing.categories[category]
 
     if not base then return nil end
 
+    if type(override) == 'number' then
+        override = { price = override }
+    elseif type(override) ~= 'table' then
+        override = nil
+    end
+
     return {
-        price = shopOverride and shopOverride.price or base.price,
-        percent = shopOverride and shopOverride.percent or base.percent,
-        enabled = not shopOverride or shopOverride.enabled ~= false,
+        price = override and override.price or base.price,
+        percent = override and override.percent or base.percent,
+        enabled = not override or override.enabled ~= false,
     }
 end
 

@@ -169,20 +169,22 @@ RegisterCommand('mechanicdebug', function(source)
         end
 
         if Config.Stock.require then
-            local shelf = Stock.StashOf(shop)
-            local short = {}
+            if not Stock.Enabled(shop) then
+                line('       stock: OFF for this shop — no storage point, so nothing is rationed')
+            else
+                local short = {}
 
-            for category, item in pairs(Config.Stock.categoryItems) do
-                if item ~= '' and Stock.Count(shop, item, 0) < 1 then
-                    short[#short + 1] = category
+                for category, item in pairs(Config.Stock.categoryItems) do
+                    if item ~= '' and Stock.Count(shop, item, 0) < 1 then
+                        short[#short + 1] = category
+                    end
                 end
+
+                table.sort(short)
+
+                line(('       stock: on%s'):format(
+                    #short > 0 and (', out of: ' .. table.concat(short, ', ')) or ', everything in'))
             end
-
-            table.sort(short)
-
-            line(('       stock: %s%s'):format(
-                shelf and 'read from the storage point' or 'no storage point — reads the mechanic',
-                #short > 0 and (', out of: ' .. table.concat(short, ', ')) or ', everything in'))
         end
 
         if shop.kind == 'owned' then

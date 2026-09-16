@@ -1,5 +1,27 @@
 # Changelog
 
+## 0.5.3
+
+- **The tablet died on opening.** The price editor wrote a category's price as
+  a plain number and the pricing code reads it as a table, so every shop that
+  had ever had a price changed threw `attempt to index a number value` and the
+  panel refused to open. Written as a table now, read tolerantly either way,
+  and normalised on save so the rows already in the database fix themselves.
+- **Nothing could be fitted.** Stock fell back to the mechanic's pockets when a
+  shop had no storage point — which reads as zero of everything, on every shop,
+  from the day it is built. A shop only runs on stock if it has a shelf to run
+  it from. Place a storage point and it starts counting.
+- **The live window follows what you are looking at.** Hover a spoiler and the
+  camera walks round the back; a wheel and it drops to the arch; a dash and it
+  looks in through the window. It eases round rather than cutting, and the
+  window says which view it is showing.
+- **Work happens on a bay.** Fitting a part, a performance package or a stance
+  needs the mechanic stood on a tuning bay with the car on it. Reading an
+  invoice or a work order does not. `Config.Tablet.insideBayOnly`.
+- **Customers stop seeing the staff room.** Storage, the laptop, the bench, the
+  dyno and the duty point are not registered at all for anyone who does not
+  work there, rather than registered and then refused.
+
 ## 0.5.2
 
 - **A customer driving into a bay was told to drive into a bay.** Nothing ever

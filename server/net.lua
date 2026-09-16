@@ -35,6 +35,41 @@ local function atShop(src, shop)
     return Util.InsideArea(GetEntityCoords(ped), shop.area)
 end
 
+--[[ On a bay, with the car on it.
+
+     Work happens on a bay. Reading an invoice does not, so this is only asked
+     of the things that change a vehicle. A shop with no tuning bay placed is
+     not held to it — there would be nowhere to stand. ]]
+local function onBay(src, shop, netId)
+    if not Config.Tablet.insideBayOnly then return true end
+
+    local hasBay = false
+
+    for _, point in ipairs(shop and shop.points or {}) do
+        if point.kind == 'tuning' then hasBay = true break end
+    end
+
+    if not hasBay then return true end
+
+    local ped = GetPlayerPed(src)
+    if not ped or ped == 0 then return false end
+
+    if not Store.PointNear(shop, 'tuning', GetEntityCoords(ped)) then return false end
+
+    -- And the car, when we know which one it is.
+    netId = tonumber(netId)
+
+    if netId then
+        local vehicle = NetworkGetEntityFromNetworkId(netId)
+
+        if vehicle and vehicle ~= 0 and DoesEntityExist(vehicle) then
+            if not Store.PointNear(shop, 'tuning', GetEntityCoords(vehicle)) then return false end
+        end
+    end
+
+    return true
+end
+
 local function settings(src)
     local citizenid = Framework.GetCitizenId(src)
     if not citizenid then return {} end
@@ -280,6 +315,10 @@ lib.callback.register('XS-Mechanic:apply', function(src, data)
         return { ok = false, error = ('You have to be at %s.'):format(shop.name) }
     end
 
+    if not onBay(src, shop, data.netId) then
+        return { ok = false, error = 'Put the car on a tuning bay and stand at it.' }
+    end
+
     local category = tostring(data.category or '')
     if not Pricing.CategoryEnabled(shop, category) then
         return { ok = false, error = 'This shop does not do that.' }
@@ -471,10 +510,15 @@ lib.callback.register('XS-Mechanic:setCategoryPrice', function(src, data)
 
     shop.pricing = shop.pricing or {}
 
+    -- A table, matching what Pricing reads. Writing the bare number here is
+    -- what broke every shop that had ever had a price changed.
     if data.clear then
         shop.pricing[category] = nil
     else
-        shop.pricing[category] = math.max(0, math.floor(tonumber(data.price) or 0))
+        local held = type(shop.pricing[category]) == 'table' and shop.pricing[category] or {}
+
+        held.price = math.max(0, math.floor(tonumber(data.price) or 0))
+        shop.pricing[category] = held
     end
 
     Store.Update(shop.id, shop)
@@ -632,7 +676,15 @@ lib.callback.register('XS-Mechanic:serviceReplace', function(src, data)
 end)
 
 lib.callback.register('XS-Mechanic:fitTuning', function(src, data)
-    return CustomTuning.Fit(src, data or {})
+    data = data or {}
+
+    local shop = Store.Get(data.shop)
+
+    if shop and not onBay(src, shop, data.netId) then
+        return { ok = false, error = 'Put the car on a tuning bay and stand at it.' }
+    end
+
+    return CustomTuning.Fit(src, data)
 end)
 
 lib.callback.register('XS-Mechanic:removeTuning', function(src, data)
@@ -640,7 +692,15 @@ lib.callback.register('XS-Mechanic:removeTuning', function(src, data)
 end)
 
 lib.callback.register('XS-Mechanic:saveStance', function(src, data)
-    return CustomTuning.SaveStance(src, data or {})
+    data = data or {}
+
+    local shop = Store.Get(data.shop)
+
+    if shop and not onBay(src, shop, data.netId) then
+        return { ok = false, error = 'Put the car on a tuning bay and stand at it.' }
+    end
+
+    return CustomTuning.SaveStance(src, data)
 end)
 
 lib.callback.register('XS-Mechanic:dynoCheck', function(src, data)

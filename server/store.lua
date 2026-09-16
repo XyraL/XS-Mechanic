@@ -29,7 +29,31 @@ local function decodeShop(row)
     }
 end
 
+--[[ Anything saved into the shop's blob gets put into the shape the rest of
+     the resource reads it in, on the way in.
+
+     A field that two places disagree about is not a bug you find in testing —
+     it is a bug you find months later, in somebody else's database, on the
+     next restart. ]]
+local function normalise(shop)
+    local pricing = {}
+
+    for category, entry in pairs(shop.pricing or {}) do
+        if type(entry) == 'number' then
+            pricing[category] = { price = entry }
+        elseif type(entry) == 'table' then
+            pricing[category] = entry
+        end
+    end
+
+    shop.pricing = pricing
+
+    return shop
+end
+
 local function encodeShop(shop)
+    shop = normalise(shop)
+
     return json.encode({
         points = shop.points or {},
         pricing = shop.pricing or {},

@@ -209,6 +209,34 @@ local function optionsFor(shop, point)
     return {}
 end
 
+--[[ What a customer should never see.
+
+     A shop's storage, its laptop, its bench and its clock-on point are for
+     staff. Registering them for everybody and then refusing the interaction
+     still puts a marker in the world for anyone walking past, which reads as a
+     shop full of things they are not allowed to touch. They are not registered
+     at all unless the player works there. ]]
+local STAFF_ONLY = {
+    storage = true,
+    laptop = true,
+    bench = true,
+    duty = true,
+    dyno = true,
+}
+
+local function visibleTo(shop, point)
+    if not STAFF_ONLY[point.kind] then return true end
+
+    -- Clocking on is the one thing you need before you are on duty, so it only
+    -- wants the job rather than the job and a shift.
+    if point.kind == 'duty' then
+        local job = Framework.GetJob()
+        return job == shop.job
+    end
+
+    return jobMatches(shop)
+end
+
 function Zones.Rebuild()
     Target.Clear()
     clearProps()
@@ -229,7 +257,9 @@ function Zones.Rebuild()
         end
 
         for _, point in ipairs(shop.points or {}) do
-            if point.kind == 'laptop' then
+            if not visibleTo(shop, point) then
+                -- Not theirs to see.
+            elseif point.kind == 'laptop' then
                 spawnLaptop(shop, point)
             else
                 local options = optionsFor(shop, point)
@@ -296,6 +326,24 @@ CreateThread(function()
         end
 
         Wait(wait)
+    end
+end)
+
+-- Getting the job, losing it or clocking on changes which points belong to
+-- you, and nothing tells the zones that. Polling the job is cheaper than
+-- knowing every framework's event name.
+CreateThread(function()
+    local was
+
+    while true do
+        Wait(4000)
+
+        local job, onDuty = Framework.GetJob()
+        local now = ('%s|%s'):format(job or '', tostring(onDuty))
+
+        if was and was ~= now then Zones.Rebuild() end
+
+        was = now
     end
 end)
 

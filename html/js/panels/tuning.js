@@ -27,8 +27,15 @@
             XS.state.tuneGroup = groups.length ? groups[0].id : null;
         }
 
+        const group = groups.find((g) => g.id === XS.state.tuneGroup);
+
+        // The window goes and looks at whatever is on screen. A slot is more
+        // specific than a category, so a spoiler sends the camera round the
+        // back rather than to "cosmetics" in general.
+        XS.subject.look(XS.state.tuneSlot || group?.id || 'full');
+
         host.append(renderTree(groups));
-        host.append(renderGrid(groups.find((g) => g.id === XS.state.tuneGroup), prices));
+        host.append(renderGrid(group, prices));
         host.append(renderDraft());
     };
 
@@ -116,7 +123,7 @@
 
             tree.append(XS.el('button', {
                 class: `tn ${XS.state.tuneGroup === group.id ? 'on' : ''}`,
-                onclick: () => { XS.state.tuneGroup = group.id; XS.panels.tuning(document.querySelector('[data-panel="tuning"]')); },
+                onclick: () => { XS.state.tuneGroup = group.id; XS.state.tuneSlot = null; XS.panels.tuning(document.querySelector('[data-panel="tuning"]')); },
             }, [
                 XS.el('span', { class: 'n', text: group.label }),
                 XS.el('span', { class: 'b', text: group.count === null ? 'RGB' : String(group.count) }),
@@ -164,6 +171,7 @@
 
                 cards.append(XS.el('button', {
                     class: `c ${XS.isPreviewing(slot.id, option.index) ? 'on' : ''} ${dry && option.index !== -1 ? 'dry' : ''}`,
+                    onmouseenter: () => XS.subject.look(slot.id),
                     onclick: () => choose(slot, option, group.id, price),
                 }, [
                     XS.el('div', { class: 'idx', text: option.index === -1 ? 'STOCK' : `IDX ${String(option.index).padStart(2, '0')}` }),
@@ -326,6 +334,7 @@
 
             cards.append(XS.el('button', {
                 class: `c ${XS.isPreviewing('wheels', option.index) ? 'on' : ''}`,
+                onmouseenter: () => XS.subject.look('wheels'),
                 onclick: () => choose(
                     { id: 'wheels', slot: 23, label: 'Wheels', wheelType: chosen.type },
                     option, 'wheels', price,
@@ -412,6 +421,7 @@
     // One per slot: a second front bumper replaces the first, a rear bumper
     // does not.
     function choose(slot, option, category, price) {
+        XS.state.tuneSlot = slot.id;
         XS.post('pickPart', payload(slot, option, category, price));
     }
 

@@ -185,6 +185,7 @@ RegisterNUICallback('fitTuning', function(data, cb)
 
     local result = lib.callback.await('XS-Mechanic:fitTuning', false, {
         shop = XSM.shop and XSM.shop.id,
+        netId = XSM.vehicle and VehToNet(XSM.vehicle),
         plate = XSM.catalogue and XSM.catalogue.plate,
         model = XSM.catalogue and XSM.catalogue.model,
         category = data.category,
@@ -228,6 +229,7 @@ end)
 RegisterNUICallback('saveStance', function(data, cb)
     local result = lib.callback.await('XS-Mechanic:saveStance', false, {
         shop = XSM.shop and XSM.shop.id,
+        netId = XSM.vehicle and VehToNet(XSM.vehicle),
         plate = XSM.catalogue and XSM.catalogue.plate,
         model = XSM.catalogue and XSM.catalogue.model,
         class = XSM.catalogue and XSM.catalogue.class,

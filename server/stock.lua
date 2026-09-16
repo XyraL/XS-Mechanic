@@ -6,14 +6,10 @@ Stock = {}
      from the target — so stocking up is putting parts in it, and the tablet
      reads what is there rather than offering everything regardless.
 
-     Two things make a shop fall back to the mechanic's own pockets: no storage
-     point placed, or an inventory that cannot be read without somebody opening
-     it. Either way the work still needs the part to exist somewhere, which is
-     the point of the setting. ]]
-
-function Stock.Enabled()
-    return Config.Stock.require == true
-end
+     No storage point, or an inventory whose stashes cannot be read without
+     somebody opening one, means no shelf and therefore no stock rules. The
+     bench still works either way; it just takes from and gives to whoever is
+     stood at it. ]]
 
 function Stock.StashOf(shop)
     if not Inventory.StashReady() then return nil end
@@ -25,6 +21,19 @@ function Stock.StashOf(shop)
     end
 
     return nil
+end
+
+--[[ A shop only runs on stock if it has somewhere to keep it.
+
+     Falling back to the mechanic's pockets looked like a sensible degradation
+     and was the opposite: a shop with no storage point read every part as zero
+     and could not fit anything at all, which is every shop on the day it is
+     built. A shelf is what makes stock mean something, so no shelf means no
+     stock rules — place a storage point and the shop starts keeping stock. ]]
+function Stock.Enabled(shop)
+    if Config.Stock.require ~= true then return false end
+
+    return Stock.StashOf(shop) ~= nil
 end
 
 function Stock.Count(shop, item, src)
@@ -76,7 +85,7 @@ end
 -- The panel greys out what is short rather than hiding it: a customer can still
 -- ask for a part the shop has not got, and somebody goes and makes one.
 function Stock.Sheet(shop, src)
-    if not Stock.Enabled() then return nil end
+    if not Stock.Enabled(shop) then return nil end
 
     local categories = {}
     local slots = {}
@@ -114,7 +123,7 @@ function Stock.Sheet(shop, src)
 end
 
 function Stock.Missing(shop, category, src, slotId)
-    if not Stock.Enabled() then return nil end
+    if not Stock.Enabled(shop) then return nil end
 
     local item = Parts.ItemFor(category, slotId)
     if not item then return nil end

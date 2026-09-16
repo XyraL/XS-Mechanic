@@ -103,6 +103,12 @@ Config.Tablet = {
     -- until somebody draws one. /mechanicdebug says which shops have one.
     insideShopOnly = true,
 
+    -- Work happens on a bay. Fitting a part, a performance package or a stance
+    -- needs the mechanic stood on a tuning bay with the car on it — reading an
+    -- invoice or a work order does not. Off lets a mechanic work anywhere
+    -- inside the shop.
+    insideBayOnly = true,
+
     -- Hold a tablet prop and stand like you are reading it while the panel is
     -- open. Cosmetic only; the interface works either way.
     animation = true,

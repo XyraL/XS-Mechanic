@@ -62,7 +62,40 @@ XS.subject = (function () {
             y: (r.top + r.height / 2) / window.innerHeight,
             w: r.width / window.innerWidth,
             h: r.height / window.innerHeight,
+            focus: XS.focus || 'full',
         });
+    }
+
+    // What the window is actually showing, in words, so it reads as a camera
+    // rather than a gap.
+    const VIEW_NAME = {
+        frontBumper: 'front', grille: 'front', xenon: 'front', lights: 'front',
+        hood: 'engine bay', engine: 'engine bay', turbo: 'engine bay',
+        engineBlock: 'engine bay', airFilter: 'engine bay', struts: 'engine bay',
+        rearBumper: 'rear', spoiler: 'rear', exhaust: 'rear', trunk: 'rear',
+        plate: 'plate', plateHolder: 'plate',
+        sideSkirt: 'side', fender: 'side', rightFender: 'side', archCover: 'side',
+        windows: 'side', livery: 'side', respray: 'side', stance: 'side',
+        wheels: 'wheels', frontWheels: 'wheels', backWheels: 'wheels',
+        brakes: 'wheels', suspension: 'wheels', tyreSmoke: 'wheels', hydraulics: 'wheels',
+        roof: 'roof', rollCage: 'roof',
+        seats: 'interior', steeringWheel: 'interior', dashboard: 'interior',
+        dial: 'interior', shifter: 'interior', speakers: 'interior',
+        doorSpeaker: 'interior', trimDesign: 'interior', ornaments: 'interior',
+        interior: 'interior', horn: 'interior', trim: 'interior',
+    };
+
+    // Which part of the car the window should be looking at. The panel sets it
+    // when the category or the slot changes and the camera walks round to it.
+    function look(at) {
+        if (XS.focus === at) return;
+
+        XS.focus = at;
+
+        const hint = host.querySelector('[data-view] .hint');
+        if (hint) hint.textContent = VIEW_NAME[at] || 'live';
+
+        reportViewport();
     }
 
     function hide() {
@@ -75,7 +108,7 @@ XS.subject = (function () {
 
         if (live) {
             hero.append(XS.el('div', { class: 'view', 'data-view': true }, [
-                XS.el('div', { class: 'hint', text: 'live' }),
+                XS.el('div', { class: 'hint', text: VIEW_NAME[XS.focus] || 'live' }),
             ]));
         } else {
             hero.append(XS.el('div', { class: 'art', html: DRAWING }));
@@ -253,5 +286,5 @@ XS.subject = (function () {
 
     window.addEventListener('resize', () => requestAnimationFrame(reportViewport));
 
-    return { redraw, reportViewport, hide };
+    return { redraw, reportViewport, hide, look };
 })();
