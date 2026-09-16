@@ -77,8 +77,8 @@ Duct tape gets you moving again without getting you fixed.
 - QBox (`qbx_core`) or QBCore (`qb-core`)
 
 Everything else is optional and detected automatically: inventory, target,
-vehicle keys, banking and phone. Set any of them by hand in `Config.Bridges` if
-the detection guesses wrong.
+banking and phone. Set any of them by hand in `Config.Bridges` if the detection
+guesses wrong.
 
 ## Setup
 
