@@ -119,9 +119,10 @@ function Repair.UseKit(item)
     end
 
     if kit.atEngine then
-        local bonnet = GetWorldPositionOfEntityBone(vehicle, GetEntityBoneIndexByName(vehicle, 'bonnet'))
+        local bone = GetEntityBoneIndexByName(vehicle, 'bonnet')
+        local bonnet = bone ~= -1 and GetWorldPositionOfEntityBone(vehicle, bone) or GetEntityCoords(vehicle)
 
-        if bonnet and #(coords - bonnet) > 2.4 then
+        if #(coords - bonnet) > 2.4 then
             XSM.Notify('Get to the front of the vehicle.', 'error')
             return
         end

@@ -26,14 +26,6 @@ function Parts.RecipeFor(item)
     return nil
 end
 
-function Parts.RecipeForCategory(category)
-    for _, recipe in ipairs(Config.Crafting.recipes) do
-        if recipe.category == category then return recipe end
-    end
-
-    return nil
-end
-
 -- The recipe's needs are written against the raw materials, not against item
 -- names, so a server that calls scrap something else changes one line.
 function Parts.Materials(recipe)

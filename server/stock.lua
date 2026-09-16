@@ -113,6 +113,16 @@ function Stock.Sheet(shop, src)
         end
     end
 
+    -- Every custom tuning package supplies its own part — a V8 is not a
+    -- "performance part". The panel greys out what the shop has run out of, so
+    -- it needs the count of the thing actually taken off the shelf, not the
+    -- count of the category's generic stand-in.
+    for _, category in ipairs(Tuning.Categories) do
+        for _, option in ipairs(Tuning.Options[category.id] or {}) do
+            if option.item and option.item ~= '' then take(option.item) end
+        end
+    end
+
     return {
         categories = categories,
         slots = slots,

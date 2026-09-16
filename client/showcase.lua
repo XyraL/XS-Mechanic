@@ -221,7 +221,7 @@ local function frame()
     local pos = vector3(
         look.x + flat.x * distance,
         look.y + flat.y * distance,
-        look.z + (distance * -math.sin(math.rad(shown.pitch))) + 0.30)
+        look.z + (distance * math.tan(math.rad(math.min(70.0, -shown.pitch)))) + 0.30)
 
     SetCamCoord(cam, pos.x, pos.y, pos.z)
 

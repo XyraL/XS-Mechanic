@@ -163,10 +163,13 @@ RegisterNUICallback('fitTuning', function(data, cb)
     -- steps aside and the mechanic works on the car for a bit.
     local seconds = Config.CustomTuning.seconds[data.category] or Config.CustomTuning.seconds.default or 10
 
+    -- The part this package actually needs, not the category's stand-in: a
+    -- shop with a V8 on the shelf was being refused the swap because it had no
+    -- generic "performance part".
     local stock = XSM.state and XSM.state.stock
-    local item = stock and (stock.categories or {}).performance
+    local item = data.item
 
-    if item and (stock.items[item] or 0) < 1 then
+    if stock and item and stock.items and stock.items[item] ~= nil and stock.items[item] < 1 then
         XSM.Toast(('No %s on the shelf. Make one at the bench.'):format(
             string.lower(stock.labels[item] or item)), 'error')
         cb({ ok = false })

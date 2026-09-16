@@ -145,6 +145,17 @@ XS.rerender = function (id) {
     XS.keepScroll(host, () => render(host));
 };
 
+// How many of one named item the shop has. null means stock is switched off
+// for this shop, or the server never published a count for it — either way the
+// panel must not grey anything out.
+XS.heldOf = function (item) {
+    const stock = XS.state.stock;
+    if (!item || !stock || !stock.items) return null;
+
+    const count = stock.items[item];
+    return count === undefined ? null : count;
+};
+
 XS.clear = function (node) {
     while (node.firstChild) node.removeChild(node.firstChild);
     return node;

@@ -11,6 +11,7 @@
             { id: 'repairs', label: 'Repairs' },
             { id: 'service', label: 'Service', when: () => XS.state.serviceEnabled !== false, badge: () => XS.state.vehicle?.service?.due },
             { id: 'performance', label: 'Performance', when: () => XS.state.tuningEnabled !== false },
+            { id: 'stance', label: 'Stance', when: () => XS.state.tuningEnabled !== false },
             { id: 'dyno', label: 'Dyno', when: () => XS.state.dynoEnabled !== false },
             { id: 'orders', label: 'Orders', badge: () => XS.state.openOrders },
             { id: 'invoices', label: 'Invoices', badge: () => XS.state.unpaid, when: () => XS.state.invoicesEnabled !== false },
@@ -69,7 +70,7 @@
     //   Tuning is not a page with a picture of a car on it — the car IS the
     //   screen and the panel is a sheet over it. Everything else is a tablet,
     //   a laptop or the bench. ]]
-    const SHEET = new Set(['tuning']);
+    const SHEET = new Set(['tuning', 'stance']);
 
     function layout() {
         if (SHEET.has(XS.panel)) return 'sheet';

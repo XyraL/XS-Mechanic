@@ -447,6 +447,36 @@ Config.Crafting = {
         { item = 'cleaning_kit',    label = 'Cleaning Kit',   group = 'Supplies',
           needs = { rubber = 2, glass = 1 } },
 
+        -- Servicing consumables. Every one of these is asked for by the
+        -- servicing screen, so if the bench cannot make them the whole feature
+        -- is a list of things nobody can do anything about.
+        { item = 'engine_oil',      label = 'Engine Oil',     group = 'Servicing',
+          needs = { scrap = 2 } },
+
+        { item = 'air_filter',      label = 'Air Filter',     group = 'Servicing',
+          needs = { scrap = 2, rubber = 1 } },
+
+        { item = 'spark_plugs',     label = 'Spark Plugs',    group = 'Servicing',
+          needs = { steel = 2, scrap = 1 } },
+
+        { item = 'clutch',          label = 'Clutch',         group = 'Servicing',
+          needs = { steel = 5, scrap = 3 } },
+
+        { item = 'brake_pads',      label = 'Brake Pads',     group = 'Servicing',
+          needs = { steel = 3, scrap = 2 } },
+
+        { item = 'tyres',           label = 'Tyres',          group = 'Servicing',
+          needs = { rubber = 8, steel = 2 } },
+
+        { item = 'suspension_kit',  label = 'Suspension Kit', group = 'Servicing',
+          needs = { steel = 6, rubber = 3 } },
+
+        { item = 'ev_battery',      label = 'EV Battery',     group = 'Servicing',
+          needs = { steel = 6, scrap = 5, glass = 2 } },
+
+        { item = 'ev_coolant',      label = 'EV Coolant',     group = 'Servicing',
+          needs = { scrap = 2, glass = 1 } },
+
         -- The modkit upgrades, one part per slot rather than one part for all
         -- of them. Level four costs the same as level one to make; what a
         -- level is worth to the customer is a price, not a recipe.

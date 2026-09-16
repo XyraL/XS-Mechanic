@@ -55,7 +55,12 @@ CreateThread(function()
                     tank = math.max(0, tank - (Config.Nitrous.drainPerSecond * GetFrameTime()))
 
                     SetVehicleBoostActive(vehicle, true)
-                    SetVehicleForwardSpeed(vehicle, GetEntitySpeed(vehicle) + Config.Nitrous.push * GetFrameTime())
+                    -- The SIGNED forward component. GetEntitySpeed is a
+                    -- magnitude, so feeding it in here turned a reversing car
+                    -- round and shoved it forwards at the same speed.
+                    local along = GetEntitySpeedVector(vehicle, true).y
+
+                    SetVehicleForwardSpeed(vehicle, along + Config.Nitrous.push * GetFrameTime())
                     StartParticleFxNonLoopedOnEntity('veh_backfire', vehicle, 0.0, -2.5, 0.0, 0.0, 0.0, 0.0, 1.0, false, false, false)
                 else
                     if boosting then

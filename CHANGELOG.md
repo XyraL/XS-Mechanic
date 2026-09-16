@@ -1,5 +1,41 @@
 # Changelog
 
+## 0.6.0
+
+The camera, and the shape of the thing.
+
+- **The preview camera was flipped, and in two places.** It placed itself with
+  `(-sin t, -cos t)`, which negates both components — a reflection, not a
+  rotation. The angle it produced worked out to `-40 - orbit - 2h`: it moved
+  with the car's world HEADING, so the same button framed a different part of
+  the car depending on which way the car was parked. Spoiler to the front,
+  front bumper to the rear. The live window and the tuning preview both had it.
+  A camera at angle α from the nose is at `forward(h + α)` and the heading
+  cancels. Views also aim fore and aft now, so an engine-bay shot frames the
+  engine bay rather than the middle of the roof.
+- **Tuning is not a window any more.** The car is the whole screen and the
+  panel is a sheet pinned to the top left. No hole, no cutout — the same
+  framing maths puts the car in the middle of everything the sheet is not
+  standing on. Drag the car to turn it, double click to put it back. Stance is
+  its own sheet: toggles, sliders, the car dropping as you move them.
+- **The tablet has a home screen** — an app grid instead of a row of text tabs.
+- **Servicing is a car with leader lines** out to what is worn, not a table.
+- **Servicing was also impossible.** All nine service parts were consumable and
+  obtainable nowhere: the bench had never been given a recipe for them, and the
+  parts counter that used to sell them is gone. `check-craftable` reported a
+  clean run because it had never been pointed at the file they live in.
+- **A shop with a V8 on the shelf was refused the engine swap.** The panel and
+  the client check asked about a generic "performance part" while the server
+  took the package's own item off the shelf. Each package now reads its own
+  part, and the count is on the card.
+- **Clicking a part no longer jumps the list to the top.**
+- Nitrous fed an unsigned speed into a signed one, so boosting while reversing
+  turned the car round and shoved it forwards.
+- The at-the-engine check measured the distance to the world origin on any
+  vehicle with no bonnet bone, so it could never pass.
+- Camera height used `sin` where the angle needs `tan`, so steep views never
+  looked down as far as they claimed.
+
 ## 0.5.3
 
 - **The tablet died on opening.** The price editor wrote a category's price as

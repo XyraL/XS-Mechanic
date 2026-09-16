@@ -25,24 +25,12 @@
             ]));
         }
 
-        tree.append(XS.el('div', { class: 'grp', text: 'Setup' }));
-        tree.append(XS.el('button', {
-            class: `tn ${chosen === 'stance' ? 'on' : ''}`,
-            onclick: () => { XS.state.tuneCategory = 'stance'; XS.rerender('performance'); },
-        }, [XS.el('span', { class: 'n', text: 'Stance' })]));
-
         host.append(tree);
 
         const grid = XS.el('section', { class: 'grid' });
 
         if (!car) {
             grid.append(XS.empty('Nothing connected', 'Connect a vehicle first.'));
-            host.append(grid);
-            return;
-        }
-
-        if (XS.state.tuneCategory === 'stance') {
-            renderStance(grid, car);
             host.append(grid);
             return;
         }
@@ -79,8 +67,10 @@
         const cards = XS.el('div', { class: 'cards' });
 
         for (const option of category.options) {
-            const stock = XS.stockFor('performance');
-            const dry = category.requiresItem && !!stock && stock.count < 1;
+            // Each package has its own part. Greying the whole list out
+            // against one generic item hid every engine a shop actually had.
+            const held = XS.heldOf(option.item);
+            const dry = category.requiresItem && held !== null && held < 1;
 
             cards.append(XS.el('button', {
                 class: `c ${option.fitted ? 'on' : ''} ${dry ? 'dry' : ''}`,
@@ -102,7 +92,7 @@
                 },
                 onclick: () => {
                     if (option.fitted) XS.post('removeTuning', { category: category.id });
-                    else XS.post('fitTuning', { category: category.id, option: option.id });
+                    else XS.post('fitTuning', { category: category.id, option: option.id, item: option.item });
                 },
             }, [
                 XS.el('div', { class: 'idx' }, [
@@ -119,7 +109,9 @@
                 XS.el('div', { class: 'fr' }, [
                     XS.el('span', {
                         class: 'pr',
-                        text: category.requiresItem ? '1 part' : XS.money(option.price),
+                        text: category.requiresItem
+                            ? (held === null ? '1 part' : `${XS.num(held)} on the shelf`)
+                            : XS.money(option.price),
                     }),
                     XS.el('span', {
                         class: `st ${option.fitted ? 'f' : ''}`,
@@ -139,116 +131,4 @@
         host.append(grid);
     };
 
-    const WHEELS = [
-        { id: 'fl', label: 'Front left' },
-        { id: 'fr', label: 'Front right' },
-        { id: 'rl', label: 'Rear left' },
-        { id: 'rr', label: 'Rear right' },
-    ];
-
-    function renderStance(grid, car) {
-        const limits = XS.state.stanceLimits || { height: 0.3, camber: 0.35, track: 0.25 };
-
-        XS.state.stanceDraft = XS.state.stanceDraft || clone(car.stance) || blank();
-        const draft = XS.state.stanceDraft;
-
-        grid.append(XS.el('div', { class: 'gh' }, [
-            XS.el('h2', { text: 'Stance' }),
-            XS.el('div', { class: 'cap', text: 'live on the vehicle' }),
-        ]));
-
-        const push = () => {
-            XS.post('previewStance', { stance: draft });
-            XS.rerender('performance');
-        };
-
-        grid.append(slider('Ride height', draft.height, -limits.height, limits.height, (v) => {
-            draft.height = v;
-            push();
-        }));
-
-        for (const wheel of WHEELS) {
-            draft[wheel.id] = draft[wheel.id] || { camber: 0, track: 0 };
-
-            grid.append(XS.el('div', { class: 'gh', style: 'margin-top:20px' }, [
-                XS.el('h2', { text: wheel.label }),
-                XS.el('div', {
-                    class: 'cap',
-                    text: `camber ${draft[wheel.id].camber.toFixed(2)} · track ${draft[wheel.id].track.toFixed(2)}`,
-                }),
-            ]));
-
-            grid.append(XS.el('div', { class: 'split' }, [
-                slider('Camber', draft[wheel.id].camber, -limits.camber, limits.camber, (v) => {
-                    draft[wheel.id].camber = v;
-                    push();
-                }),
-                slider('Track', draft[wheel.id].track, -limits.track, limits.track, (v) => {
-                    draft[wheel.id].track = v;
-                    push();
-                }),
-            ]));
-        }
-
-        grid.append(XS.el('div', { style: 'display:flex;gap:9px;margin-top:22px' }, [
-            XS.el('button', {
-                class: 'mini hot', text: 'Save stance',
-                onclick: () => { XS.post('saveStance', { stance: draft }); },
-            }),
-            // Resetting has to be saved as well as shown, or the old stance
-            // comes straight back the next time the car spawns.
-            XS.el('button', {
-                class: 'mini', text: 'Back to factory',
-                onclick: () => {
-                    XS.state.stanceDraft = blank();
-                    XS.post('previewStance', { stance: XS.state.stanceDraft });
-                    XS.post('saveStance', { stance: XS.state.stanceDraft });
-                    XS.rerender('performance');
-                },
-            }),
-        ]));
-    }
-
-    function slider(label, value, min, max, onInput) {
-        const readout = XS.el('span', {
-            style: 'font:600 12px/1 var(--mono);color:var(--accent2)',
-            text: Number(value).toFixed(2),
-        });
-
-        return XS.el('div', { class: 'field' }, [
-            XS.el('label', { style: 'display:flex;justify-content:space-between;align-items:center' }, [
-                label, readout,
-            ]),
-            XS.el('input', {
-                type: 'range',
-                min: String(min), max: String(max), step: '0.01',
-                value: String(value),
-                style: 'width:100%;accent-color:var(--accent)',
-                oninput: (ev) => {
-                    const next = Number(ev.target.value);
-                    readout.textContent = next.toFixed(2);
-                    onInput(next);
-                },
-            }),
-        ]);
-    }
-
-    function blank() {
-        const out = { height: 0 };
-        for (const wheel of WHEELS) out[wheel.id] = { camber: 0, track: 0 };
-        return out;
-    }
-
-    function clone(stance) {
-        if (!stance) return null;
-
-        const out = { height: Number(stance.height) || 0 };
-
-        for (const wheel of WHEELS) {
-            const entry = stance[wheel.id] || {};
-            out[wheel.id] = { camber: Number(entry.camber) || 0, track: Number(entry.track) || 0 };
-        }
-
-        return out;
-    }
 })();

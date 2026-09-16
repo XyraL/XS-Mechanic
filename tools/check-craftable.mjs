@@ -14,6 +14,12 @@ const read = (file) => readFileSync(path.join(ROOT, file), 'utf8');
 const config = read('config.lua');
 const tuning = read('shared/tuning.lua');
 
+// Servicing was the list nobody checked. Nine parts a mechanic is asked for
+// every time a car comes in, none of them obtainable anywhere in the resource —
+// and this checker reported a clean run because it had never been pointed at
+// the file they live in. A checker is only as honest as its sources.
+const service = read('shared/service.lua');
+
 function block(source, opener, closer) {
     const found = source.match(new RegExp(`${opener}\\s*=\\s*\\{([\\s\\S]*?)\\n${closer}\\}`));
     return found ? found[1] : null;
@@ -51,6 +57,11 @@ for (const m of slotBlock.matchAll(/([a-zA-Z]+)\s*=\s*'([^']*)'/g)) {
 // Every custom tuning package names the item the shop supplies.
 for (const m of tuning.matchAll(/id\s*=\s*'([^']+)'[\s\S]{0,400}?item\s*=\s*'([^']+)'/g)) {
     consumed(m[2], `tuning ${m[1]}`);
+}
+
+// Every worn part names what replaces it.
+for (const m of service.matchAll(/id\s*=\s*'([^']+)'[\s\S]{0,300}?item\s*=\s*'([^']+)'/g)) {
+    consumed(m[2], `service ${m[1]}`);
 }
 
 const kitBlock = block(config, 'kits', '    ');

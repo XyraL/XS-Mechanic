@@ -173,10 +173,24 @@ RegisterCommand('mechanicdebug', function(source)
                 line('       stock: OFF for this shop — no storage point, so nothing is rationed')
             else
                 local short = {}
+                local seen = {}
 
-                for category, item in pairs(Config.Stock.categoryItems) do
-                    if item ~= '' and Stock.Count(shop, item, 0) < 1 then
-                        short[#short + 1] = category
+                local function check(label, item)
+                    if not item or item == '' or seen[item] then return end
+
+                    seen[item] = true
+
+                    if Stock.Count(shop, item, 0) < 1 then short[#short + 1] = label end
+                end
+
+                for category, item in pairs(Config.Stock.categoryItems) do check(category, item) end
+                for slot, item in pairs(Config.Stock.slotItems) do check(slot, item) end
+
+                for _, part in ipairs(Service.Parts) do check(part.id, part.item) end
+
+                for _, category in ipairs(Tuning.Categories) do
+                    for _, option in ipairs(Tuning.Options[category.id] or {}) do
+                        check(option.id, option.item)
                     end
                 end
 
