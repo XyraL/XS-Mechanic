@@ -139,10 +139,6 @@ Config.Desk = {
 
     -- Metres. How close you have to be to use it.
     useDistance = 1.6,
-
-    -- Let the boss manage staff and money from the laptop only, never from the
-    -- tablet. Off lets both do it.
-    managementHereOnly = false,
 }
 
 -- ── Pricing ──────────────────────────────────────────────────────────────────

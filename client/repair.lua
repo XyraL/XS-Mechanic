@@ -161,7 +161,9 @@ function Repair.Wash()
         return
     end
 
-    if GetVehicleDirtLevel(vehicle) < 1.0 then
+    -- Dirt runs 0 to 15, not 0 to 1. Against 1.0 anything short of caked in
+    -- mud reported as clean and the wash refused to run.
+    if GetVehicleDirtLevel(vehicle) <= 0.1 then
         XSM.Notify('It is already clean.', 'inform')
         return
     end

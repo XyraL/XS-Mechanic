@@ -68,15 +68,37 @@
 
         const fitted = (XS.state.catalogue?.slots || []).filter((s) => s.current !== -1);
 
+        // A handling package is not a mod slot — it changes how the car
+        // drives and nothing the catalogue can see. Reading only the slots is
+        // why a car with a V8 in it still reported as completely stock.
+        const packages = [];
+
+        for (const category of XS.state.vehicle?.tuning || []) {
+            const option = (category.options || []).find((o) => o.fitted);
+            if (option) packages.push({ category, option });
+        }
+
+        const count = fitted.length + packages.length;
+
         grid.append(XS.el('div', { class: 'gh', style: 'margin-top:22px' }, [
             XS.el('h2', { text: 'Fitted' }),
-            XS.el('div', { class: 'cap', text: `${fitted.length} non-stock parts` }),
+            XS.el('div', { class: 'cap', text: `${count} non-stock part${count === 1 ? '' : 's'}` }),
         ]));
 
-        if (!fitted.length) {
+        if (!count) {
             grid.append(XS.empty('Completely stock', 'Nothing has been changed on this vehicle.'));
         } else {
             const rows = XS.el('div', { class: 'rows' });
+
+            for (const { category, option } of packages) {
+                rows.append(XS.el('div', { class: 'row' }, [
+                    XS.el('div', {}, [
+                        XS.el('div', { class: 't', text: option.name }),
+                        XS.el('div', { class: 'm', text: `tuning · ${category.label}` }),
+                    ]),
+                    XS.el('span', { class: 'st f', text: 'PACKAGE' }),
+                ]));
+            }
 
             for (const slot of fitted) {
                 const option = (slot.options || []).find((o) => o.index === slot.current);

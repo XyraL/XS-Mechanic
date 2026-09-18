@@ -18,6 +18,12 @@ local busy = false
 -- of connecting to a car, and asking somebody to open the tablet first to tell
 -- it something it can see for itself is a step for nothing.
 local function carInFront()
+    -- Sat in it is not stood at it. Nothing about fitting a part works from
+    -- the driver's seat, and the animation plays into the roof.
+    if IsPedInAnyVehicle(cache.ped, false) then
+        return nil, 'Get out of the car first.'
+    end
+
     local coords = GetEntityCoords(cache.ped)
 
     if XSM.vehicle and DoesEntityExist(XSM.vehicle)
@@ -66,7 +72,7 @@ local function fit(vehicle, line, item)
         and (Config.CustomTuning.seconds[line.tuning.category] or Config.CustomTuning.seconds.default or 10)
         or (Config.Tuning.seconds[line.category] or Config.Tuning.seconds.default or 0)
 
-    if seconds > 0 and not Anim.Work(seconds, ('Fitting %s'):format(line.label or 'it'), line.category) then
+    if seconds > 0 and not Anim.Work(seconds, ('Fitting %s'):format(line.label or 'it')) then
         return false
     end
 
@@ -111,10 +117,10 @@ function Install.Use(item)
         return
     end
 
-    local vehicle = carInFront()
+    local vehicle, why = carInFront()
 
     if not vehicle then
-        XSM.Notify('Stand at the car you are working on.', 'error')
+        XSM.Notify(why or 'Stand at the car you are working on.', 'error')
         return
     end
 
@@ -192,10 +198,10 @@ end
 function Install.ByHand()
     if busy then return end
 
-    local vehicle = carInFront()
+    local vehicle, why = carInFront()
 
     if not vehicle then
-        XSM.Notify('Stand at the car you are working on.', 'error')
+        XSM.Notify(why or 'Stand at the car you are working on.', 'error')
         return
     end
 

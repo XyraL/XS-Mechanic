@@ -1,5 +1,30 @@
 # Changelog
 
+## 0.7.1
+
+- **The tablet is the mechanic's, the laptop is the shop's.** Team and Shop are
+  off the tablet, and so is pricing. Prices live on the laptop at the desk
+  now — every category, and every handling package by name, each with a Change
+  on it for anybody whose rank allows it. The tablet quotes off those numbers
+  and cannot set them. `Config.Desk.managementHereOnly` is gone with them; the
+  split is not optional any more.
+- **Apps only show where they can be used.** Tuning, Performance and Stance
+  appear on a tuning bay, Dyno in the dyno bay, and neither anywhere else.
+  Walking away from the bay with Tuning open puts you back on the home screen
+  rather than leaving you on a page that cannot do anything. A shop that has
+  not placed that kind of point is not held to it.
+- **Bigger apps.** 92px tiles, larger glyphs and labels, more room between them.
+- **One animation for everything.** The same welding the bench uses, whatever
+  the part. There was a different pose per category, which read well as an idea
+  and in practice had a mechanic janitor-sweeping a respray and reading a
+  clipboard at an interior.
+- **A car with a package in it reported as completely stock.** The Fitted list
+  read mod slots only, and an engine swap is not a mod slot — it changes how
+  the car drives and nothing the catalogue can see. Packages are listed now.
+- **Parts cannot be fitted from the driver's seat.** Checked on both ends.
+- **The wash said everything was already clean.** Dirt runs 0 to 15, not 0 to
+  1, so anything short of caked in mud read as spotless and the wash refused.
+
 ## 0.7.0
 
 The tablet stops being the thing that changes the car.

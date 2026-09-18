@@ -204,31 +204,11 @@
         });
     }
 
-    // A senior enough mechanic can change what the shop charges for a whole
-    // category without being handed the money and the staff list as well.
-    function pricer(group) {
-        if (!XS.state.canPrice) return null;
-
-        return XS.el('button', {
-            class: 'mini',
-            text: 'Price',
-            onclick: () => XS.askPrice({
-                title: `${group.label} price`,
-                note: 'Applies to everything in this category at this shop. Clear it to go back to the server default.',
-                price: (XS.state.prices || {})[group.id] || 0,
-            }, ({ price }) => XS.post('setCategoryPrice', { category: group.id, price })),
-        });
+    // Prices are the shop's business, not the job in front of you. They are
+    // set on the laptop at the desk.
+    function pricer() {
+        return null;
     }
-
-    // What gets painted. Pearl and wheel colour come off the same palette as
-    // the body — a pearl is one of these colours laid over the paint, not a
-    // list of its own.
-    const CHANNELS = [
-        ['primary', 'Primary', 'primary'],
-        ['secondary', 'Secondary', 'secondary'],
-        ['pearl', 'Pearl', 'pearlescent'],
-        ['wheel', 'Wheels', 'wheelColour'],
-    ];
 
     function renderRespray(grid, group, prices) {
         const on = group.paint || {};

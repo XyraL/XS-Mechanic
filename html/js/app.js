@@ -3,19 +3,23 @@
     const led = document.querySelector('[data-led]');
 
     const TABS = {
+        // The tablet is the mechanic's. Running the shop — the books, the
+        // staff, the prices — is the laptop's job and lives on the desk.
+        //
+        // `at` names a kind of point the app only makes sense on. A shop that
+        // has not placed one of those is not held to it, or a shop with no
+        // dyno would be a shop where the Dyno app can never be opened.
         tablet: [
             { id: 'apps', label: 'Home' },
             { id: 'vehicle', label: 'Vehicle' },
-            { id: 'tuning', label: 'Tuning' },
+            { id: 'tuning', label: 'Tuning', at: 'tuning' },
             { id: 'repairs', label: 'Repairs' },
             { id: 'service', label: 'Service', when: () => XS.state.serviceEnabled !== false, badge: () => XS.state.vehicle?.service?.due },
-            { id: 'performance', label: 'Performance', when: () => XS.state.tuningEnabled !== false },
-            { id: 'stance', label: 'Stance', when: () => XS.state.tuningEnabled !== false },
-            { id: 'dyno', label: 'Dyno', when: () => XS.state.dynoEnabled !== false },
+            { id: 'performance', label: 'Performance', at: 'tuning', when: () => XS.state.tuningEnabled !== false },
+            { id: 'stance', label: 'Stance', at: 'tuning', when: () => XS.state.tuningEnabled !== false },
+            { id: 'dyno', label: 'Dyno', at: 'dyno', when: () => XS.state.dynoEnabled !== false },
             { id: 'orders', label: 'Orders', badge: () => XS.state.openOrders },
             { id: 'invoices', label: 'Invoices', badge: () => XS.state.unpaid, when: () => XS.state.invoicesEnabled !== false },
-            { id: 'home', label: 'Shop' },
-            { id: 'team', label: 'Team', boss: true, when: () => !XS.state.deskOnlyManagement },
             { id: 'settings', label: 'Settings' },
         ],
         desk: [
@@ -41,9 +45,17 @@
     // The tabs this player can actually reach, in this mode, right now. The nav
     // bar and the home screen both need the same list.
     XS.apps = function () {
+        const near = XS.state.near || {};
+
         return (TABS[XS.mode] || []).filter((tab) => {
             if (tab.boss && !XS.state.isBoss) return false;
             if (tab.when && !tab.when()) return false;
+
+            // near[kind] is false only when the shop HAS that kind of point
+            // and you are not stood on one. Undefined means there is nothing
+            // to stand on, so the app is not hidden.
+            if (tab.at && near[tab.at] === false) return false;
+
             return true;
         });
     };
@@ -155,6 +167,13 @@
 
         XS.subject.redraw();
         renderNav();
+
+        // An app you have walked away from cannot stay on screen — the bay
+        // apps go when you leave the bay, and standing on a dead panel is
+        // worse than being put back on the home screen.
+        if (!XS.apps().some((tab) => tab.id === XS.panel)) {
+            if (XS.apps().some((tab) => tab.id === 'apps')) { XS.show('apps'); return; }
+        }
 
         XS.rerender(XS.panel);
     };

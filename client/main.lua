@@ -52,6 +52,8 @@ function XSM.Open(mode, shopId)
     XSM.state = payload.state or {}
     XSM.open = true
 
+    XSM.state.near = XSM.NearPoints()
+
     SetNuiFocus(true, true)
     XSM.Send('open', { mode = mode, state = payload.state })
 
@@ -298,6 +300,66 @@ end)
 
 RegisterNetEvent('XS-Mechanic:client:builder', function()
     XSM.Open('builder')
+end)
+
+--[[ Which of the shop's points you are stood on.
+
+     Some apps only mean anything somewhere: tuning happens on a bay and a dyno
+     run happens in the dyno bay. Those apps are hidden everywhere else.
+
+     false means the shop HAS that kind of point and you are not on one. nil
+     means it has none at all, and then nothing is hidden — a shop with no dyno
+     placed would otherwise be a shop where the dyno can never be opened.
+
+     Recomputed while the panel is open rather than only when it opens, because
+     a mechanic carries the tablet across the workshop with it up. ]]
+local POINTS = { 'tuning', 'dyno', 'bench', 'storage' }
+
+function XSM.NearPoints()
+    local shop = XSM.ShopById(XSM.shop and XSM.shop.id)
+    if not shop then return {} end
+
+    local coords = GetEntityCoords(cache.ped)
+    local near = {}
+
+    for _, kind in ipairs(POINTS) do
+        local has = false
+
+        for _, point in ipairs(shop.points or {}) do
+            if point.kind == kind then has = true break end
+        end
+
+        if has then near[kind] = Zones.OnPoint(shop, kind, coords) ~= nil end
+    end
+
+    return near
+end
+
+CreateThread(function()
+    local was
+
+    while true do
+        Wait(800)
+
+        if XSM.open and XSM.mode ~= 'builder' then
+            local near = XSM.NearPoints()
+            local key = ''
+
+            for _, kind in ipairs(POINTS) do
+                key = ('%s%s:%s|'):format(key, kind, tostring(near[kind]))
+            end
+
+            -- Only when it changes. The panel rebuilds its app list on every
+            -- state push and the home screen would flicker once a second.
+            if key ~= was then
+                was = key
+                XSM.state.near = near
+                XSM.Send('state', { state = { near = near } })
+            end
+        else
+            was = nil
+        end
+    end
 end)
 
 -- The tablet is an item, so losing it while the panel is open should close the

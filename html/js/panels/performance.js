@@ -81,9 +81,7 @@
             XS.el('h2', { text: category.label }),
             XS.el('div', { class: 'cap' }, [
                 `${category.options.length} available`,
-                XS.state.canPrice
-                    ? XS.el('span', { class: 'stk', text: ' · right click to price' })
-                    : null,
+                null,
             ]),
         ]));
 
@@ -99,22 +97,6 @@
 
             cards.append(XS.el('button', {
                 class: `c ${picked ? 'on' : ''} ${dry ? 'dry' : ''}`,
-                oncontextmenu: (ev) => {
-                    ev.preventDefault();
-                    if (!XS.state.canPrice) return;
-
-                    // Right click is the price. The left one fits the part,
-                    // which is what you are here to do nine times in ten.
-                    XS.askPrice({
-                        title: option.name,
-                        note: 'What this package is called and what it costs this shop. Everybody at this shop sees the change.',
-                        price: option.price,
-                        label: option.name,
-                        naming: true,
-                    }, ({ price, label }) => XS.post('setTuningPrice', {
-                        category: category.id, option: option.id, price, label,
-                    }));
-                },
                 // Nothing is fitted here. It goes on the list, the list
                 // becomes a work order, and somebody fits the part later —
                 // the same journey a bumper takes.

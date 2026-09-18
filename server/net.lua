@@ -92,7 +92,6 @@ local function stateFor(src, mode, shopId)
         serviceEnabled = Config.Service.enabled,
         livePreview = Config.Tablet.livePreview,
         invoicesEnabled = Config.Invoices.enabled,
-        deskOnlyManagement = Config.Desk.managementHereOnly,
         tuningEnabled = Config.CustomTuning.enabled,
         dynoEnabled = Config.Dyno.enabled,
         stanceLimits = { height = 0.30, camber = 0.35, track = 0.25 },
@@ -159,6 +158,12 @@ local function stateFor(src, mode, shopId)
 
     if mode == 'bench' then
         state.crafting = Craft.Sheet(src, shop)
+    end
+
+    -- Prices are set at the desk. The tablet quotes off them and cannot
+    -- change them, so it is not sent the editable list.
+    if mode == 'desk' then
+        state.tuningPrices = CustomTuning.PriceList(shop)
     end
 
     return state
@@ -414,6 +419,12 @@ lib.callback.register('XS-Mechanic:fitLine', function(src, data)
 
     if not atShop(src, shop) then
         return { ok = false, error = ('You have to be at %s.'):format(shop.name) }
+    end
+
+    local ped = GetPlayerPed(src)
+
+    if ped and ped ~= 0 and GetVehiclePedIsIn(ped, false) ~= 0 then
+        return { ok = false, error = 'Get out of the car first.' }
     end
 
     -- Work happens on a bay, the same rule the panel used to be held to. A

@@ -179,6 +179,8 @@
     }
 
     function renderPrices(grid) {
+        const canPrice = XS.state.canPrice;
+
         grid.append(XS.el('div', { class: 'gh' }, [
             XS.el('h2', { text: 'What this shop charges' }),
             XS.el('div', { class: 'cap', text: `mode: ${XS.state.pricingMode || 'fixed'}` }),
@@ -187,18 +189,69 @@
         const rows = XS.el('div', { class: 'rows' });
 
         for (const [id, price] of Object.entries(XS.state.prices || {})) {
+            const label = id.charAt(0).toUpperCase() + id.slice(1);
+
             rows.append(XS.el('div', { class: 'row' }, [
                 XS.el('div', {}, [
-                    XS.el('div', { class: 't', text: id.charAt(0).toUpperCase() + id.slice(1) }),
-                    XS.el('div', { class: 'm', text: 'base price before level multiplier' }),
+                    XS.el('div', { class: 't', text: label }),
+                    XS.el('div', { class: 'm', text: 'base price before the level multiplier' }),
                 ]),
                 XS.el('span', { class: 'a', text: XS.money(price) }),
+                canPrice ? XS.el('button', {
+                    class: 'mini', text: 'Change',
+                    onclick: () => XS.askPrice({
+                        title: `${label} price`,
+                        note: 'Everything in this category at this shop. Zero makes it free.',
+                        price,
+                    }, ({ price: set }) => XS.post('setCategoryPrice', { category: id, price: set })),
+                }) : null,
             ]));
         }
 
         grid.append(rows);
 
+        // The handling packages are priced one at a time rather than by
+        // category — a V8 and a set of tyres are both "tuning" and nobody
+        // charges the same for them.
+        for (const category of XS.state.tuningPrices || []) {
+            grid.append(XS.el('div', { class: 'gh', style: 'margin-top:22px' }, [
+                XS.el('h2', { text: category.label }),
+                XS.el('div', { class: 'cap', text: `${category.options.length} packages` }),
+            ]));
+
+            const list = XS.el('div', { class: 'rows' });
+
+            for (const option of category.options) {
+                list.append(XS.el('div', { class: 'row' }, [
+                    XS.el('div', {}, [
+                        XS.el('div', { class: 't' }, [
+                            option.name,
+                            option.priced ? XS.el('span', { class: 'tag', text: 'RENAMED' }) : null,
+                        ]),
+                        XS.el('div', { class: 'm', text: option.priced ? `shipped as ${option.stock}` : 'shipped price' }),
+                    ]),
+                    XS.el('span', { class: 'a', text: XS.money(option.price) }),
+                    canPrice ? XS.el('button', {
+                        class: 'mini', text: 'Change',
+                        onclick: () => XS.askPrice({
+                            title: option.name,
+                            note: 'What this package is called and what it costs here. Everybody at this shop sees the change.',
+                            price: option.price,
+                            label: option.name,
+                            naming: true,
+                        }, ({ price, label }) => XS.post('setTuningPrice', {
+                            category: category.id, option: option.id, price, label,
+                        })),
+                    }) : null,
+                ]));
+            }
+
+            grid.append(list);
+        }
+
         grid.append(XS.el('div', { style: 'margin-top:16px;font-size:12px;color:var(--faint);line-height:1.6' },
-            'Prices are set per shop by an admin in the builder. A boss cannot change them from here.'));
+            canPrice
+                ? 'Changing one here changes it for everybody at this shop. The tablet only quotes off these — it cannot set them.'
+                : 'Your rank cannot change prices. Ask a boss.'));
     }
 })();

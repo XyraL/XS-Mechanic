@@ -51,6 +51,10 @@ if XSM and not XSM.PushBasket then
     XSM.PushBasket = function() end
 end
 
+if XSM and not XSM.NearPoints then
+    XSM.NearPoints = function() return {} end
+end
+
 if #missing > 0 then
     print(('^1[XS-Mechanic]^0 %d file(s) missing from the client, features switched off:'):format(#missing))
     for _, file in ipairs(missing) do

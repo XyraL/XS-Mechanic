@@ -24,6 +24,37 @@ function CustomTuning.Priced(shop, category, option)
     return override.label or option.name, override.price or option.price, true
 end
 
+--[[ Every package and what it costs, with no vehicle involved.
+
+     CustomTuning.Sheet answers "what can go in THIS car", which is the wrong
+     question at a desk — an electric motor is not offered against an empty
+     profile and would be missing from the price list for good. ]]
+function CustomTuning.PriceList(shop)
+    if not Config.CustomTuning.enabled then return {} end
+
+    local out = {}
+
+    for _, category in ipairs(Tuning.Categories) do
+        local options = {}
+
+        for _, option in ipairs(Tuning.Options[category.id] or {}) do
+            local name, price, custom = CustomTuning.Priced(shop, category.id, option)
+
+            options[#options + 1] = {
+                id = option.id,
+                name = name,
+                price = price,
+                priced = custom,
+                stock = option.name,
+            }
+        end
+
+        out[#out + 1] = { id = category.id, label = category.label, options = options }
+    end
+
+    return out
+end
+
 function CustomTuning.Sheet(profile, shop)
     if not Config.CustomTuning.enabled then return {} end
 

@@ -15,29 +15,14 @@ local MODEL = 'prop_cs_tablet'
 -- SKEL_L_Hand. The tablet sits in the left hand so the right is free.
 local BONE = 18905
 
---[[ What the mechanic looks like doing each kind of work.
+--[[ What the mechanic looks like working.
 
-     A bumper does not go on the same way as a set of wheels, and watching the
-     same kneeling animation for all of it makes the shop feel like one job
-     with different labels on it.
-
-     Every dictionary here ships with the game. One that will not load falls
-     back to the kneeling repair rather than leaving a progress bar running
-     over a ped stood perfectly still. ]]
-local WORK = {
-    cosmetics   = { dict = 'amb@world_human_welding@male@base',          clip = 'base' },
-    wheels      = { dict = 'mini@repair',                                clip = 'fixing_a_ped' },
-    respray     = { dict = 'amb@world_human_janitor@male@base',          clip = 'base' },
-    livery      = { dict = 'amb@world_human_janitor@male@base',          clip = 'base' },
-    lights      = { dict = 'amb@world_human_vehicle_mechanic@male@base', clip = 'base' },
-    interior    = { dict = 'amb@world_human_clipboard@male@base',        clip = 'base' },
-    extras      = { dict = 'amb@world_human_hammering@male@base',        clip = 'base' },
-    plate       = { dict = 'amb@world_human_hammering@male@base',        clip = 'base' },
-    performance = { dict = 'amb@world_human_vehicle_mechanic@male@base', clip = 'base' },
-    repair      = { dict = 'mini@repair',                                clip = 'fixing_a_ped' },
-    service     = { dict = 'amb@world_human_vehicle_mechanic@male@base', clip = 'base' },
-    craft       = { dict = 'amb@world_human_welding@male@base',          clip = 'base' },
-}
+     One pose for everything — the same welding the bench uses. There used to
+     be a different animation per category, which read well on paper and in
+     practice meant a mechanic janitor-sweeping a respray and reading a
+     clipboard at an interior. The bench pose is the one that looks like
+     somebody making a car work, so it is the one every job gets. ]]
+local POSE = { dict = 'amb@world_human_welding@male@base', clip = 'base' }
 
 local FALLBACK = { dict = 'mini@repair', clip = 'fixing_a_ped' }
 
@@ -166,8 +151,8 @@ local function loadable(entry)
     return nil
 end
 
-function Anim.For(category)
-    return loadable(WORK[category or '']) or loadable(FALLBACK)
+function Anim.For()
+    return loadable(POSE) or loadable(FALLBACK)
 end
 
 --[[ Working on a car.
@@ -177,11 +162,11 @@ end
      progress bar has already gone.
 
      Returns true if the mechanic saw it through. ]]
-function Anim.Work(seconds, label, category)
+function Anim.Work(seconds, label)
     seconds = tonumber(seconds) or 0
     if seconds <= 0 then return true end
 
-    local entry = Anim.For(category)
+    local entry = Anim.For()
 
     local done = lib.progressCircle({
         duration = math.floor(seconds * 1000),
