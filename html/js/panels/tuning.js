@@ -517,7 +517,7 @@
 
     function renderDraft() {
         if (XS.mode === 'bay') return renderBasket();
-        if ((XS.state.basket || []).length) return renderQueue();
+        if ((XS.state.basket || []).length) return XS.renderQueue();
 
         const side = XS.el('aside', { class: 'side' });
         const draft = XS.state.invoice || { items: [], total: 0 };
@@ -630,9 +630,18 @@
                 onclick: () => XS.post('fitAll'),
             }),
 
+            // Not everything gets done while the customer waits. Writing it
+            // down is a first-class answer, not something you reach by trying
+            // to fit it and being told there are no parts.
+            XS.el('button', {
+                class: 'sub',
+                text: 'Put it on a work order',
+                onclick: () => XS.post('bookAll'),
+            }),
+
             XS.el('div', {
                 style: 'font-size:11px;color:var(--faint);line-height:1.5;margin-top:10px;text-align:center',
-                text: 'Each one is fitted in turn and goes on the invoice at the shop price.',
+                text: 'Fitting bills as it goes. Anything the shelf cannot cover is written down instead.',
             }),
         ]));
 

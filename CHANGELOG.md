@@ -1,5 +1,27 @@
 # Changelog
 
+## 0.6.2
+
+- **Tuning threw, and the throw looked like three separate bugs.** The queue
+  moved to `XS.renderQueue` so Performance could use it too, and one call site
+  in Tuning was left behind. The error took the whole bill out with it: no
+  total, no Fit all, no work-order button, and the panel bailed before it could
+  put the list back where you were reading it — so every click also jumped you
+  to the top. One name, three symptoms.
+- **The list keeps its place even when a panel breaks.** Scroll is restored in
+  a `finally` now. A render that throws is a bug to fix, not a reason to also
+  lose where the reader was.
+- **Put it on a work order** sits under Fit all on the Tuning queue. Same
+  basket, same total — the parts you cannot fit today get written down against
+  that car instead.
+- **Writing an order failed with a SQL error.** `Framework.GetName` ended in
+  `:gsub()`, which hands back the string AND the replacement count. Passed last
+  to an INSERT it became two parameters and oxmysql refused the query — "expected
+  10 parameters, but received 11", pointing at the query instead of at the name.
+  A pair of brackets fixes it. `tools/check-returns.mjs` now scans every `return`
+  in the resource for the same mistake.
+- **The Price button stopped falling off the sheet.** Header rows wrap at 360px.
+
 ## 0.6.1
 
 - **The tablet is a tablet.** No row of tabs across the top — a home screen of

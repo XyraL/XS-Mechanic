@@ -116,20 +116,27 @@ XS.keepScroll = function (host, redraw) {
     const boxes = [...host.querySelectorAll('.grid, .tree, .lines, .body')];
     const was = boxes.map((box) => [box.className, box.scrollTop, box.scrollLeft]);
 
-    redraw();
+    // In a finally, because a panel that throws half way through still has a
+    // scroll position worth putting back — and losing it is how a render error
+    // shows up as "clicking a part jumps me to the top".
+    try {
+        redraw();
+    } finally {
 
-    // After layout, or the box has no height yet and the offset is discarded.
-    requestAnimationFrame(() => {
-        const now = [...host.querySelectorAll('.grid, .tree, .lines, .body')];
+        // After layout, or the box has no height yet and the offset is
+        // discarded.
+        requestAnimationFrame(() => {
+            const now = [...host.querySelectorAll('.grid, .tree, .lines, .body')];
 
-        for (const box of now) {
-            const found = was.find(([name]) => name === box.className);
-            if (!found) continue;
+            for (const box of now) {
+                const found = was.find(([name]) => name === box.className);
+                if (!found) continue;
 
-            box.scrollTop = found[1];
-            box.scrollLeft = found[2];
-        }
-    });
+                box.scrollTop = found[1];
+                box.scrollLeft = found[2];
+            }
+        });
+    }
 };
 
 // Redraw one panel in place, keeping the list where it was. Panels that redraw

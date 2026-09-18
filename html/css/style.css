@@ -1228,3 +1228,9 @@ button.dk:hover{background:var(--panel2);color:var(--text)}
 /* The home screen is the whole screen. A column of car stats next to a wall
    of apps is two ideas fighting. */
 body[data-layout="sheet"] .dock{display:none}
+
+/* The sheet is narrow. A header row of title, caption and a button does not
+   fit on one line in it, and the button was the bit that fell off the end. */
+body[data-layout="sheet"] .gh{flex-wrap:wrap;gap:8px 10px}
+body[data-layout="sheet"] .gh .cap{white-space:normal;margin-left:auto;text-align:right;max-width:100%}
+body[data-layout="sheet"] .gh .mini{margin-left:0}

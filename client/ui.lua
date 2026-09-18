@@ -384,6 +384,39 @@ RegisterNUICallback('dropPick', function(data, cb)
     cb({ ok = true })
 end)
 
+RegisterNUICallback('bookAll', function(_, cb)
+    if #XSM.basket == 0 then
+        cb({ ok = false })
+        return
+    end
+
+    local result = lib.callback.await('XS-Mechanic:bookOrder', false, {
+        shop = XSM.shop and XSM.shop.id,
+        plate = XSM.catalogue and XSM.catalogue.plate,
+        model = XSM.catalogue and XSM.catalogue.model,
+        class = XSM.catalogue and XSM.catalogue.class,
+        picks = XSM.basket,
+    })
+
+    if not result or not result.ok then
+        XSM.Toast(result and result.error or 'That did not go through.', 'error')
+        cb({ ok = false })
+        return
+    end
+
+    XSM.basket = {}
+
+    -- Written down, not done. The car goes back to how it arrived.
+    XSM.StopPreview(false)
+    pushBasket()
+    XSM.PushVehicle()
+    XSM.Refresh()
+
+    XSM.Toast(('%d on a work order.'):format(result.count or 0), 'good')
+
+    cb({ ok = true })
+end)
+
 RegisterNUICallback('clearPicks', function(_, cb)
     XSM.basket = {}
     rebuild()
