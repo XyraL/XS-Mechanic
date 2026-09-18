@@ -32,12 +32,6 @@
 
         grid.append(XS.el('div', { class: 'gh' }, [
             XS.el('h2', { text: XS.state.shop?.name || 'Mechanic' }),
-            XS.el('div', {
-                class: 'cap',
-                text: XS.state.vehicle
-                    ? `connected to ${XS.state.vehicle.plate || 'a vehicle'}`
-                    : 'nothing connected',
-            }),
         ]));
 
         const wall = XS.el('div', { class: 'apps' });

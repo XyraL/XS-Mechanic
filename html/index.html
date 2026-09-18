@@ -31,17 +31,21 @@
     <div class="frame">
 
       <div class="bar">
+        <button class="back" data-back hidden title="Home">
+          <svg viewBox="0 0 24 24"><path d="M15 5 8 12l7 7"/></svg>
+        </button>
+
         <div class="logo">
           <i>M</i>
           <div>
-            <div class="t">Mechanic</div>
+            <div class="t" data-title>Mechanic</div>
             <div class="s" data-shop-name>No shop</div>
           </div>
         </div>
 
-        <nav class="nav" data-nav></nav>
-
         <div class="sp"></div>
+
+        <span class="link" data-link hidden></span>
 
         <div class="who">
           <i data-duty></i>
@@ -73,6 +77,25 @@
           <section class="panel" data-panel="settings"></section>
           <section class="panel" data-panel="builder"></section>
         </div>
+      </div>
+
+      <!-- The dock. A tablet gets you home with a button, the way a tablet
+           does, rather than a row of tabs across the top. -->
+      <div class="dock" data-dock>
+        <button class="dk" data-dock-home>
+          <svg viewBox="0 0 24 24"><path d="M4 11 12 4l8 7"/><path d="M6.5 10v9h11v-9"/></svg>
+          Home
+        </button>
+        <span class="dk state" data-dock-duty>On duty</span>
+        <div class="sp"></div>
+        <button class="dk" data-dock-drop hidden>
+          <svg viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"/></svg>
+          Disconnect
+        </button>
+        <button class="dk" data-dock-close>
+          <svg viewBox="0 0 24 24"><path d="M10 4H6a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h4"/><path d="M15 8l4 4-4 4M19 12H9"/></svg>
+          Close
+        </button>
       </div>
 
     </div>

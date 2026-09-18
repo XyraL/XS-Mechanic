@@ -1,7 +1,8 @@
 (function () {
-    // Categories a customer is not shown at all: there is nothing to look at,
-    // so there is nothing to pick. They ask the mechanic instead.
-    const NO_PREVIEW = new Set(['performance']);
+    // Tuning is the cosmetic screen. Engine, brakes, transmission and
+    // suspension are mechanical, they change nothing you can look at, and they
+    // live on the Performance screen next to the packages that do the same job.
+    const MECHANICAL = new Set(['performance']);
 
     XS.panels.tuning = function (host) {
         XS.clear(host);
@@ -67,10 +68,7 @@
         for (const [id, label, section] of ORDER) {
             if (enabled[id] === false) continue;
 
-            // Nobody picks a turbo off a menu because it looks nice. A
-            // customer asks the mechanic, and the mechanic fits it and bills
-            // for it — so performance is not on the customer's screen at all.
-            if (XS.mode === 'bay' && NO_PREVIEW.has(id)) continue;
+            if (MECHANICAL.has(id)) continue;
 
             if (id === 'wheels') {
                 if (!cat.wheels) continue;
@@ -582,7 +580,7 @@
     // list the same way a customer's does — a front bumper and a rear bumper
     // are two things to fit, not one choice between them — and fitting runs
     // through the lot, one job at a time, adding a line each.
-    function renderQueue() {
+    XS.renderQueue = function () {
         const side = XS.el('aside', { class: 'side' });
         const queue = XS.state.basket || [];
         const total = queue.reduce((sum, item) => sum + (item.price || 0), 0);
@@ -639,5 +637,5 @@
         ]));
 
         return side;
-    }
+    };
 })();

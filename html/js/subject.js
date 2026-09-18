@@ -261,9 +261,10 @@ XS.subject = (function () {
             return;
         }
 
-        // The laptop and the bench are not pointed at a car, so they get the
-        // whole width rather than an empty column.
-        if (XS.mode === 'desk' || XS.mode === 'bench') {
+        // The home screen, the laptop and the bench are not pointed at a car,
+        // so they get the whole width rather than an empty column. A wall of
+        // apps next to a column of car stats is two ideas fighting.
+        if (XS.panel === 'apps' || XS.mode === 'desk' || XS.mode === 'bench') {
             split.className = 'split wide';
             reportViewport();
             return;

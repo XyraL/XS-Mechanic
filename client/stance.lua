@@ -2,6 +2,12 @@ Stance = {}
 
 --[[ Suspension height, camber and track width, per wheel.
 
+     Height goes through SetVehicleSuspensionHeight rather than the handling
+     field of the same name. fSuspensionRaise is handling data and handling data
+     is shared per MODEL: writing it lowered every car of that model on the
+     server, and lowered none of them on screen until something made the vehicle
+     read its handling again.
+
      Everything here is a DIFFERENCE from how the vehicle left the factory, not
      an absolute. The stock values are read off the entity once, before anything
      touches it, and kept — so a stance of nothing puts the car back exactly,
@@ -60,7 +66,7 @@ local function factory(vehicle)
 
     held = {
         model = model,
-        raise = GetVehicleHandlingFloat(vehicle, 'CHandlingData', 'fSuspensionRaise') or 0.0,
+        raise = GetVehicleSuspensionHeight(vehicle) or 0.0,
         wheels = readWheels(vehicle),
     }
 
@@ -111,7 +117,7 @@ function Stance.Reset(vehicle)
 
     local was = factory(vehicle)
 
-    SetVehicleHandlingFloat(vehicle, 'CHandlingData', 'fSuspensionRaise', was.raise)
+    SetVehicleSuspensionHeight(vehicle, was.raise)
 
     for _, wheel in ipairs(WHEELS) do
         local entry = was.wheels[wheel]
@@ -140,7 +146,7 @@ function Stance.Apply(vehicle, stance)
         return
     end
 
-    SetVehicleHandlingFloat(vehicle, 'CHandlingData', 'fSuspensionRaise', was.raise + stance.height)
+    SetVehicleSuspensionHeight(vehicle, was.raise + stance.height)
 
     for _, wheel in ipairs(WHEELS) do
         local entry = stance[wheel]
@@ -183,7 +189,7 @@ function Stance.Read(vehicle)
     local now = readWheels(vehicle)
 
     local out = {
-        height = (GetVehicleHandlingFloat(vehicle, 'CHandlingData', 'fSuspensionRaise') or 0.0) - was.raise,
+        height = (GetVehicleSuspensionHeight(vehicle) or 0.0) - was.raise,
     }
 
     for _, wheel in ipairs(WHEELS) do

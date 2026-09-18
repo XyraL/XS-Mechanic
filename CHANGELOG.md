@@ -1,5 +1,24 @@
 # Changelog
 
+## 0.6.1
+
+- **The tablet is a tablet.** No row of tabs across the top — a home screen of
+  apps, a chevron back to it, and a dock along the bottom with Home, your duty
+  state, Disconnect and Close. The bar says what the tablet is plugged into.
+  The home screen gets the whole width; an empty car column was sitting on top
+  of the apps and pushing them a third of the way down the screen.
+- **Ride height did nothing.** It was written to `fSuspensionRaise`, which is
+  HANDLING data — shared per model. It lowered every car of that model on the
+  server and lowered none of them on screen until something made the vehicle
+  re-read its handling. `SetVehicleSuspensionHeight` is the per-entity native
+  and it takes effect immediately.
+- **Performance is off the Tuning screen.** Engine, brakes, transmission,
+  suspension and turbo levels live on the Performance app next to the packages
+  that do the same job. Tuning is cosmetic.
+- **Fitting no longer refuses over an empty shelf.** What the shop can fit, it
+  fits; what it cannot becomes a work order against that car, already claimed
+  by the mechanic who wrote it. Make the parts, come back, finish it.
+
 ## 0.6.0
 
 The camera, and the shape of the thing.

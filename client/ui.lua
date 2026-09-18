@@ -412,15 +412,18 @@ RegisterNUICallback('fitAll', function(_, cb)
 
     local fitted = 0
     local stopped = nil
+    local short = {}
 
     XSM.Hide()
 
     for _, pick in ipairs(queue) do
         local item = stock and ((stock.slots or {})[pick.slotId] or (stock.categories or {})[pick.category])
 
+        -- Nothing on the shelf is not a refusal. It goes on the work order and
+        -- somebody makes the part.
         if item and (stock.items[item] or 0) < 1 then
-            stopped = ('No %s left.'):format(string.lower(stock.labels[item] or item))
-            break
+            short[#short + 1] = pick
+            goto continue
         end
 
         local seconds = Config.Tuning.seconds[pick.category] or Config.Tuning.seconds.default or 0
@@ -456,6 +459,8 @@ RegisterNUICallback('fitAll', function(_, cb)
         if item then stock.items[item] = (stock.items[item] or 1) - 1 end
 
         fitted = fitted + 1
+
+        ::continue::
     end
 
     XSM.Unhide(panel)
@@ -469,10 +474,36 @@ RegisterNUICallback('fitAll', function(_, cb)
     XSM.PushVehicle()
     XSM.Refresh()
 
-    if fitted == 0 then
-        XSM.Toast(stopped or 'Nothing fitted.', 'error')
-    elseif stopped then
+    local booked = 0
+
+    if #short > 0 then
+        local result = lib.callback.await('XS-Mechanic:bookOrder', false, {
+            shop = XSM.shop and XSM.shop.id,
+            plate = XSM.catalogue and XSM.catalogue.plate,
+            model = XSM.catalogue and XSM.catalogue.model,
+            class = XSM.catalogue and XSM.catalogue.class,
+            picks = short,
+            notes = 'Waiting on parts.',
+        })
+
+        if result and result.ok then
+            booked = result.count or #short
+
+            for _, pick in ipairs(short) do forget(pick.slotId) end
+
+            pushBasket()
+            rebuild()
+        end
+    end
+
+    if stopped then
         XSM.Toast(('Fitted %d of %d. %s'):format(fitted, #queue, stopped), 'error')
+    elseif booked > 0 and fitted > 0 then
+        XSM.Toast(('Fitted %d. %d on a work order — make the parts and finish it.'):format(fitted, booked), 'good')
+    elseif booked > 0 then
+        XSM.Toast(('Nothing on the shelf. %d put on a work order.'):format(booked), 'inform')
+    elseif fitted == 0 then
+        XSM.Toast('Nothing fitted.', 'error')
     else
         XSM.Toast(('Fitted %d, all on the invoice.'):format(fitted), 'good')
     end

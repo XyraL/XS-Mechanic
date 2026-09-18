@@ -1,6 +1,5 @@
 (function () {
     const root = document.getElementById('root');
-    const nav = document.querySelector('[data-nav]');
     const led = document.querySelector('[data-led]');
 
     const TABS = {
@@ -20,6 +19,7 @@
             { id: 'settings', label: 'Settings' },
         ],
         desk: [
+            { id: 'apps', label: 'Home' },
             { id: 'invoices', label: 'Invoices', badge: () => XS.state.unpaid, when: () => XS.state.invoicesEnabled !== false },
             { id: 'home', label: 'Shop' },
             { id: 'team', label: 'Team', boss: true },
@@ -48,21 +48,46 @@
         });
     };
 
+    //[[ No tabs.
+    //
+    //   A tablet does not have a row of tabs across the top — it has a home
+    //   screen of apps, and a way back to it. The bar carries the name of
+    //   whatever app you are in and a chevron home; the dock along the bottom
+    //   does the rest. ]]
     function renderNav() {
-        XS.clear(nav);
+        const home = XS.panel === 'apps';
+        const tab = (TABS[XS.mode] || []).find((t) => t.id === XS.panel);
 
-        for (const tab of XS.apps()) {
+        const back = document.querySelector('[data-back]');
+        const title = document.querySelector('[data-title]');
 
-            const count = tab.badge ? tab.badge() : 0;
+        if (back) back.hidden = home || !XS.apps().some((t) => t.id === 'apps');
+        if (title) title.textContent = home || !tab ? 'Mechanic' : tab.label;
 
-            nav.append(XS.el('button', {
-                class: XS.panel === tab.id ? 'on' : '',
-                onclick: () => XS.show(tab.id),
-            }, [
-                tab.label,
-                count ? XS.el('span', { class: 'badge', text: String(count) }) : null,
-            ]));
+        // What the tablet is plugged into, the way the reference says it.
+        const link = document.querySelector('[data-link]');
+
+        if (link) {
+            const plate = XS.state.vehicle?.plate;
+
+            link.hidden = !plate;
+            link.textContent = plate ? `Connected to ${plate}` : '';
         }
+
+        const duty = document.querySelector('[data-dock-duty]');
+
+        if (duty) {
+            const on = XS.state.onDuty !== false;
+
+            duty.textContent = on ? 'On duty' : 'Off duty';
+            duty.className = `dk state ${on ? 'on' : ''}`;
+        }
+
+        const drop = document.querySelector('[data-dock-drop]');
+        if (drop) drop.hidden = !XS.state.vehicle || XS.mode !== 'tablet';
+
+        const dock = document.querySelector('[data-dock]');
+        if (dock) dock.hidden = !XS.apps().some((t) => t.id === 'apps');
     }
 
     //[[ Which shell the screen is wearing.
@@ -104,6 +129,11 @@
         }
 
         renderNav();
+
+        // The column belongs to the screen, not to the session: the home
+        // screen has no car beside it and every other screen does, so leaving
+        // home has to put it back.
+        XS.subject.redraw();
 
         XS.rerender(id);
 
@@ -155,6 +185,16 @@
     };
 
     document.querySelector('[data-close]').addEventListener('click', XS.close);
+
+    for (const [selector, go] of [
+        ['[data-back]', () => XS.show('apps')],
+        ['[data-dock-home]', () => XS.show('apps')],
+        ['[data-dock-close]', () => XS.close()],
+        ['[data-dock-drop]', () => XS.post('disconnect')],
+    ]) {
+        const button = document.querySelector(selector);
+        if (button) button.addEventListener('click', go);
+    }
 
     // Drag anywhere on the car to turn it. The panel has the mouse while it is
     // open, so the game cannot be given the drag — it is caught here and the

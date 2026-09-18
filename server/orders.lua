@@ -112,6 +112,84 @@ function Orders.Create(src, data)
     return { ok = true }
 end
 
+--[[ A work order the SHOP writes.
+
+     A mechanic picks five things, the shelf has three of them, and the answer
+     is not "no". The three go on, the two that cannot go on become a job the
+     shop owes the customer — which is the whole reason work orders exist.
+
+     It goes down already claimed by whoever wrote it. They are stood at the
+     car; they are not waiting for somebody else to pick it up. ]]
+function Orders.Book(src, data)
+    local shop = Store.Get(data.shop)
+    if not shop or not shop.enabled then return { ok = false, error = 'That shop is closed.' } end
+
+    local job = Framework.GetJob(src)
+    if shop.kind == 'owned' and job ~= shop.job then return { ok = false, error = 'Not your shop.' } end
+
+    local picks = type(data.picks) == 'table' and data.picks or {}
+    if #picks == 0 then return { ok = false, error = 'Nothing to book.' } end
+
+    local plate = Util.Trim(data.plate or ''):sub(1, 12)
+    if plate == '' then return { ok = false, error = 'No vehicle.' } end
+
+    local priced, total = {}, 0
+
+    for _, pick in ipairs(picks) do
+        local category = tostring(pick.category or '')
+
+        if Pricing.CategoryEnabled(shop, category) then
+            local price = Pricing.For(shop, category, data.model, data.class, pick.index) or 0
+
+            priced[#priced + 1] = {
+                category = category,
+                categoryLabel = Mods.CategoryLabel[category] or category,
+                slotId = tostring(pick.slotId or ''),
+                slot = tonumber(pick.slot),
+                index = tonumber(pick.index),
+                wheelType = tonumber(pick.wheelType),
+                legacy = pick.legacy == true,
+                label = tostring(pick.label or 'Part'):sub(1, 64),
+                price = price,
+            }
+
+            total = total + price
+        end
+    end
+
+    if #priced == 0 then return { ok = false, error = 'This shop does not do any of that.' } end
+
+    -- The customer is whoever the vehicle belongs to when we know, and the
+    -- mechanic when we do not — an order has to belong to somebody.
+    local profile = Vehicles.Profile(plate, data.model)
+    local customer = profile and profile.owner or nil
+
+    local me = Framework.GetCitizenId(src) or ''
+
+    local id = MySQL.insert.await([[
+        INSERT INTO xs_mechanic_orders
+            (shop_id, customer, customer_name, plate, model, requested, notes, quote, status, claimed_by, claimed_name)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'claimed', ?, ?)
+    ]], {
+        shop.id,
+        customer or me,
+        customer and (Framework.GetNameByCitizenId(customer) or 'Customer') or Framework.GetName(src),
+        plate,
+        tostring(data.model or ''):sub(1, 64),
+        json.encode(priced),
+        tostring(data.notes or 'Waiting on parts.'):sub(1, 300),
+        total,
+        me,
+        Framework.GetName(src),
+    })
+
+    if not id then return { ok = false, error = 'Could not write that down.' } end
+
+    TriggerClientEvent('XS-Mechanic:client:refresh', -1)
+
+    return { ok = true, count = #priced, total = total }
+end
+
 local function claimable(src, id)
     local row = MySQL.single.await('SELECT * FROM xs_mechanic_orders WHERE id = ?', { id })
     if not row then return nil, 'That order is gone.' end

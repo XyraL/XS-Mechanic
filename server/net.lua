@@ -468,6 +468,10 @@ lib.callback.register('XS-Mechanic:finishOrder', function(src, data)
     return Orders.Finish(src, data and data.id)
 end)
 
+lib.callback.register('XS-Mechanic:bookOrder', function(src, data)
+    return Orders.Book(src, data or {})
+end)
+
 lib.callback.register('XS-Mechanic:dropOrderLine', function(src, data)
     return Orders.DropLine(src, data and data.id, data and data.line)
 end)
