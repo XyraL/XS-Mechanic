@@ -147,3 +147,17 @@ end)
 function Vehicles.Forget(plate)
     cache[Util.Trim(plate or '')] = nil
 end
+
+-- Who the vehicle belongs to, as a citizenid.
+--
+-- Vehicles.Summary carries an `owner` too, but that one is a display NAME for
+-- the readout strip. Orders.Book was reading it off the profile, where it has
+-- never existed, so every order the shop wrote down recorded the MECHANIC as
+-- the customer — and an invoice against that order billed the mechanic.
+function Vehicles.OwnerOf(plate)
+    plate = Util.Trim(plate or '')
+    if plate == '' then return nil end
+
+    local row = MySQL.single.await('SELECT citizenid FROM player_vehicles WHERE plate = ? LIMIT 1', { plate })
+    return row and row.citizenid or nil
+end

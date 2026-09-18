@@ -78,30 +78,6 @@ local function settings(src)
     return Util.Decode(row and row.settings, {}) or {}
 end
 
-local function colourTable()
-    -- The game's colour list is fixed, so it is built once and reused. Only the
-    -- ones a mechanic would actually reach for are offered by name; custom RGB
-    -- covers everything else.
-    return {
-        { id = 0, label = 'Black', hex = '#0d0d0d' }, { id = 1, label = 'Graphite', hex = '#1c1c1e' },
-        { id = 2, label = 'Anthracite', hex = '#26282b' }, { id = 3, label = 'Steel', hex = '#3d4249' },
-        { id = 4, label = 'Silver', hex = '#9ba1a8' }, { id = 5, label = 'Bluish Silver', hex = '#aab6c4' },
-        { id = 9, label = 'Gunmetal', hex = '#40474d' }, { id = 11, label = 'Black Steel', hex = '#232c35' },
-        { id = 27, label = 'Red', hex = '#c00e1a' }, { id = 28, label = 'Torino Red', hex = '#da1918' },
-        { id = 29, label = 'Formula Red', hex = '#b6111b' }, { id = 34, label = 'Sunrise Orange', hex = '#d44f2a' },
-        { id = 36, label = 'Orange', hex = '#f78616' }, { id = 38, label = 'Gold', hex = '#c2a661' },
-        { id = 42, label = 'Bright Green', hex = '#31a02c' }, { id = 49, label = 'Dark Green', hex = '#132428' },
-        { id = 53, label = 'Lime', hex = '#aad13a' }, { id = 55, label = 'Midnight Blue', hex = '#222e46' },
-        { id = 64, label = 'Navy', hex = '#1f2852' }, { id = 70, label = 'Ultra Blue', hex = '#224faa' },
-        { id = 73, label = 'Racing Blue', hex = '#2c5f9a' }, { id = 77, label = 'Bright Blue', hex = '#2354a1' },
-        { id = 88, label = 'Yellow', hex = '#f1d80a' }, { id = 89, label = 'Race Yellow', hex = '#fcf04c' },
-        { id = 96, label = 'Brown', hex = '#3b2e2a' }, { id = 106, label = 'Beige', hex = '#a8a086' },
-        { id = 111, label = 'White', hex = '#ffffff' }, { id = 112, label = 'Frost White', hex = '#eaeaea' },
-        { id = 117, label = 'Brushed Steel', hex = '#6f7f85' }, { id = 120, label = 'Pure Gold', hex = '#b3a04a' },
-        { id = 132, label = 'Chameleon', hex = '#7c5cd6' },
-    }
-end
-
 local function stateFor(src, mode, shopId)
     local shop = shopFor(src, shopId)
     local job, onDuty = Framework.GetJob(src)
@@ -110,7 +86,7 @@ local function stateFor(src, mode, shopId)
         name = Framework.GetName(src),
         onDuty = onDuty,
         settings = settings(src),
-        colours = colourTable(),
+        paint = Paint.Sheet(),
         levelMultiplier = Config.Pricing.levelMultiplier,
         pricingMode = Config.Pricing.mode,
         serviceEnabled = Config.Service.enabled,
@@ -307,71 +283,6 @@ lib.callback.register('XS-Mechanic:deleteShop', function(src, data)
 end)
 
 -- Fitting something. The price is worked out here, never taken from the panel.
-lib.callback.register('XS-Mechanic:apply', function(src, data)
-    local shop = shopFor(src, data and data.shop)
-    if not shop then return { ok = false, error = 'No shop.' } end
-
-    if not atShop(src, shop) then
-        return { ok = false, error = ('You have to be at %s.'):format(shop.name) }
-    end
-
-    if not onBay(src, shop, data.netId) then
-        return { ok = false, error = 'Put the car on a tuning bay and stand at it.' }
-    end
-
-    local category = tostring(data.category or '')
-    if not Pricing.CategoryEnabled(shop, category) then
-        return { ok = false, error = 'This shop does not do that.' }
-    end
-
-    -- The shelf. A shop that has run out of body panels cannot fit one, and
-    -- says so rather than fitting it anyway.
-    local short = Stock.Missing(shop, category, src, data.slotId)
-
-    if short then
-        return { ok = false, error = ('No %s left. Make one at the bench.'):format(string.lower(Parts.Label(short))) }
-    end
-
-    local price = Pricing.For(shop, category, data.model, data.class, data.index) or 0
-    local label = tostring(data.label or 'Part'):sub(1, 64)
-
-    if data.mode == 'bay' then
-        local account = Config.SelfService.account
-
-        if Framework.GetMoney(src, account) < price then
-            return { ok = false, error = ('You need %s.'):format(Util.Money(price)) }
-        end
-
-        Framework.RemoveMoney(src, account, price, 'Mechanic')
-        Banking.Add(shop, price, ('Self service — %s'):format(label), Framework.GetName(src), 'selfservice')
-        Stock.Take(shop, Parts.ItemFor(category, data.slotId), 1, src)
-
-        Discord.Send('tuning', 'Self service',
-            ('**%s** fitted %s at %s for %s'):format(Framework.GetName(src), label, shop.name, Util.Money(price)),
-            Discord.Colour.info)
-
-        return { ok = true, message = ('Fitted for %s.'):format(Util.Money(price)) }
-    end
-
-    local job = Framework.GetJob(src)
-    if shop.kind == 'owned' and job ~= shop.job then
-        return { ok = false, error = 'Not your shop.' }
-    end
-
-    Stock.Take(shop, Parts.ItemFor(category, data.slotId), 1, src)
-
-    if settings(src).autoDraft ~= false and Config.Invoices.autoDraft then
-        Invoices.AddLine(src, label, price, Mods.CategoryLabel[category] or category)
-    end
-
-    Discord.Send('tuning', 'Work applied',
-        ('**%s** fitted %s to `%s` at %s'):format(
-            Framework.GetName(src), label, data.plate or '??', shop.name),
-        Discord.Colour.info)
-
-    return { ok = true, message = 'Fitted and added to the invoice.' }
-end)
-
 lib.callback.register('XS-Mechanic:repairQuote', function(src, data)
     local shop = Store.Get(data and data.shop)
     if not shop then return { ok = false, error = 'No shop.' } end
@@ -472,8 +383,47 @@ lib.callback.register('XS-Mechanic:bookOrder', function(src, data)
     return Orders.Book(src, data or {})
 end)
 
+lib.callback.register('XS-Mechanic:billOrder', function(src, data)
+    return Orders.Bill(src, data or {})
+end)
+
+lib.callback.register('XS-Mechanic:billRest', function(src, data)
+    return Orders.BillRest(src, data and data.id)
+end)
+
 lib.callback.register('XS-Mechanic:dropOrderLine', function(src, data)
     return Orders.DropLine(src, data and data.id, data and data.line)
+end)
+
+--[[ The two halves of fitting a part.
+
+     orderLines answers "what is this thing for", before any time is spent on
+     an animation. fitLine is where the part is actually taken and the line
+     ticked off, and it checks everything again — the answer from the first
+     call is minutes old by the time the second one arrives, and somebody else
+     may have fitted that line in between. ]]
+lib.callback.register('XS-Mechanic:orderLines', function(src, data)
+    return Orders.Candidates(src, data or {})
+end)
+
+lib.callback.register('XS-Mechanic:fitLine', function(src, data)
+    data = data or {}
+
+    local shop = Store.ByJob(Framework.GetJob(src))
+    if not shop then return { ok = false, error = 'You are not a mechanic.' } end
+
+    if not atShop(src, shop) then
+        return { ok = false, error = ('You have to be at %s.'):format(shop.name) }
+    end
+
+    -- Work happens on a bay, the same rule the panel used to be held to. A
+    -- shop with no tuning bay placed is not held to it — there would be
+    -- nowhere to stand.
+    if not onBay(src, shop, data.netId) then
+        return { ok = false, error = 'Put the car on a tuning bay and stand at it.' }
+    end
+
+    return Orders.Fit(src, data)
 end)
 
 lib.callback.register('XS-Mechanic:craft', function(src, data)
@@ -679,22 +629,6 @@ lib.callback.register('XS-Mechanic:serviceReplace', function(src, data)
     return Servicing.Replace(src, Util.Trim(data and data.plate or ''), data and data.part, shop)
 end)
 
-lib.callback.register('XS-Mechanic:fitTuning', function(src, data)
-    data = data or {}
-
-    local shop = Store.Get(data.shop)
-
-    if shop and not onBay(src, shop, data.netId) then
-        return { ok = false, error = 'Put the car on a tuning bay and stand at it.' }
-    end
-
-    return CustomTuning.Fit(src, data)
-end)
-
-lib.callback.register('XS-Mechanic:removeTuning', function(src, data)
-    return CustomTuning.Remove(src, data or {})
-end)
-
 lib.callback.register('XS-Mechanic:saveStance', function(src, data)
     data = data or {}
 
@@ -768,6 +702,21 @@ lib.callback.register('XS-Mechanic:pricePick', function(src, data)
     local shop = shopFor(src, data and data.shop)
     local category = tostring(data and data.category or '')
 
+    -- A handling package is priced per option and the shop can rename and
+    -- reprice it, so there is no category band to read. Asking for one returns
+    -- nothing, which is how every package used to land in the basket free and
+    -- then bill at the flat performance price.
+    if type(data.tuning) == 'table' then
+        local option = Tuning.Get(data.tuning.category, data.tuning.option)
+
+        if not option then return { label = 'Tuning', price = 0 } end
+        if data.tuning.remove then return { label = 'Tuning', price = 0 } end
+
+        local name, price = CustomTuning.Priced(shop, data.tuning.category, option)
+
+        return { label = 'Tuning', name = name, price = math.max(0, math.floor(tonumber(price) or 0)) }
+    end
+
     return {
         label = Mods.CategoryLabel[category] or category,
         price = shop and Pricing.For(shop, category, data.model, data.class, data.index) or 0,
@@ -777,46 +726,22 @@ end)
 -- A customer's order. Every price is worked out again here; the panel's
 -- numbers are for the customer to look at, not for the server to trust.
 lib.callback.register('XS-Mechanic:submitOrder', function(src, data)
-    local shop = Store.Get(data and data.shop)
-    if not shop or not shop.enabled then return { ok = false, error = 'That shop is closed.' } end
+    data = data or {}
 
     local picks = type(data.picks) == 'table' and data.picks or {}
     if #picks == 0 then return { ok = false, error = 'Nothing on the order.' } end
     if #picks > 40 then return { ok = false, error = 'That is too much for one order.' } end
 
-    local priced, total = {}, 0
-
-    for _, pick in ipairs(picks) do
-        local category = tostring(pick.category or '')
-
-        if Pricing.CategoryEnabled(shop, category) then
-            local price = Pricing.For(shop, category, data.model, data.class, pick.index) or 0
-
-            priced[#priced + 1] = {
-                category = category,
-                categoryLabel = Mods.CategoryLabel[category] or category,
-                slotId = tostring(pick.slotId or ''),
-                slot = tonumber(pick.slot),
-                index = tonumber(pick.index),
-                wheelType = tonumber(pick.wheelType),
-                legacy = pick.legacy == true,
-                label = tostring(pick.label or 'Part'):sub(1, 64),
-                price = price,
-            }
-
-            total = total + price
-        end
-    end
-
-    if #priced == 0 then return { ok = false, error = 'This shop does not do any of that.' } end
-
+    -- The picks go across whole. Orders.Create prices them and keeps every
+    -- field: a respray that arrives without its colour is a job nobody can
+    -- do, which is exactly what rebuilding the picks here used to cause.
     return Orders.Create(src, {
-        shop = shop.id,
+        shop = data.shop,
         plate = data.plate,
         model = data.model,
-        requested = priced,
+        class = data.class,
+        picks = picks,
         notes = data.notes,
-        quote = total,
     })
 end)
 

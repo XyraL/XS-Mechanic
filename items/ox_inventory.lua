@@ -55,6 +55,7 @@
     stack = true,
     close = true,
     description = 'A set of tyres and the tools to fit them.',
+    client = { export = 'XS-Mechanic.fit_tyre_kit' },
 },
 
 ['performance_part'] = {
@@ -63,6 +64,7 @@
     stack = true,
     close = true,
     description = 'Whatever the tuning menu asked for.',
+    client = { export = 'XS-Mechanic.fit_performance_part' },
 },
 
 -- Phase 2: servicing parts, custom tuning parts, and the two pocket items.
@@ -145,6 +147,7 @@
     stack = true,
     close = true,
     description = 'Small and revvy.',
+    client = { export = 'XS-Mechanic.fit_i4_engine' },
 },
 
 ['v6_engine'] = {
@@ -153,6 +156,7 @@
     stack = true,
     close = true,
     description = 'The sensible one.',
+    client = { export = 'XS-Mechanic.fit_v6_engine' },
 },
 
 ['v8_engine'] = {
@@ -161,6 +165,7 @@
     stack = true,
     close = true,
     description = 'Torque everywhere.',
+    client = { export = 'XS-Mechanic.fit_v8_engine' },
 },
 
 ['v12_engine'] = {
@@ -169,6 +174,7 @@
     stack = true,
     close = true,
     description = 'Not for a hatchback.',
+    client = { export = 'XS-Mechanic.fit_v12_engine' },
 },
 
 ['electric_motor'] = {
@@ -177,6 +183,7 @@
     stack = true,
     close = true,
     description = 'Instant, and quiet about it.',
+    client = { export = 'XS-Mechanic.fit_electric_motor' },
 },
 
 ['turbo_kit'] = {
@@ -185,6 +192,7 @@
     stack = true,
     close = true,
     description = 'Snail, pipework, wastegate.',
+    client = { export = 'XS-Mechanic.fit_turbo_kit' },
 },
 
 ['drivetrain_kit'] = {
@@ -193,6 +201,7 @@
     stack = true,
     close = true,
     description = 'Changes which wheels do the work.',
+    client = { export = 'XS-Mechanic.fit_drivetrain_kit' },
 },
 
 ['gearbox_kit'] = {
@@ -201,6 +210,7 @@
     stack = true,
     close = true,
     description = 'Ratios you actually chose.',
+    client = { export = 'XS-Mechanic.fit_gearbox_kit' },
 },
 
 ['brake_kit'] = {
@@ -209,6 +219,7 @@
     stack = true,
     close = true,
     description = 'Discs, calipers, braided lines.',
+    client = { export = 'XS-Mechanic.fit_brake_kit' },
 },
 
 ['drift_kit'] = {
@@ -217,6 +228,7 @@
     stack = true,
     close = true,
     description = 'Loose on purpose.',
+    client = { export = 'XS-Mechanic.fit_drift_kit' },
 },
 
 ['nitrous'] = {
@@ -246,6 +258,7 @@
     stack = true,
     close = false,
     description = 'A panel, a bumper, a skirt. Whatever the car is missing.',
+    client = { export = 'XS-Mechanic.fit_body_part' },
 },
 
 ['wheel_set'] = {
@@ -254,6 +267,7 @@
     stack = true,
     close = false,
     description = 'Four of them, boxed.',
+    client = { export = 'XS-Mechanic.fit_wheel_set' },
 },
 
 ['paint_can'] = {
@@ -262,6 +276,7 @@
     stack = true,
     close = false,
     description = 'Mixed to whatever the customer picks.',
+    client = { export = 'XS-Mechanic.fit_paint_can' },
 },
 
 ['vinyl_wrap'] = {
@@ -270,6 +285,7 @@
     stack = true,
     close = false,
     description = 'A roll of it. Bubbles are the fitter, not the vinyl.',
+    client = { export = 'XS-Mechanic.fit_vinyl_wrap' },
 },
 
 ['light_kit'] = {
@@ -278,6 +294,7 @@
     stack = true,
     close = false,
     description = 'Housings, bulbs and the loom to run them.',
+    client = { export = 'XS-Mechanic.fit_light_kit' },
 },
 
 ['interior_part'] = {
@@ -286,6 +303,7 @@
     stack = true,
     close = false,
     description = 'Trim, dials, a wheel. The bits you actually touch.',
+    client = { export = 'XS-Mechanic.fit_interior_part' },
 },
 
 ['plate_blank'] = {
@@ -294,6 +312,7 @@
     stack = true,
     close = false,
     description = 'Pressed, unprinted, entirely legal until it is not.',
+    client = { export = 'XS-Mechanic.fit_plate_blank' },
 },
 
 -- The modkit upgrades. One part per slot, so a shop stocks engine work and
@@ -305,6 +324,7 @@
     stack = true,
     close = false,
     description = 'Cams, pistons and a gasket set.',
+    client = { export = 'XS-Mechanic.fit_engine_parts' },
 },
 
 ['brake_parts'] = {
@@ -313,6 +333,7 @@
     stack = true,
     close = false,
     description = 'Discs, pads and the lines to feed them.',
+    client = { export = 'XS-Mechanic.fit_brake_parts' },
 },
 
 ['transmission_parts'] = {
@@ -321,6 +342,7 @@
     stack = true,
     close = false,
     description = 'Ratios, synchros and a clutch.',
+    client = { export = 'XS-Mechanic.fit_transmission_parts' },
 },
 
 ['suspension_parts'] = {
@@ -329,4 +351,5 @@
     stack = true,
     close = false,
     description = 'Coilovers, bushes and drop links.',
+    client = { export = 'XS-Mechanic.fit_suspension_parts' },
 },

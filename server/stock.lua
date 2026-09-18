@@ -132,13 +132,3 @@ function Stock.Sheet(shop, src)
     }
 end
 
-function Stock.Missing(shop, category, src, slotId)
-    if not Stock.Enabled(shop) then return nil end
-
-    local item = Parts.ItemFor(category, slotId)
-    if not item then return nil end
-
-    if Stock.Count(shop, item, src) > 0 then return nil end
-
-    return item
-end

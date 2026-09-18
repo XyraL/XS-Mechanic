@@ -33,7 +33,7 @@
 
         grid.append(XS.el('div', { class: 'gh' }, [
             XS.el('h2', { text: 'Work orders' }),
-            XS.el('div', { class: 'cap', text: 'sent in from the bays' }),
+            XS.el('div', { class: 'cap', text: 'what the shop owes, and what is left to fit' }),
         ]));
 
         // The car in front of you comes first, whatever the filter says. That
@@ -67,14 +67,20 @@
         const tone = order.status === 'done' ? 'f' : order.status === 'claimed' ? 'p' : 'w';
         const parts = (order.requested || []).filter((entry) => entry && typeof entry === 'object');
 
+        const total = parts.length;
+        const done = parts.filter((p) => p.fitted).length;
+        const owed = parts.some((p) => !p.billed);
+
         return XS.el('div', { class: here ? 'row lit' : 'row' }, [
             XS.el('div', {}, [
                 XS.el('div', { class: 't' }, [
                     `${order.customerName || 'Unknown'} · ${order.plate || '——'}`,
                     here ? XS.el('span', { class: 'tag', text: 'CONNECTED' }) : null,
+                    owed ? XS.el('span', { class: 'tag warn', text: 'UNBILLED' }) : null,
                 ]),
-                XS.el('div', { class: 'm', text: `${summarise(parts)} · ${XS.ago(order.createdAt)}` }),
-                lines(order, parts),
+                XS.el('div', { class: 'm', text: `${summarise(parts, done)} · ${XS.ago(order.createdAt)}` }),
+                total ? XS.track(Math.round((done / total) * 100), done === total ? 'good' : '') : null,
+                lines(order, parts, here),
                 order.notes ? XS.el('div', {
                     style: 'font-size:12px;color:var(--dim);margin-top:8px;line-height:1.5',
                     text: order.notes,
@@ -87,6 +93,11 @@
                     class: 'mini hot', text: 'Claim',
                     onclick: () => XS.post('claimOrder', { id: order.id }),
                 }) : null,
+                // Booked without billing, or added to since the last bill.
+                owed && order.status !== 'done' ? XS.el('button', {
+                    class: 'mini', text: 'Bill it',
+                    onclick: () => XS.post('billOrder', { id: order.id }),
+                }) : null,
                 order.status === 'claimed' ? XS.el('button', {
                     class: 'mini', text: 'Finish',
                     onclick: () => XS.post('finishOrder', { id: order.id }),
@@ -95,7 +106,7 @@
         ]);
     }
 
-    function summarise(parts) {
+    function summarise(parts, done) {
         if (!parts.length) return 'nothing listed';
 
         const seen = [];
@@ -105,32 +116,51 @@
             if (label && !seen.includes(label)) seen.push(label);
         }
 
-        return `${parts.length} part${parts.length === 1 ? '' : 's'} · ${seen.join(', ')}`;
+        return `${done} of ${parts.length} fitted · ${seen.join(', ')}`;
     }
 
-    // Each line can be taken off. A part the shop cannot get hold of should
-    // come off the order rather than sit on it, and the quote follows it down.
-    function lines(order, parts) {
+    // What the mechanic reads before walking to the bench. Each line says what
+    // it is waiting on: a part to be made, a part on the shelf to go and get,
+    // or nothing at all — those last ones have no part behind them and are the
+    // only work this screen does itself.
+    function lines(order, parts, here) {
         if (!parts.length) return null;
 
         const open = order.status !== 'done';
         const wrap = XS.el('div', { style: 'margin-top:10px;display:flex;flex-direction:column;gap:5px' });
 
-        for (const [index, pick] of parts.entries()) {
-            const stock = XS.stockFor(pick.category);
+        // Finished work drops to the bottom; what is left to do stays in view.
+        const sorted = [...parts].sort((a, b) => Number(!!a.fitted) - Number(!!b.fitted));
 
-            wrap.append(XS.el('div', { class: 'ol' }, [
+        for (const pick of sorted) {
+            const held = pick.needs ? XS.heldOf(pick.needs) : null;
+            const short = !pick.fitted && pick.needs && held !== null && held < 1;
+
+            wrap.append(XS.el('div', {
+                class: 'ol',
+                style: pick.fitted ? 'opacity:.55' : null,
+            }, [
                 XS.el('span', { class: 'n' }, [
                     XS.el('span', { class: 'c', text: (pick.categoryLabel || pick.category || '').toUpperCase() }),
                     pick.label,
-                    stock && stock.count < 1
-                        ? XS.el('span', { class: 'tag warn', text: 'MAKE ONE' })
+                    pick.fitted ? XS.el('span', { class: 'tag', text: 'FITTED' }) : null,
+                    short ? XS.el('span', { class: 'tag warn', text: 'MAKE ONE' }) : null,
+                    !pick.fitted && pick.needs && !short
+                        ? XS.el('span', { class: 'tag', text: (pick.needsLabel || pick.needs).toUpperCase() })
                         : null,
                 ]),
                 XS.el('span', { class: 'p', text: XS.money(pick.price) }),
-                open ? XS.el('button', {
+
+                // No part to use, so there is nothing to hand the mechanic —
+                // this is the one thing the tablet still does to a car.
+                !pick.fitted && !pick.needs && here && open ? XS.el('button', {
+                    class: 'mini', text: 'Do it',
+                    onclick: () => XS.post('fitByHand'),
+                }) : null,
+
+                open && !pick.fitted ? XS.el('button', {
                     class: 'del', text: '×', title: 'Take this off the order',
-                    onclick: () => XS.post('dropOrderLine', { id: order.id, line: index }),
+                    onclick: () => XS.post('dropOrderLine', { id: order.id, line: pick.lid }),
                 }) : null,
             ]));
         }

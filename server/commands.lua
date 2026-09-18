@@ -94,6 +94,18 @@ if Inventory.name ~= 'ox_inventory' then
                 end
             end
         end
+
+        for _, item in ipairs(Parts.Installable()) do
+            local handler = function(src)
+                TriggerClientEvent('XS-Mechanic:client:useItem', src, item)
+            end
+
+            if Framework.name == 'qbox' then
+                exports.qbx_core:CreateUseableItem(item, handler)
+            elseif Framework.core then
+                Framework.core.Functions.CreateUseableItem(item, handler)
+            end
+        end
     end)
 end
 

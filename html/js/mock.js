@@ -12,16 +12,435 @@
 
     const NOW = Math.floor(Date.now() / 1000);
 
-    const COLOURS = [
-        { id: 0, label: 'Black', hex: '#0d0d0d' }, { id: 1, label: 'Graphite', hex: '#1c1c1e' },
-        { id: 2, label: 'Anthracite', hex: '#26282b' }, { id: 3, label: 'Steel', hex: '#3d4249' },
-        { id: 4, label: 'Silver', hex: '#9ba1a8' }, { id: 5, label: 'Bluish Silver', hex: '#aab6c4' },
-        { id: 27, label: 'Red', hex: '#c00e1a' }, { id: 28, label: 'Torino Red', hex: '#da1918' },
-        { id: 36, label: 'Orange', hex: '#f78616' }, { id: 38, label: 'Gold', hex: '#c2a661' },
-        { id: 49, label: 'Dark Green', hex: '#132428' }, { id: 53, label: 'Lime', hex: '#aad13a' },
-        { id: 64, label: 'Navy', hex: '#222e46' }, { id: 70, label: 'Ultra Blue', hex: '#224faa' },
-        { id: 73, label: 'Racing Blue', hex: '#2c5f9a' }, { id: 88, label: 'Yellow', hex: '#f1d80a' },
-        { id: 111, label: 'White', hex: '#ffffff' }, { id: 132, label: 'Chameleon', hex: '#7c5cd6' },
+    // Trimmed from shared/paint.lua — the same families and indices the
+    // game uses, a slice of each so the file stays readable.
+    const PAINT = [
+            {
+                    "id": "metallic",
+                    "label": "Metallic",
+                    "colours": [
+                            {
+                                    "id": 0,
+                                    "label": "Black",
+                                    "hex": "#0d1116"
+                            },
+                            {
+                                    "id": 1,
+                                    "label": "Graphite Black",
+                                    "hex": "#1c1d21"
+                            },
+                            {
+                                    "id": 2,
+                                    "label": "Black Steel",
+                                    "hex": "#32383d"
+                            },
+                            {
+                                    "id": 3,
+                                    "label": "Dark Silver",
+                                    "hex": "#454b4f"
+                            },
+                            {
+                                    "id": 4,
+                                    "label": "Silver",
+                                    "hex": "#999da0"
+                            },
+                            {
+                                    "id": 5,
+                                    "label": "Blue Silver",
+                                    "hex": "#c2c4c6"
+                            },
+                            {
+                                    "id": 6,
+                                    "label": "Steel Gray",
+                                    "hex": "#979a97"
+                            },
+                            {
+                                    "id": 7,
+                                    "label": "Shadow Silver",
+                                    "hex": "#637380"
+                            },
+                            {
+                                    "id": 8,
+                                    "label": "Stone Silver",
+                                    "hex": "#63625c"
+                            },
+                            {
+                                    "id": 9,
+                                    "label": "Midnight Silver",
+                                    "hex": "#3c3f47"
+                            },
+                            {
+                                    "id": 10,
+                                    "label": "Gun Metal",
+                                    "hex": "#444e54"
+                            },
+                            {
+                                    "id": 11,
+                                    "label": "Anthracite Grey",
+                                    "hex": "#1d2129"
+                            },
+                            {
+                                    "id": 27,
+                                    "label": "Red",
+                                    "hex": "#c00e1a"
+                            },
+                            {
+                                    "id": 28,
+                                    "label": "Torino Red",
+                                    "hex": "#da1918"
+                            },
+                            {
+                                    "id": 29,
+                                    "label": "Formula Red",
+                                    "hex": "#b6111b"
+                            },
+                            {
+                                    "id": 30,
+                                    "label": "Blaze Red",
+                                    "hex": "#a51e23"
+                            },
+                            {
+                                    "id": 31,
+                                    "label": "Graceful Red",
+                                    "hex": "#7b1a22"
+                            },
+                            {
+                                    "id": 32,
+                                    "label": "Garnet Red",
+                                    "hex": "#8e1b1f"
+                            }
+                    ]
+            },
+            {
+                    "id": "matte",
+                    "label": "Matte",
+                    "colours": [
+                            {
+                                    "id": 12,
+                                    "label": "Black",
+                                    "hex": "#13181f"
+                            },
+                            {
+                                    "id": 13,
+                                    "label": "Gray",
+                                    "hex": "#26282a"
+                            },
+                            {
+                                    "id": 14,
+                                    "label": "Light Grey",
+                                    "hex": "#515554"
+                            },
+                            {
+                                    "id": 39,
+                                    "label": "Red",
+                                    "hex": "#cf1f21"
+                            },
+                            {
+                                    "id": 40,
+                                    "label": "Dark Red",
+                                    "hex": "#732021"
+                            },
+                            {
+                                    "id": 41,
+                                    "label": "Orange",
+                                    "hex": "#f27d20"
+                            },
+                            {
+                                    "id": 42,
+                                    "label": "Yellow",
+                                    "hex": "#ffc91f"
+                            },
+                            {
+                                    "id": 55,
+                                    "label": "Lime Green",
+                                    "hex": "#66b81f"
+                            },
+                            {
+                                    "id": 82,
+                                    "label": "Dark Blue",
+                                    "hex": "#1f2852"
+                            },
+                            {
+                                    "id": 83,
+                                    "label": "Blue",
+                                    "hex": "#253aa7"
+                            },
+                            {
+                                    "id": 84,
+                                    "label": "Midnight Blue",
+                                    "hex": "#1c3551"
+                            },
+                            {
+                                    "id": 128,
+                                    "label": "Green",
+                                    "hex": "#4e6443"
+                            },
+                            {
+                                    "id": 129,
+                                    "label": "Brown",
+                                    "hex": "#bcac8f"
+                            },
+                            {
+                                    "id": 131,
+                                    "label": "White",
+                                    "hex": "#fcf9f1"
+                            },
+                            {
+                                    "id": 133,
+                                    "label": "Olive Army Green",
+                                    "hex": "#81844c"
+                            },
+                            {
+                                    "id": 148,
+                                    "label": "Purple",
+                                    "hex": "#6b1f7b"
+                            },
+                            {
+                                    "id": 149,
+                                    "label": "Dark Purple",
+                                    "hex": "#1e1d22"
+                            },
+                            {
+                                    "id": 151,
+                                    "label": "Forest Green",
+                                    "hex": "#2d362a"
+                            }
+                    ]
+            },
+            {
+                    "id": "metals",
+                    "label": "Metals & Chrome",
+                    "colours": [
+                            {
+                                    "id": 117,
+                                    "label": "Brushed Steel",
+                                    "hex": "#6a747c",
+                                    "shaded": true
+                            },
+                            {
+                                    "id": 118,
+                                    "label": "Brushed Black Steel",
+                                    "hex": "#354158",
+                                    "shaded": true
+                            },
+                            {
+                                    "id": 119,
+                                    "label": "Brushed Aluminium",
+                                    "hex": "#9ba0a8",
+                                    "shaded": true
+                            },
+                            {
+                                    "id": 120,
+                                    "label": "Chrome",
+                                    "hex": "#5870a1",
+                                    "shaded": true
+                            },
+                            {
+                                    "id": 158,
+                                    "label": "Pure Gold",
+                                    "hex": "#c9a227",
+                                    "shaded": true
+                            },
+                            {
+                                    "id": 159,
+                                    "label": "Brushed Gold",
+                                    "hex": "#a08a55",
+                                    "shaded": true
+                            }
+                    ]
+            },
+            {
+                    "id": "utility",
+                    "label": "Utility",
+                    "colours": [
+                            {
+                                    "id": 15,
+                                    "label": "Black",
+                                    "hex": "#151921"
+                            },
+                            {
+                                    "id": 16,
+                                    "label": "Black Poly",
+                                    "hex": "#1e2429"
+                            },
+                            {
+                                    "id": 17,
+                                    "label": "Dark Silver",
+                                    "hex": "#333a3c"
+                            },
+                            {
+                                    "id": 18,
+                                    "label": "Silver",
+                                    "hex": "#8c9095"
+                            },
+                            {
+                                    "id": 19,
+                                    "label": "Gun Metal",
+                                    "hex": "#39434d"
+                            },
+                            {
+                                    "id": 20,
+                                    "label": "Shadow Silver",
+                                    "hex": "#506272"
+                            },
+                            {
+                                    "id": 43,
+                                    "label": "Red",
+                                    "hex": "#9c1016"
+                            },
+                            {
+                                    "id": 44,
+                                    "label": "Bright Red",
+                                    "hex": "#de0f18"
+                            },
+                            {
+                                    "id": 56,
+                                    "label": "Dark Green",
+                                    "hex": "#22383e"
+                            },
+                            {
+                                    "id": 57,
+                                    "label": "Green",
+                                    "hex": "#1d5a3f"
+                            },
+                            {
+                                    "id": 75,
+                                    "label": "Dark Blue",
+                                    "hex": "#112552"
+                            },
+                            {
+                                    "id": 76,
+                                    "label": "Midnight Blue",
+                                    "hex": "#1b203e"
+                            },
+                            {
+                                    "id": 77,
+                                    "label": "Blue",
+                                    "hex": "#275190"
+                            },
+                            {
+                                    "id": 78,
+                                    "label": "Sea Foam Blue",
+                                    "hex": "#608592"
+                            },
+                            {
+                                    "id": 79,
+                                    "label": "Lightning Blue",
+                                    "hex": "#2446a8"
+                            },
+                            {
+                                    "id": 80,
+                                    "label": "Maui Blue Poly",
+                                    "hex": "#4271e1"
+                            },
+                            {
+                                    "id": 81,
+                                    "label": "Bright Blue",
+                                    "hex": "#3b39e0"
+                            },
+                            {
+                                    "id": 108,
+                                    "label": "Brown",
+                                    "hex": "#3a2a1b"
+                            }
+                    ]
+            },
+            {
+                    "id": "worn",
+                    "label": "Worn",
+                    "colours": [
+                            {
+                                    "id": 21,
+                                    "label": "Black",
+                                    "hex": "#1e232f"
+                            },
+                            {
+                                    "id": 22,
+                                    "label": "Graphite",
+                                    "hex": "#363a3f"
+                            },
+                            {
+                                    "id": 23,
+                                    "label": "Silver Grey",
+                                    "hex": "#a0a199"
+                            },
+                            {
+                                    "id": 24,
+                                    "label": "Silver",
+                                    "hex": "#d3d3d3"
+                            },
+                            {
+                                    "id": 25,
+                                    "label": "Blue Silver",
+                                    "hex": "#b7bfca"
+                            },
+                            {
+                                    "id": 26,
+                                    "label": "Shadow Silver",
+                                    "hex": "#778794"
+                            },
+                            {
+                                    "id": 46,
+                                    "label": "Red",
+                                    "hex": "#a94744"
+                            },
+                            {
+                                    "id": 47,
+                                    "label": "Golden Red",
+                                    "hex": "#b16c51"
+                            },
+                            {
+                                    "id": 48,
+                                    "label": "Dark Red",
+                                    "hex": "#371c25"
+                            },
+                            {
+                                    "id": 58,
+                                    "label": "Dark Green",
+                                    "hex": "#2d423f"
+                            },
+                            {
+                                    "id": 59,
+                                    "label": "Green",
+                                    "hex": "#45594b"
+                            },
+                            {
+                                    "id": 60,
+                                    "label": "Sea Wash",
+                                    "hex": "#65867f"
+                            },
+                            {
+                                    "id": 85,
+                                    "label": "Dark Blue",
+                                    "hex": "#4c5f81"
+                            },
+                            {
+                                    "id": 86,
+                                    "label": "Blue",
+                                    "hex": "#58688e"
+                            },
+                            {
+                                    "id": 87,
+                                    "label": "Light Blue",
+                                    "hex": "#74b5d8"
+                            },
+                            {
+                                    "id": 113,
+                                    "label": "Honey Beige",
+                                    "hex": "#b0ab94"
+                            },
+                            {
+                                    "id": 114,
+                                    "label": "Brown",
+                                    "hex": "#453831"
+                            },
+                            {
+                                    "id": 115,
+                                    "label": "Dark Brown",
+                                    "hex": "#2a282b"
+                            }
+                    ]
+            }
     ];
 
     function slot(id, label, category, current, names) {
@@ -159,16 +578,16 @@
         staffOnline: 2,
         takesOrders: true,
         basket: [
-            { category: 'cosmetics', categoryLabel: 'Cosmetics', label: 'Carbon Lip — Front Bumper', price: 2150 },
-            { category: 'wheels', categoryLabel: 'Wheels', label: 'Endo v1', price: 750 },
-            { category: 'performance', categoryLabel: 'Performance', label: 'Level 3 — Engine', price: 3250 },
+            { lid: 1, category: 'cosmetics', categoryLabel: 'Cosmetics', label: 'Carbon Lip — Front Bumper', price: 2150, fitted: false, needs: 'body_part', needsLabel: 'Body Part' },
+            { lid: 2, category: 'wheels', categoryLabel: 'Wheels', label: 'Endo v1', price: 750, fitted: false, needs: 'wheel_set', needsLabel: 'Wheel Set' },
+            { lid: 3, category: 'performance', categoryLabel: 'Performance', label: 'Level 3 — Engine', price: 3250, fitted: true, billed: 88 },
         ],
         serviceEnabled: true,
         tuningEnabled: true,
         dynoEnabled: true,
         stanceLimits: { height: 0.30, camber: 0.35, track: 0.25 },
         settings: { accent: 'blue', hud: true, sounds: true, autoDraft: true },
-        colours: COLOURS,
+        paint: PAINT,
 
         shop: { id: 1, name: 'Hayes Autoworks', kind: 'owned', job: 'mechanic' },
 
@@ -208,28 +627,28 @@
             { id: 412, status: 'open', customerName: 'Ellis Ward', plate: '46VSN720',
               quote: 6150, createdAt: NOW - 60 * 9,
               requested: [
-                  { category: 'cosmetics', categoryLabel: 'Cosmetics', label: 'Carbon Lip — Front Bumper', price: 2150 },
-                  { category: 'cosmetics', categoryLabel: 'Cosmetics', label: 'GT Wing — Spoiler', price: 2750 },
-                  { category: 'wheels', categoryLabel: 'Wheels', label: 'Endo v1', price: 1250 },
+                  { lid: 4, category: 'cosmetics', categoryLabel: 'Cosmetics', label: 'Carbon Lip — Front Bumper', price: 2150, fitted: false, needs: 'body_part', needsLabel: 'Body Part' },
+                  { lid: 5, category: 'cosmetics', categoryLabel: 'Cosmetics', label: 'GT Wing — Spoiler', price: 2750, fitted: false, needs: 'body_part', needsLabel: 'Body Part' },
+                  { lid: 6, category: 'wheels', categoryLabel: 'Wheels', label: 'Endo v1', price: 1250, fitted: true, billed: 88, needs: 'wheel_set', needsLabel: 'Wheel Set' },
               ],
               notes: 'Wants the front end done. Not fussed on colour.' },
             { id: 411, status: 'open', customerName: 'Rosa Delgado', plate: 'KTM 8841',
               quote: 1250, createdAt: NOW - 60 * 34,
               requested: [
-                  { category: 'wheels', categoryLabel: 'Wheels', label: 'Dash VIP', price: 1250 },
+                  { lid: 7, category: 'wheels', categoryLabel: 'Wheels', label: 'Dash VIP', price: 1250, fitted: false, needs: 'wheel_set', needsLabel: 'Wheel Set' },
               ],
               notes: 'Bent rim on the nearside front.' },
             { id: 410, status: 'claimed', customerName: 'Aaron Pike', plate: 'LSV 2210',
               quote: 1000, createdAt: NOW - 60 * 72,
               requested: [
-                  { category: 'respray', categoryLabel: 'Respray', label: 'Respray — Racing Blue', price: 400 },
-                  { category: 'livery', categoryLabel: 'Livery', label: 'Stripes', price: 600 },
+                  { lid: 8, category: 'respray', categoryLabel: 'Respray', label: 'Respray — Racing Blue', price: 400, fitted: false, needs: 'paint_can', needsLabel: 'Paint Can' },
+                  { lid: 9, category: 'livery', categoryLabel: 'Livery', label: 'Stripes', price: 600, fitted: true, billed: 88, needs: 'vinyl_wrap', needsLabel: 'Vinyl Wrap' },
               ],
               notes: '' },
             { id: 409, status: 'done', customerName: 'Nina Brackley', plate: 'ZZR 0098',
               quote: 400, createdAt: NOW - 60 * 210,
               requested: [
-                  { category: 'interior', categoryLabel: 'Interior', label: 'Carbon Dash', price: 400 },
+                  { lid: 10, category: 'interior', categoryLabel: 'Interior', label: 'Carbon Dash', price: 400, fitted: false, needs: 'interior_part', needsLabel: 'Interior Part' },
               ],
               notes: 'Overdue on everything.' },
         ],

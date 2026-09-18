@@ -77,20 +77,10 @@
             return;
         }
 
-        const held = XS.stockFor('performance');
-
         grid.append(XS.el('div', { class: 'gh' }, [
             XS.el('h2', { text: category.label }),
             XS.el('div', { class: 'cap' }, [
-                category.requiresItem ? 'the shop supplies the part' : 'paid from shop funds',
-                category.requiresItem && held
-                    ? XS.el('span', {
-                        class: 'stk',
-                        text: held.count > 0
-                            ? ` · ${XS.num(held.count)} ${held.label} in stock`
-                            : ` · no ${held.label} — one has to be made`,
-                    })
-                    : null,
+                `${category.options.length} available`,
                 XS.state.canPrice
                     ? XS.el('span', { class: 'stk', text: ' · right click to price' })
                     : null,
@@ -104,9 +94,11 @@
             // against one generic item hid every engine a shop actually had.
             const held = XS.heldOf(option.item);
             const dry = category.requiresItem && held !== null && held < 1;
+            const picked = (XS.state.basket || []).some((p) =>
+                p.tuning && p.tuning.category === category.id && p.tuning.option === option.id);
 
             cards.append(XS.el('button', {
-                class: `c ${option.fitted ? 'on' : ''} ${dry ? 'dry' : ''}`,
+                class: `c ${picked ? 'on' : ''} ${dry ? 'dry' : ''}`,
                 oncontextmenu: (ev) => {
                     ev.preventDefault();
                     if (!XS.state.canPrice) return;
@@ -123,13 +115,22 @@
                         category: category.id, option: option.id, price, label,
                     }));
                 },
-                onclick: () => {
-                    if (option.fitted) XS.post('removeTuning', { category: category.id });
-                    else XS.post('fitTuning', { category: category.id, option: option.id, item: option.item });
-                },
+                // Nothing is fitted here. It goes on the list, the list
+                // becomes a work order, and somebody fits the part later —
+                // the same journey a bumper takes.
+                onclick: () => XS.post('pickPart', {
+                    slotId: `pkg_${category.id}`,
+                    category: 'tuning',
+                    label: option.fitted ? `Take off ${option.name}` : option.name,
+                    tuning: {
+                        category: category.id,
+                        option: option.id,
+                        remove: option.fitted || undefined,
+                    },
+                }),
             }, [
                 XS.el('div', { class: 'idx' }, [
-                    category.requiresItem ? option.item.toUpperCase() : 'PACKAGE',
+                    category.requiresItem && option.item ? option.item.toUpperCase() : 'PACKAGE',
                     option.priced ? XS.el('span', { class: 'stk', text: ' · SHOP PRICE' }) : null,
                 ]),
                 XS.el('div', { class: 'nm', text: option.name }),
@@ -139,16 +140,17 @@
                         text: option.info,
                     })
                     : null,
+                dry
+                    ? XS.el('div', {
+                        style: 'font-size:11px;color:var(--warn);line-height:1.45;margin:-6px 0 12px',
+                        text: 'None on the shelf. Make one at the bench.',
+                    })
+                    : null,
                 XS.el('div', { class: 'fr' }, [
+                    XS.el('span', { class: 'pr', text: XS.money(option.price) }),
                     XS.el('span', {
-                        class: 'pr',
-                        text: category.requiresItem
-                            ? (held === null ? '1 part' : `${XS.num(held)} on the shelf`)
-                            : XS.money(option.price),
-                    }),
-                    XS.el('span', {
-                        class: `st ${option.fitted ? 'f' : ''}`,
-                        text: option.fitted ? 'FITTED' : 'AVAILABLE',
+                        class: `st ${option.fitted ? 'f' : picked ? 'p' : ''}`,
+                        text: option.fitted ? 'FITTED' : picked ? 'PICKED' : 'AVAILABLE',
                     }),
                 ]),
             ]));
@@ -158,7 +160,7 @@
 
         grid.append(XS.el('div', {
             style: 'margin-top:18px;font-size:12px;color:var(--faint);line-height:1.6;max-width:640px',
-            text: 'These change the vehicle’s handling. The shipped values are tuned against stock cars — an addon with an unbalanced handling file can come out slower, which is the handling file rather than the swap.',
+            text: 'These change how the car drives and nothing you can look at. The shipped values are tuned against stock cars — an addon with an unbalanced handling file can come out slower, which is the handling file rather than the swap.',
         }));
 
         host.append(grid);
@@ -220,7 +222,7 @@
     }
 
     function queue() {
-        if (!(XS.state.basket || []).length || !XS.renderQueue) return null;
+        if (!XS.renderQueue || !(XS.state.basket || []).length) return null;
         return XS.renderQueue();
     }
 })();

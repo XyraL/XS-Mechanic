@@ -31,6 +31,25 @@ function kitNames() {
     return [...kits[1].matchAll(/^\s{8}([a-z0-9_]+)\s*=\s*\{/gm)].map((m) => m[1]);
 }
 
+// And the parts, registered in a loop over Parts.Installable(). That list is
+// built from two config tables and the tuning catalogue, so the export names
+// only exist once all three are expanded — the same shape as the kits above.
+function installableNames() {
+    const names = new Set();
+
+    for (const table of ['categoryItems', 'slotItems']) {
+        const found = config.match(new RegExp(table + String.raw`\s*=\s*\{([\s\S]*?)\n    \},`, 'm'));
+        if (!found) continue;
+
+        for (const m of found[1].matchAll(/=\s*'([a-z0-9_]+)'/g)) names.add(m[1]);
+    }
+
+    const tuning = readFileSync(path.join(ROOT, 'shared/tuning.lua'), 'utf8');
+    for (const m of tuning.matchAll(/item\s*=\s*'([a-z0-9_]+)'/g)) names.add(m[1]);
+
+    return [...names];
+}
+
 function exportsIn(files) {
     const found = new Set();
 
@@ -47,6 +66,11 @@ function exportsIn(files) {
         // exports(('use_%s'):format(item), ...) inside the kit loop.
         if (/exports\(\(\s*['"]use_%s['"]\s*\)\s*:format\(item\)/.test(src)) {
             for (const kit of kitNames()) found.add(`use_${kit}`);
+        }
+
+        // exports(('fit_%s'):format(item), ...) inside the parts loop.
+        if (/exports\(\(\s*['"]fit_%s['"]\s*\)\s*:format\(item\)/.test(src)) {
+            for (const part of installableNames()) found.add(`fit_${part}`);
         }
     }
 

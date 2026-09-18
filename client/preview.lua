@@ -262,6 +262,13 @@ end
 -- swinging round on every click would fight it.
 local function framing(vehicle, category)
     if Showcase.active then return end
+
+    -- The preview camera exists to show somebody the part they are looking at
+    -- in the panel. Fitting a part off a work order goes through the same
+    -- code with the panel shut, and swinging a camera onto the car then —
+    -- with no UI on screen to explain it — is just the view being taken away.
+    if not XSM.open then return end
+
     startCam(vehicle, category)
 end
 
@@ -320,12 +327,23 @@ function Preview.Respray(data)
         else
             SetVehicleCustomSecondaryColour(vehicle, r, g, b)
         end
-    elseif data.part == 'primary' then
-        ClearVehicleCustomPrimaryColour(vehicle)
-        SetVehicleColours(vehicle, tonumber(data.index) or primary, secondary)
-    else
+    elseif data.part == 'pearl' or data.part == 'wheel' then
+        -- Pearl and wheel colour are the extra pair rather than the main one,
+        -- and they read from the same palette: a pearl is one of these
+        -- colours laid over whatever the body is.
+        local pearl, wheelColour = GetVehicleExtraColours(vehicle)
+
+        if data.part == 'pearl' then
+            SetVehicleExtraColours(vehicle, tonumber(data.index) or pearl, wheelColour)
+        else
+            SetVehicleExtraColours(vehicle, pearl, tonumber(data.index) or wheelColour)
+        end
+    elseif data.part == 'secondary' then
         ClearVehicleCustomSecondaryColour(vehicle)
         SetVehicleColours(vehicle, primary, tonumber(data.index) or secondary)
+    else
+        ClearVehicleCustomPrimaryColour(vehicle)
+        SetVehicleColours(vehicle, tonumber(data.index) or primary, secondary)
     end
 
     XSM.preview = { category = 'respray', slotId = 'respray', label = 'Respray', price = data.price }

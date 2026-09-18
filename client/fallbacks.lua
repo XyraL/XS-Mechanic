@@ -37,9 +37,18 @@ optional('Lighting', 'client/extras.lua', { Open = function() end, Set = functio
 optional('Anim', 'client/anim.lua', { holding = false, Start = function() end, Stop = function() end, Work = function() return true end })
 optional('Showcase', 'client/showcase.lua', { active = false, Start = function() end, Stop = function() end, SetRect = function() end, Spin = function() end, Spun = function() return 0 end, Focus = function() end })
 optional('Catalogue', 'client/catalogue.lua', { Build = function() return nil end, SupportsChameleon = function() return false end, IsElectric = function() return false end })
+optional('Install', 'client/install.lua', { Use = function() end, ByHand = function() end, Pick = function() end })
+
+-- Shared, not client, but the client is where a missing one is felt: without
+-- it every part item registers an export that cannot resolve its own name.
+optional('Paint', 'shared/paint.lua', { Families = {}, Colours = {}, ById = {}, Get = function() return nil end, Sheet = function() return {} end, Allowed = function() return false end })
 
 if XSM and not XSM.StopPreview then
     XSM.StopPreview = function() end
+end
+
+if XSM and not XSM.PushBasket then
+    XSM.PushBasket = function() end
 end
 
 if #missing > 0 then

@@ -231,6 +231,36 @@ Config.Tuning = {
     },
 }
 
+-- ── Paint ────────────────────────────────────────────────────────────────────
+-- The colours themselves are in shared/paint.lua, grouped the way the game
+-- groups them: Metallic, Matte, Metals & Chrome, Utility and Worn. This is
+-- where you change what a shop is allowed to sell.
+Config.Paint = {
+    -- Colour indices to take off the list entirely.
+    hidden = {},
+
+    -- Colours that are in the table but off by default because selling them
+    -- causes arguments. Right now that is only the police fleet blue.
+    allowRestricted = false,
+
+    -- Colours to ADD. This is for paint your server streams itself: an add-on
+    -- paint pack, or the chameleon paints on a build that has them.
+    --
+    -- Nothing is shipped here on purpose. Chameleon indices depend on the
+    -- server build and on carcols_gen9.meta being streamed — they start at 161
+    -- on some builds and higher on others — so guessing them here would paint
+    -- cars the wrong colour rather than fail. Find yours and list them.
+    --
+    -- `family` slots a colour into one of the groups above, or invents a new
+    -- group of its own. Leave it out and it lands under extraLabel.
+    extra = {
+        -- { id = 161, label = 'Monochrome',  hex = '#8f97a8', family = 'chameleon' },
+        -- { id = 162, label = 'Night & Day', hex = '#3b5ba8', family = 'chameleon' },
+    },
+
+    extraLabel = 'Add-ons',
+}
+
 -- ── Servicing ────────────────────────────────────────────────────────────────
 -- Parts wear as a vehicle gains mileage, and worn parts make it drive worse
 -- until a mechanic replaces them. What each part is, how long it lasts and what
@@ -531,8 +561,13 @@ Config.Crafting = {
 Config.Invoices = {
     enabled = true,
 
-    -- An invoice is drafted as the mechanic works, one line per thing applied,
-    -- priced from the shop. The mechanic can edit every line before sending.
+    -- Repairs, servicing and stance are added to a running draft as they are
+    -- done, one line each, priced from the shop. The mechanic can edit every
+    -- line before sending it.
+    --
+    -- Parts are not on this path. They are quoted in the tablet, written down
+    -- as a work order and billed from the order, so a customer sees the price
+    -- before the work rather than after it.
     autoDraft = true,
 
     -- Percentage of a paid invoice that goes to the mechanic who sent it. The

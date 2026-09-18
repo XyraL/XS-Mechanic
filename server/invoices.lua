@@ -36,8 +36,27 @@ local function retotal(draft)
     draft.total = total
 end
 
+--[[ Whether work done on the spot lands on the running bill by itself.
+
+     Only repairs, servicing and stance come through here now. Parts are fitted
+     off a work order and billed from the order, which is its own path and is
+     never silent — somebody pressed a button that said what it would do. ]]
+local function autoDraft(src)
+    if not Config.Invoices.autoDraft then return false end
+
+    local citizenid = Framework.GetCitizenId(src)
+    if not citizenid then return true end
+
+    local row = MySQL.single.await('SELECT settings FROM xs_mechanic_players WHERE citizenid = ?', { citizenid })
+    local settings = Util.Decode(row and row.settings, {}) or {}
+
+    return settings.autoDraft ~= false
+end
+
 function Invoices.AddLine(src, label, amount, category, note)
     local draft = Invoices.Draft(src)
+
+    if not autoDraft(src) then return draft end
 
     draft.items[#draft.items + 1] = {
         label = label,
@@ -111,7 +130,7 @@ end
 
 -- Nearest customer to the mechanic. An invoice is handed over in person, so
 -- there is no player list to pick a stranger out of.
-local function nearestCustomer(src)
+function Invoices.Nearest(src)
     local mechanic = GetPlayerPed(src)
     if not mechanic or mechanic == 0 then return nil end
 
@@ -147,7 +166,7 @@ function Invoices.Send(src, shop, plate, save)
     local customerSrc, customerId, customerName
 
     if not save then
-        customerSrc = nearestCustomer(src)
+        customerSrc = Invoices.Nearest(src)
 
         if not customerSrc then
             return { ok = false, error = 'Nobody close enough to hand it to.' }
@@ -204,6 +223,104 @@ function Invoices.Send(src, shop, plate, save)
     return { ok = true, message = ('Sent to %s.'):format(customerName) }
 end
 
+--[[ Billing a work order.
+
+     Nothing to do with the draft. The draft is one running bill per mechanic,
+     which is right for a repair or a service done on the spot and wrong for an
+     order — an order already knows what is on it and who it is for, and a
+     mechanic who writes two orders before sending either should not have them
+     bleed into each other.
+
+     The customer is whoever the order is for, online or not, because they
+     agreed to the work when they asked for it. Only an order with nobody on it
+     falls back to whoever is stood there. ]]
+function Invoices.Bill(src, shop, order, lines)
+    local items, total = {}, 0
+
+    for _, line in ipairs(lines or {}) do
+        local amount = math.max(0, math.floor(tonumber(line.price) or 0))
+
+        items[#items + 1] = {
+            label = line.label,
+            amount = amount,
+            category = line.categoryLabel or line.category,
+            note = ('Order #%d'):format(order.id),
+        }
+
+        total = total + amount
+    end
+
+    if #items == 0 then return { ok = false, error = 'Nothing to bill.' } end
+
+    local customer, customerName = order.customer, order.customerName
+
+    if not customer or customer == '' then
+        local nearest = Invoices.Nearest(src)
+        if not nearest then return { ok = false, error = 'Nobody close enough to hand it to.' } end
+
+        customer = Framework.GetCitizenId(nearest)
+        customerName = Framework.GetName(nearest)
+
+        if not customer then return { ok = false, error = 'That player is not loaded.' } end
+
+        MySQL.update.await('UPDATE xs_mechanic_orders SET customer = ?, customer_name = ? WHERE id = ?',
+            { customer, customerName, order.id })
+
+        order.customer, order.customerName = customer, customerName
+    end
+
+    local id = MySQL.insert.await([[
+        INSERT INTO xs_mechanic_invoices
+            (shop_id, mechanic, mechanic_name, customer, customer_name, plate, items, total, status, order_id)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'sent', ?)
+    ]], {
+        shop.id,
+        Framework.GetCitizenId(src) or '',
+        Framework.GetName(src),
+        customer,
+        customerName or '',
+        order.plate or '',
+        json.encode(items),
+        total,
+        order.id,
+    })
+
+    if not id then return { ok = false, error = 'Could not write that invoice.' } end
+
+    -- Handed over now if they are here, waiting in /invoices if they are not.
+    local customerSrc
+
+    for _, playerId in ipairs(GetPlayers()) do
+        playerId = tonumber(playerId)
+        if Framework.GetCitizenId(playerId) == customer then customerSrc = playerId break end
+    end
+
+    if customerSrc then
+        TriggerClientEvent('XS-Mechanic:client:invoice', customerSrc, {
+            id = id,
+            shopName = shop.name,
+            total = total,
+            summary = summarise(items),
+        })
+
+        Phone.Notify(customerSrc, shop.name, ('Invoice for %s'):format(Util.Money(total)))
+    end
+
+    Discord.Send('money', 'Invoice sent',
+        ('**%s** billed **%s** %s at %s'):format(
+            Framework.GetName(src), customerName, Util.Money(total), shop.name),
+        Discord.Colour.info)
+
+    return {
+        ok = true,
+        id = id,
+        total = total,
+        message = customerSrc
+            and ('Billed %s %s.'):format(customerName, Util.Money(total))
+            or ('%s billed to %s. They are not online — it is waiting for them.'):format(Util.Money(total), customerName),
+    }
+end
+
 function Invoices.Resend(src, id)
     local row = MySQL.single.await([[
         SELECT *, UNIX_TIMESTAMP(created_at) AS created_at_unix,
@@ -226,7 +343,7 @@ function Invoices.Resend(src, id)
     -- stood in front of the mechanic, the same as a fresh one.
     if invoice.customer == '' or not customerSrc then
         if invoice.customer == '' then
-            local nearest = nearestCustomer(src)
+            local nearest = Invoices.Nearest(src)
             if not nearest then return { ok = false, error = 'Nobody close enough to hand it to.' } end
 
             customerSrc = nearest

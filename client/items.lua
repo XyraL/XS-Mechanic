@@ -37,6 +37,17 @@ for item, kit in pairs(Config.Repair.kits) do
     end
 end
 
+-- Every part that fits something. Using one at a connected car is how work
+-- actually gets done — the tablet only writes the job down — so all of them
+-- land in the same place and the work order decides what goes on.
+for _, item in ipairs(Parts.Installable()) do
+    exports(('fit_%s'):format(item), function()
+        Install.Use(item)
+    end)
+
+    registered[#registered + 1] = ('fit_%s'):format(item)
+end
+
 if Config.Nitrous.enabled and Config.Nitrous.item ~= '' then
     exports('use_nitrous', function()
         Nitrous.Toggle()

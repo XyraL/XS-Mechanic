@@ -48,7 +48,7 @@
             ['hud', 'Show the HUD', 'A small readout at the edge of the screen while you are working on a car.', true],
             ['hudRight', 'HUD on the right', 'Move it to the other side of the screen.', false],
             ['sounds', 'Sounds', 'Clicks and confirmations while using the tablet.', true],
-            ['autoDraft', 'Build the invoice as I work', 'Every part fitted is added as a line automatically.', true],
+            ['autoDraft', 'Build the invoice as I work', 'Repairs, servicing and stance go on the running bill as you do them. Parts are billed from the work order instead.', true],
         ]) {
             const current = settings[key] === undefined ? fallback : settings[key];
 

@@ -494,6 +494,16 @@ button{cursor:pointer;border:0;background:none}
 .st.w{color:var(--warn);border-color:color-mix(in srgb,var(--warn) 34%,transparent)}
 .st.b{color:var(--bad);border-color:color-mix(in srgb,var(--bad) 34%,transparent)}
 
+/* A row of small choices inside a grid: which part of the car is being
+   painted, and which finish. Same button as the tree, laid out here. */
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 14px}
+.chips .tn{flex:none;padding:7px 12px;white-space:nowrap}
+
+/* Chrome, the brushed metals and the golds have no flat colour — chrome is
+   black in the game files because it is all reflection. The swatch gets a
+   sheen so it reads as metal rather than as a dull blue square. */
+.sw.shaded{background-image:linear-gradient(145deg,rgba(255,255,255,.6),rgba(255,255,255,0) 36%,rgba(0,0,0,.4) 60%,rgba(255,255,255,.3))}
+
 .swatches{display:grid;grid-template-columns:repeat(auto-fill,minmax(66px,1fr));gap:7px}
 .sw{aspect-ratio:1;border-radius:var(--r);border:1px solid var(--line2);position:relative;transition:.15s}
 .sw:hover{transform:scale(1.06);border-color:var(--line3)}
@@ -1018,8 +1028,21 @@ body[data-layout="sheet"] .side .sh{
   font:9.5px/1 var(--mono);letter-spacing:.11em;text-transform:uppercase;color:var(--faint);
 }
 body[data-layout="sheet"] .side .lines{
-  display:flex;flex-direction:column;gap:5px;overflow-y:auto;max-height:150px;
+  display:flex;flex-direction:column;gap:5px;overflow-y:auto;max-height:118px;
 }
+
+/* A few things on the list and the total block ate the sheet: with three
+   picks on it the parts above were down to 130 pixels, which is not enough
+   to show one row of swatches.
+   Capping the total's HEIGHT does not fix it — the panel is a grid and the
+   row it sits in keeps the space whether the box uses it or not, so the
+   sheet just gains a dead strip. The sheet lays its three parts out with
+   flex instead: the list takes what is left and the total takes what it
+   needs, up to half. */
+body[data-layout="sheet"] .panel{display:flex;flex-direction:column}
+body[data-layout="sheet"] .panel .tree{flex:none}
+body[data-layout="sheet"] .panel .grid{flex:1 1 auto;min-height:0}
+body[data-layout="sheet"] .panel .side{flex:0 1 auto;max-height:50%;overflow-y:auto}
 body[data-layout="sheet"] .side .ln{white-space:normal}
 body[data-layout="sheet"] .side .ln .m{display:block}
 body[data-layout="sheet"] .side .tot{flex-direction:column;align-items:stretch;gap:9px}

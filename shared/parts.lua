@@ -55,3 +55,31 @@ function Parts.Label(item)
 
     return item
 end
+
+--[[ Every item that fits something to a car.
+
+     One list, because the exports, both item files, the useable-item loop and
+     the checker all have to agree on it — and because a server owner who
+     renames a part in config expects it to carry on working without editing
+     five other places. ]]
+function Parts.Installable()
+    local seen, out = {}, {}
+
+    local function add(item)
+        if not item or item == '' or seen[item] then return end
+
+        seen[item] = true
+        out[#out + 1] = item
+    end
+
+    for _, item in pairs(Config.Stock.categoryItems) do add(item) end
+    for _, item in pairs(Config.Stock.slotItems) do add(item) end
+
+    for _, options in pairs(Tuning.Options) do
+        for _, option in ipairs(options) do add(option.item) end
+    end
+
+    table.sort(out)
+
+    return out
+end

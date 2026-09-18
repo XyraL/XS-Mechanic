@@ -37,6 +37,15 @@ for item, kit in pairs(Config.Repair.kits) do
     end
 end
 
+for _, item in ipairs(Parts.Installable()) do
+    exports(('fit_%s'):format(item), function(_, _, inventory)
+        local src = target(inventory)
+        if not src then return end
+
+        TriggerClientEvent('XS-Mechanic:client:useItem', src, item)
+    end)
+end
+
 if Config.Nitrous.enabled and Config.Nitrous.item ~= '' then
     exports('use_nitrous', function(_, _, inventory)
         local src = target(inventory)

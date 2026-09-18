@@ -114,6 +114,11 @@ end
 -- Columns added after the first release go here, not into the CREATE above.
 local COLUMNS = {
     -- { 'xs_mechanic_shops', 'example', 'ALTER TABLE `xs_mechanic_shops` ADD COLUMN `example` INT NOT NULL DEFAULT 0' },
+
+    -- Which work order an invoice came off, so an order row can say it has
+    -- been billed and the bill can say what it was for.
+    { 'xs_mechanic_invoices', 'order_id',
+      'ALTER TABLE `xs_mechanic_invoices` ADD COLUMN `order_id` INT UNSIGNED NULL' },
 }
 
 function DB.Ensure()

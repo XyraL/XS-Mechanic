@@ -1,5 +1,48 @@
 # Changelog
 
+## 0.7.0
+
+The tablet stops being the thing that changes the car.
+
+- **Work is quoted in the tablet and done at the car.** Picking parts previews
+  them and builds a list; the list becomes a work order and a bill. Nothing is
+  fitted from a menu any more. A mechanic makes the part, carries it to the
+  car, and uses it — and what goes on is read off that car's work order, so a
+  paint can knows which colour and a body part knows which bumper. All 23 part
+  items are useable on both inventories.
+- **Bill the customer** replaces Fit all on the queue, with Put it on a work
+  order underneath it. Both write the same order; billing sends one invoice for
+  everything on it nobody has been charged for yet. Adding to a car that
+  already has an order open appends to it, so the bumpers and the turbo are one
+  job and one bill.
+- **Performance goes through the same basket.** Engine swaps, turbos, brakes,
+  gearboxes and the rest are picked, quoted, written down and billed exactly
+  like a bumper, and fitted by using the part. They used to fit and charge the
+  shop the moment you clicked them.
+- **Every shop-written order recorded the MECHANIC as the customer.** It read
+  an `owner` field off the vehicle profile that has never existed there — only
+  the readout strip has one, and that is a display name rather than an id. With
+  billing hanging off the order, that would have billed the mechanic every
+  time.
+- **A booked respray lost its colour.** Orders rebuilt each pick down to eight
+  fields and dropped the rest, so a respray, an extra and a package all arrived
+  as a line nobody could act on. Both order paths now carry the whole pick.
+- **The paint palette is the real one.** 159 colours in five finishes —
+  Metallic, Matte, Metals & Chrome, Utility and Worn — plus pearl and wheel
+  colour off the same table, and `Config.Paint` for hiding colours or adding
+  your own. The old hand-written list of 31 had 14 wrong entries: "Pure Gold"
+  was index 120, which is Chrome, and "Bright Green" was 42, which is Matte
+  Yellow. Finishes come from the game's own shader id rather than the name, so
+  Util Garnet Red sits with the metallics because that is what it renders as.
+- **The custom colour picker threw instead of picking.** A local named `paint`
+  shadowed the function called `paint`.
+- **A shop with forty finished jobs lost its open orders off the tablet** while
+  a mechanic stood at the car holding the part for one of them.
+- Picks no longer follow you from one car to the next.
+- With a few things on the list, the sheet had squeezed the parts above it down
+  to 130 pixels — not enough for one row of swatches.
+- `tools/check-items.mjs` now expands the parts loop as well as the kit loop.
+
 ## 0.6.2
 
 - **Tuning threw, and the throw looked like three separate bugs.** The queue

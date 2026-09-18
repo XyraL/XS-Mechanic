@@ -220,68 +220,119 @@
         });
     }
 
+    // What gets painted. Pearl and wheel colour come off the same palette as
+    // the body — a pearl is one of these colours laid over the paint, not a
+    // list of its own.
+    const CHANNELS = [
+        ['primary', 'Primary', 'primary'],
+        ['secondary', 'Secondary', 'secondary'],
+        ['pearl', 'Pearl', 'pearlescent'],
+        ['wheel', 'Wheels', 'wheelColour'],
+    ];
+
     function renderRespray(grid, group, prices) {
-        const paint = group.paint || {};
+        const on = group.paint || {};
         const price = prices.respray || 0;
+        const families = XS.state.paint || [];
+
+        if (!CHANNELS.some((c) => c[0] === XS.state.paintChannel)) XS.state.paintChannel = 'primary';
+
+        if (!families.some((f) => f.id === XS.state.paintFamily)) {
+            XS.state.paintFamily = families.length ? families[0].id : null;
+        }
+
+        const channel = CHANNELS.find((c) => c[0] === XS.state.paintChannel);
 
         grid.append(XS.el('div', { class: 'gh' }, [
-            XS.el('h2', { text: 'Respray · Primary' }),
+            XS.el('h2', { text: 'Respray' }),
             XS.el('div', { class: 'cap' }, [XS.money(price), stockNote(XS.stockFor('respray'))]),
             pricer(group),
         ]));
 
-        grid.append(swatchGrid('primary', paint.primary));
+        const parts = XS.el('div', { class: 'chips' });
 
-        grid.append(XS.el('div', { class: 'gh' }, [
-            XS.el('h2', { text: 'Respray · Secondary' }),
-            XS.el('div', { class: 'cap', text: 'matched to primary by default' }),
-        ]));
+        for (const [id, label] of CHANNELS) {
+            parts.append(XS.el('button', {
+                class: `tn ${XS.state.paintChannel === id ? 'on' : ''}`,
+                onclick: () => { XS.state.paintChannel = id; XS.rerender('tuning'); },
+            }, [XS.el('span', { class: 'n', text: label })]));
+        }
 
-        grid.append(swatchGrid('secondary', paint.secondary));
+        grid.append(parts);
 
-        grid.append(XS.el('div', { class: 'gh' }, [
-            XS.el('h2', { text: 'Respray · Custom' }),
-            XS.el('div', { class: 'cap', text: 'any colour' }),
-        ]));
+        if (!families.length) {
+            grid.append(XS.empty('No palette loaded', 'The colour table did not reach the panel.'));
+            return grid;
+        }
 
-        const custom = XS.el('div', { class: 'cards' });
+        const finishes = XS.el('div', { class: 'chips' });
 
-        for (const part of ['primary', 'secondary']) {
-            const input = XS.el('input', {
-                type: 'color',
-                value: hexOf(paint[`custom${part[0].toUpperCase()}${part.slice(1)}`]) || '#1e2530',
-                style: 'width:100%;height:38px;padding:2px;background:var(--sunk);border:1px solid var(--line2);border-radius:7px;cursor:pointer',
-                onchange: (ev) => paint({ custom: part, hex: ev.target.value, label: 'Custom ' + part }),
-            });
-
-            custom.append(XS.el('div', { class: 'c' }, [
-                XS.el('div', { class: 'idx', text: part.toUpperCase() }),
-                XS.el('div', { class: 'nm', text: `Custom ${part}` }),
-                input,
+        for (const family of families) {
+            finishes.append(XS.el('button', {
+                class: `tn ${XS.state.paintFamily === family.id ? 'on' : ''}`,
+                onclick: () => { XS.state.paintFamily = family.id; XS.rerender('tuning'); },
+            }, [
+                XS.el('span', { class: 'n', text: family.label }),
+                XS.el('span', { class: 'b', text: String(family.colours.length) }),
             ]));
         }
 
-        grid.append(custom);
+        grid.append(finishes);
+
+        const family = families.find((f) => f.id === XS.state.paintFamily);
+
+        grid.append(swatchGrid(channel, family, on[channel[2]]));
+
+        // Only the body takes a colour off the picker. Pearl and wheel colour
+        // are indices into the table and have no custom form.
+        if (channel[0] === 'primary' || channel[0] === 'secondary') {
+            grid.append(XS.el('div', { class: 'gh' }, [
+                XS.el('h2', { text: `${channel[1]} · Custom` }),
+                XS.el('div', { class: 'cap', text: 'any colour, no finish' }),
+            ]));
+
+            const held = on[`custom${channel[1]}`];
+
+            const input = XS.el('input', {
+                type: 'color',
+                value: hexOf(held) || '#1e2530',
+                style: 'width:100%;height:44px;padding:2px;background:var(--sunk);border:1px solid var(--line2);border-radius:7px;cursor:pointer',
+                onchange: (ev) => choosePaint({
+                    part: channel[0],
+                    custom: channel[0],
+                    hex: ev.target.value,
+                    label: `Custom ${channel[1].toLowerCase()}`,
+                }),
+            });
+
+            grid.append(XS.el('div', { class: 'cards' }, [
+                XS.el('div', { class: 'c' }, [
+                    XS.el('div', { class: 'idx', text: channel[1].toUpperCase() }),
+                    XS.el('div', { class: 'nm', text: 'Mixed to order' }),
+                    input,
+                ]),
+            ]));
+        }
 
         return grid;
     }
 
-    function swatchGrid(part, current) {
+    function swatchGrid(channel, family, current) {
         const wrap = XS.el('div', { class: 'swatches' });
 
-        for (const colour of XS.state.colours || []) {
+        for (const colour of (family && family.colours) || []) {
             wrap.append(XS.el('button', {
-                class: `sw ${current === colour.id ? 'on' : ''}`,
-                style: `background:${colour.hex}`,
-                title: colour.label,
-                onclick: () => paint({ part, index: colour.id, label: 'Respray — ' + colour.label }),
+                class: `sw ${current === colour.id ? 'on' : ''} ${colour.shaded ? 'shaded' : ''}`,
+                style: `background-color:${colour.hex}`,
+                title: `${colour.label} · ${family.label}`,
+                onclick: () => choosePaint({
+                    part: channel[0],
+                    index: colour.id,
+                    label: `${channel[1]} — ${colour.label}`,
+                }),
             }, [
                 XS.el('span', { class: 'lbl', text: colour.label }),
             ]));
-        }
-
-        if (!(XS.state.colours || []).length) {
-            wrap.append(XS.empty('No palette loaded', 'The colour table did not reach the panel.'));
         }
 
         return wrap;
@@ -423,7 +474,9 @@
         XS.post('pickPart', payload(slot, option, category, price));
     }
 
-    function paint(data) {
+    function choosePaint(data) {
+        XS.state.tuneSlot = 'respray';
+
         XS.post('pickPart', Object.assign({
             paint: true, slotId: 'respray', category: 'respray',
         }, data));
@@ -487,7 +540,7 @@
 
             XS.el('div', {
                 style: 'font-size:11px;color:var(--faint);line-height:1.5;margin:-4px 0 12px',
-                text: 'The shop can change any of these prices before you pay.',
+                text: 'Nothing goes on the car until the shop fits it.',
             }),
 
             // One button. With staff in you send an order; with the shop empty
@@ -624,15 +677,14 @@
                 XS.el('span', { text: XS.money(total) }),
             ]),
 
+            // Both buttons write the same work order against this car.
+            // Billing is what the first one adds on top.
             XS.el('button', {
                 class: 'go',
-                text: `Fit ${queue.length === 1 ? 'it' : `all ${queue.length}`}`,
-                onclick: () => XS.post('fitAll'),
+                text: 'Bill the customer',
+                onclick: () => XS.post('billAll'),
             }),
 
-            // Not everything gets done while the customer waits. Writing it
-            // down is a first-class answer, not something you reach by trying
-            // to fit it and being told there are no parts.
             XS.el('button', {
                 class: 'sub',
                 text: 'Put it on a work order',
@@ -641,7 +693,7 @@
 
             XS.el('div', {
                 style: 'font-size:11px;color:var(--faint);line-height:1.5;margin-top:10px;text-align:center',
-                text: 'Fitting bills as it goes. Anything the shelf cannot cover is written down instead.',
+                text: 'Nothing goes on the car from here. Make the parts, then fit them at the car.',
             }),
         ]));
 

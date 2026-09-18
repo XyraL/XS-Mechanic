@@ -158,69 +158,6 @@ RegisterNUICallback('replacePart', function(data, cb)
     ServiceUI.Replace(data.part)
 end)
 
-RegisterNUICallback('fitTuning', function(data, cb)
-    -- An engine swap should take longer than a set of tyres, so the panel
-    -- steps aside and the mechanic works on the car for a bit.
-    local seconds = Config.CustomTuning.seconds[data.category] or Config.CustomTuning.seconds.default or 10
-
-    -- The part this package actually needs, not the category's stand-in: a
-    -- shop with a V8 on the shelf was being refused the swap because it had no
-    -- generic "performance part".
-    local stock = XSM.state and XSM.state.stock
-    local item = data.item
-
-    if stock and item and stock.items and stock.items[item] ~= nil and stock.items[item] < 1 then
-        XSM.Toast(('No %s on the shelf. Make one at the bench.'):format(
-            string.lower(stock.labels[item] or item)), 'error')
-        cb({ ok = false })
-        return
-    end
-
-    if seconds > 0 then
-        XSM.Hide()
-
-        if not Anim.Work(seconds, 'Fitting', 'performance') then
-            XSM.Unhide('performance')
-            cb({ ok = false })
-            return
-        end
-    end
-
-    local result = lib.callback.await('XS-Mechanic:fitTuning', false, {
-        shop = XSM.shop and XSM.shop.id,
-        netId = XSM.vehicle and VehToNet(XSM.vehicle),
-        plate = XSM.catalogue and XSM.catalogue.plate,
-        model = XSM.catalogue and XSM.catalogue.model,
-        category = data.category,
-        option = data.option,
-    })
-
-    if result and result.message then XSM.Notify(result.message, result.ok and 'success' or 'error')
-    elseif result and result.error then XSM.Notify(result.error, 'error') end
-
-    XSM.PushVehicle()
-
-    if seconds > 0 then XSM.Unhide('performance') end
-
-    XSM.Refresh()
-
-    cb(result or { ok = false })
-end)
-
-RegisterNUICallback('removeTuning', function(data, cb)
-    local result = lib.callback.await('XS-Mechanic:removeTuning', false, {
-        shop = XSM.shop and XSM.shop.id,
-        plate = XSM.catalogue and XSM.catalogue.plate,
-        category = data.category,
-    })
-
-    if result and result.message then XSM.Toast(result.message, result.ok and 'good' or 'error') end
-
-    XSM.PushVehicle()
-    XSM.Refresh()
-    cb(result or { ok = false })
-end)
-
 RegisterNUICallback('previewStance', function(data, cb)
     if XSM.vehicle and DoesEntityExist(XSM.vehicle) then
         Stance.Preview(XSM.vehicle, data.stance)
@@ -266,7 +203,7 @@ end)
 -- again when it lands, so nothing here is trusted.
 XSM.basket = {}
 
-local function pushBasket()
+function XSM.PushBasket()
     XSM.Send('state', { state = { basket = XSM.basket } })
 end
 
@@ -280,8 +217,9 @@ end
      One pick per slot: choosing a second front bumper replaces the first. ]]
 local function putOnCar(pick)
     -- A repair is a job, not a part. There is nothing to show on the car, so
-    -- there is nothing to put on it.
-    if pick.plain then return true end
+    -- there is nothing to put on it. A handling package is the same: an engine
+    -- swap changes how the car drives and nothing you can look at.
+    if pick.plain or pick.tuning then return true end
 
     if pick.paint then return Preview.Respray(pick) end
     if pick.extra then return Preview.Extra(pick.extra, pick.on) end
@@ -299,7 +237,7 @@ local function rebuild()
 
     XSM.preview = nil
     XSM.PushVehicle()
-    pushBasket()
+    XSM.PushBasket()
 end
 
 local function forget(slotId)
@@ -345,6 +283,7 @@ RegisterNUICallback('pickPart', function(data, cb)
         class = XSM.catalogue and XSM.catalogue.class,
         category = data.category,
         index = data.index,
+        tuning = data.tuning,
     })
 
     XSM.basket[#XSM.basket + 1] = {
@@ -363,12 +302,16 @@ RegisterNUICallback('pickPart', function(data, cb)
         hex = data.hex,
         extra = data.extra,
         on = data.on,
+        -- A handling package: which one, and whether it is going on or coming
+        -- off. Dropped here once, which made every package on a work order an
+        -- unpriced line nobody could fit.
+        tuning = data.tuning,
         price = priced and priced.price or 0,
     }
 
     XSM.preview = nil
     XSM.PushVehicle()
-    pushBasket()
+    XSM.PushBasket()
 
     cb({ ok = true })
 end)
@@ -384,13 +327,28 @@ RegisterNUICallback('dropPick', function(data, cb)
     cb({ ok = true })
 end)
 
-RegisterNUICallback('bookAll', function(_, cb)
+RegisterNUICallback('clearPicks', function(_, cb)
+    XSM.basket = {}
+    rebuild()
+    cb({ ok = true })
+end)
+
+--[[ Sending the job off.
+
+     Two ways out of the basket and both write the same work order against the
+     car. Booking writes it and stops; billing writes it and then sends one
+     invoice for everything on that order nobody has been charged for yet.
+
+     Neither one touches the vehicle. What the customer has been looking at is
+     a preview, and it goes back to how the car arrived — the car changes when
+     a mechanic stands at it with the parts and uses them. ]]
+local function sendBasket(endpoint, cb)
     if #XSM.basket == 0 then
         cb({ ok = false })
         return
     end
 
-    local result = lib.callback.await('XS-Mechanic:bookOrder', false, {
+    local result = lib.callback.await(endpoint, false, {
         shop = XSM.shop and XSM.shop.id,
         plate = XSM.catalogue and XSM.catalogue.plate,
         model = XSM.catalogue and XSM.catalogue.model,
@@ -406,142 +364,33 @@ RegisterNUICallback('bookAll', function(_, cb)
 
     XSM.basket = {}
 
-    -- Written down, not done. The car goes back to how it arrived.
     XSM.StopPreview(false)
-    pushBasket()
+    XSM.PushBasket()
     XSM.PushVehicle()
     XSM.Refresh()
 
-    XSM.Toast(('%d on a work order.'):format(result.count or 0), 'good')
+    XSM.Toast(result.message or ('%d on a work order.'):format(result.count or 0), 'good')
 
     cb({ ok = true })
+end
+
+RegisterNUICallback('bookAll', function(_, cb)
+    sendBasket('XS-Mechanic:bookOrder', cb)
 end)
 
-RegisterNUICallback('clearPicks', function(_, cb)
-    XSM.basket = {}
-    rebuild()
+RegisterNUICallback('billAll', function(_, cb)
+    sendBasket('XS-Mechanic:billOrder', cb)
+end)
+
+RegisterNUICallback('billOrder', serverCall('billRest'))
+
+-- The lines with no part behind them. Everything else is fitted by using the
+-- part at the car; these have nothing to use.
+RegisterNUICallback('fitByHand', function(_, cb)
     cb({ ok = true })
-end)
 
---[[ Fitting the list.
-
-     One job at a time, in the order they were picked, with its own animation
-     and its own invoice line. Whatever is fitted stays on the car and stops
-     being something that can be taken back off; whatever is left is still just
-     picked, so backing out still puts it right.
-
-     Stopping halfway is a real answer — the parts fitted so far are fitted. ]]
-RegisterNUICallback('fitAll', function(_, cb)
-    if #XSM.basket == 0 or not XSM.vehicle then
-        cb({ ok = false })
-        return
-    end
-
-    local queue = {}
-    for index, pick in ipairs(XSM.basket) do queue[index] = pick end
-
-    local panel = XSM.panel or 'tuning'
-    local stock = XSM.state and XSM.state.stock
-
-    local fitted = 0
-    local stopped = nil
-    local short = {}
-
-    XSM.Hide()
-
-    for _, pick in ipairs(queue) do
-        local item = stock and ((stock.slots or {})[pick.slotId] or (stock.categories or {})[pick.category])
-
-        -- Nothing on the shelf is not a refusal. It goes on the work order and
-        -- somebody makes the part.
-        if item and (stock.items[item] or 0) < 1 then
-            short[#short + 1] = pick
-            goto continue
-        end
-
-        local seconds = Config.Tuning.seconds[pick.category] or Config.Tuning.seconds.default or 0
-
-        if seconds > 0 and not Anim.Work(seconds, ('Fitting %s'):format(pick.label or 'it'), pick.category) then
-            stopped = 'Stopped.'
-            break
-        end
-
-        local result = lib.callback.await('XS-Mechanic:apply', false, {
-            shop = XSM.shop and XSM.shop.id,
-            mode = XSM.mode,
-            netId = VehToNet(XSM.vehicle),
-            plate = XSM.catalogue and XSM.catalogue.plate,
-            model = XSM.catalogue and XSM.catalogue.model,
-            class = XSM.catalogue and XSM.catalogue.class,
-            category = pick.category,
-            label = pick.label,
-            slotId = pick.slotId,
-            index = pick.index,
-            price = pick.price,
-        })
-
-        if not result or not result.ok then
-            stopped = result and result.error or 'That did not go through.'
-            break
-        end
-
-        -- Fitted and paid for. It is part of the car now, not part of the list.
-        Preview.Accept()
-        forget(pick.slotId)
-
-        if item then stock.items[item] = (stock.items[item] or 1) - 1 end
-
-        fitted = fitted + 1
-
-        ::continue::
-    end
-
-    XSM.Unhide(panel)
-
-    if #XSM.basket == 0 then
-        Preview.Commit()
-    else
-        pushBasket()
-    end
-
-    XSM.PushVehicle()
-    XSM.Refresh()
-
-    local booked = 0
-
-    if #short > 0 then
-        local result = lib.callback.await('XS-Mechanic:bookOrder', false, {
-            shop = XSM.shop and XSM.shop.id,
-            plate = XSM.catalogue and XSM.catalogue.plate,
-            model = XSM.catalogue and XSM.catalogue.model,
-            class = XSM.catalogue and XSM.catalogue.class,
-            picks = short,
-            notes = 'Waiting on parts.',
-        })
-
-        if result and result.ok then
-            booked = result.count or #short
-
-            for _, pick in ipairs(short) do forget(pick.slotId) end
-
-            pushBasket()
-            rebuild()
-        end
-    end
-
-    if stopped then
-        XSM.Toast(('Fitted %d of %d. %s'):format(fitted, #queue, stopped), 'error')
-    elseif booked > 0 and fitted > 0 then
-        XSM.Toast(('Fitted %d. %d on a work order — make the parts and finish it.'):format(fitted, booked), 'good')
-    elseif booked > 0 then
-        XSM.Toast(('Nothing on the shelf. %d put on a work order.'):format(booked), 'inform')
-    elseif fitted == 0 then
-        XSM.Toast('Nothing fitted.', 'error')
-    else
-        XSM.Toast(('Fitted %d, all on the invoice.'):format(fitted), 'good')
-    end
-
-    cb({ ok = fitted > 0 })
+    XSM.Close()
+    Install.ByHand()
 end)
 
 RegisterNUICallback('submitOrder', function(_, cb)
@@ -574,7 +423,7 @@ RegisterNUICallback('submitOrder', function(_, cb)
     -- The order is placed, not done. The car goes back to how it arrived until
     -- somebody actually fits any of it.
     XSM.StopPreview(true)
-    pushBasket()
+    XSM.PushBasket()
     XSM.Toast(result.message or 'Sent to the shop.', 'good')
     XSM.Close()
 
@@ -600,7 +449,7 @@ RegisterNUICallback('checkout', function(_, cb)
     -- been looking at. Paying for it just makes it the truth.
     Preview.Commit()
     XSM.basket = {}
-    pushBasket()
+    XSM.PushBasket()
     XSM.PushVehicle()
     XSM.Toast(result.message or 'Done.', 'good')
 

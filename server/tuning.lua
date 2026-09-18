@@ -65,24 +65,21 @@ function CustomTuning.Sheet(profile, shop)
     return out
 end
 
-function CustomTuning.Fit(src, data)
+--[[ Fitting a package off a work order.
+
+     The same job as CustomTuning.Fit without the paying for it. On an order
+     the part has already been made, already been taken off the shelf and is
+     already in the mechanic's pockets, and Orders.Fit takes it from there —
+     charging the shop again here would take a second one. ]]
+function CustomTuning.FitOff(src, shop, order, line)
     if not Config.CustomTuning.enabled then
         return { ok = false, error = 'Custom tuning is off on this server.' }
     end
 
-    local shop = Store.Get(data.shop)
-    if not shop then return { ok = false, error = 'No shop.' } end
-
-    local job = Framework.GetJob(src)
-    if shop.kind == 'owned' and job ~= shop.job then
-        return { ok = false, error = 'Not your shop.' }
-    end
-
-    local option = Tuning.Get(data.category, data.option)
+    local option = Tuning.Get(line.tuning.category, line.tuning.option)
     if not option then return { ok = false, error = 'Unknown option.' } end
 
-    local plate = Util.Trim(data.plate or '')
-    local profile = Vehicles.Profile(plate, data.model)
+    local profile = Vehicles.Profile(order.plate, order.model)
     if not profile then return { ok = false, error = 'No vehicle.' } end
 
     if not Tuning.Allowed(option, profile.model, electricOf(profile)) then
@@ -91,46 +88,23 @@ function CustomTuning.Fit(src, data)
 
     local fitted = profile.performance or {}
 
-    if fitted[data.category] == option.id then
+    if fitted[line.tuning.category] == option.id then
         return { ok = false, error = 'Already fitted.' }
     end
 
-    local name, price = CustomTuning.Priced(shop, data.category, option)
-    local usesItem = shop.tuningItems ~= false and Config.CustomTuning.requiresItem
-
-    if usesItem then
-        -- The shelf first, the mechanic's own pockets second. A shop that has
-        -- stocked its storage should not need every mechanic carrying parts.
-        if Stock.Count(shop, option.item, src) < 1 then
-            return { ok = false, error = ('The shop needs a %s.'):format(name) }
-        end
-
-        if not Stock.Take(shop, option.item, 1, src) then
-            return { ok = false, error = 'Could not take the part.' }
-        end
-    else
-        if not Banking.Remove(shop, price, ('Tuning — %s'):format(name), Framework.GetName(src), 'tuning') then
-            return { ok = false, error = 'The shop cannot cover that.' }
-        end
-    end
-
-    fitted[data.category] = option.id
+    fitted[line.tuning.category] = option.id
     profile.performance = fitted
 
     Vehicles.Save(profile)
 
     for _, entity in ipairs(GetAllVehicles and GetAllVehicles() or {}) do
-        if Util.Trim(GetVehicleNumberPlateText(entity) or '') == plate then
-            Vehicles.Push(entity, plate, profile.model)
+        if Util.Trim(GetVehicleNumberPlateText(entity) or '') == order.plate then
+            Vehicles.Push(entity, order.plate, profile.model)
             break
         end
     end
 
-    Discord.Send('tuning', 'Custom tuning fitted',
-        ('**%s** fitted %s to `%s` at %s'):format(Framework.GetName(src), name, plate, shop.name),
-        Discord.Colour.info)
-
-    return { ok = true, message = ('%s fitted.'):format(name) }
+    return { ok = true }
 end
 
 function CustomTuning.Remove(src, data)

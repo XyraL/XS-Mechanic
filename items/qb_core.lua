@@ -38,14 +38,14 @@
 
 ['tyre_kit'] = {
     name = 'tyre_kit', label = 'Tyre Kit', weight = 5000,
-    type = 'item', image = 'tyre_kit.png', unique = false, useable = false,
+    type = 'item', image = 'tyre_kit.png', unique = false, useable = true,
     shouldClose = true, combinable = nil,
     description = 'A set of tyres and the tools to fit them.',
 },
 
 ['performance_part'] = {
     name = 'performance_part', label = 'Performance Part', weight = 2500,
-    type = 'item', image = 'performance_part.png', unique = false, useable = false,
+    type = 'item', image = 'performance_part.png', unique = false, useable = true,
     shouldClose = true, combinable = nil,
     description = 'Whatever the tuning menu asked for.',
 },
@@ -117,70 +117,70 @@
 
 ['i4_engine'] = {
     name = 'i4_engine', label = 'I4 Engine', weight = 40000,
-    type = 'item', image = 'i4_engine.png', unique = false, useable = false,
+    type = 'item', image = 'i4_engine.png', unique = false, useable = true,
     shouldClose = true, combinable = nil,
     description = 'Small and revvy.',
 },
 
 ['v6_engine'] = {
     name = 'v6_engine', label = 'V6 Engine', weight = 55000,
-    type = 'item', image = 'v6_engine.png', unique = false, useable = false,
+    type = 'item', image = 'v6_engine.png', unique = false, useable = true,
     shouldClose = true, combinable = nil,
     description = 'The sensible one.',
 },
 
 ['v8_engine'] = {
     name = 'v8_engine', label = 'V8 Engine', weight = 70000,
-    type = 'item', image = 'v8_engine.png', unique = false, useable = false,
+    type = 'item', image = 'v8_engine.png', unique = false, useable = true,
     shouldClose = true, combinable = nil,
     description = 'Torque everywhere.',
 },
 
 ['v12_engine'] = {
     name = 'v12_engine', label = 'V12 Engine', weight = 85000,
-    type = 'item', image = 'v12_engine.png', unique = false, useable = false,
+    type = 'item', image = 'v12_engine.png', unique = false, useable = true,
     shouldClose = true, combinable = nil,
     description = 'Not for a hatchback.',
 },
 
 ['electric_motor'] = {
     name = 'electric_motor', label = 'Electric Motor', weight = 60000,
-    type = 'item', image = 'electric_motor.png', unique = false, useable = false,
+    type = 'item', image = 'electric_motor.png', unique = false, useable = true,
     shouldClose = true, combinable = nil,
     description = 'Instant, and quiet about it.',
 },
 
 ['turbo_kit'] = {
     name = 'turbo_kit', label = 'Turbo Kit', weight = 9000,
-    type = 'item', image = 'turbo_kit.png', unique = false, useable = false,
+    type = 'item', image = 'turbo_kit.png', unique = false, useable = true,
     shouldClose = true, combinable = nil,
     description = 'Snail, pipework, wastegate.',
 },
 
 ['drivetrain_kit'] = {
     name = 'drivetrain_kit', label = 'Drivetrain Kit', weight = 15000,
-    type = 'item', image = 'drivetrain_kit.png', unique = false, useable = false,
+    type = 'item', image = 'drivetrain_kit.png', unique = false, useable = true,
     shouldClose = true, combinable = nil,
     description = 'Changes which wheels do the work.',
 },
 
 ['gearbox_kit'] = {
     name = 'gearbox_kit', label = 'Gearbox', weight = 25000,
-    type = 'item', image = 'gearbox_kit.png', unique = false, useable = false,
+    type = 'item', image = 'gearbox_kit.png', unique = false, useable = true,
     shouldClose = true, combinable = nil,
     description = 'Ratios you actually chose.',
 },
 
 ['brake_kit'] = {
     name = 'brake_kit', label = 'Brake Kit', weight = 6000,
-    type = 'item', image = 'brake_kit.png', unique = false, useable = false,
+    type = 'item', image = 'brake_kit.png', unique = false, useable = true,
     shouldClose = true, combinable = nil,
     description = 'Discs, calipers, braided lines.',
 },
 
 ['drift_kit'] = {
     name = 'drift_kit', label = 'Drift Kit', weight = 7000,
-    type = 'item', image = 'drift_kit.png', unique = false, useable = false,
+    type = 'item', image = 'drift_kit.png', unique = false, useable = true,
     shouldClose = true, combinable = nil,
     description = 'Loose on purpose.',
 },
@@ -204,49 +204,49 @@
 
 ['body_part'] = {
     name = 'body_part', label = 'Body Part', weight = 2500,
-    type = 'item', image = 'body_part.png', unique = false, useable = false,
+    type = 'item', image = 'body_part.png', unique = false, useable = true,
     shouldClose = false, combinable = nil,
     description = 'A panel, a bumper, a skirt. Whatever the car is missing.',
 },
 
 ['wheel_set'] = {
     name = 'wheel_set', label = 'Wheel Set', weight = 6000,
-    type = 'item', image = 'wheel_set.png', unique = false, useable = false,
+    type = 'item', image = 'wheel_set.png', unique = false, useable = true,
     shouldClose = false, combinable = nil,
     description = 'Four of them, boxed.',
 },
 
 ['paint_can'] = {
     name = 'paint_can', label = 'Paint Can', weight = 1200,
-    type = 'item', image = 'paint_can.png', unique = false, useable = false,
+    type = 'item', image = 'paint_can.png', unique = false, useable = true,
     shouldClose = false, combinable = nil,
     description = 'Mixed to whatever the customer picks.',
 },
 
 ['vinyl_wrap'] = {
     name = 'vinyl_wrap', label = 'Vinyl Wrap', weight = 900,
-    type = 'item', image = 'vinyl_wrap.png', unique = false, useable = false,
+    type = 'item', image = 'vinyl_wrap.png', unique = false, useable = true,
     shouldClose = false, combinable = nil,
     description = 'A roll of it. Bubbles are the fitter, not the vinyl.',
 },
 
 ['light_kit'] = {
     name = 'light_kit', label = 'Light Kit', weight = 1100,
-    type = 'item', image = 'light_kit.png', unique = false, useable = false,
+    type = 'item', image = 'light_kit.png', unique = false, useable = true,
     shouldClose = false, combinable = nil,
     description = 'Housings, bulbs and the loom to run them.',
 },
 
 ['interior_part'] = {
     name = 'interior_part', label = 'Interior Part', weight = 1400,
-    type = 'item', image = 'interior_part.png', unique = false, useable = false,
+    type = 'item', image = 'interior_part.png', unique = false, useable = true,
     shouldClose = false, combinable = nil,
     description = 'Trim, dials, a wheel. The bits you actually touch.',
 },
 
 ['plate_blank'] = {
     name = 'plate_blank', label = 'Plate Blank', weight = 300,
-    type = 'item', image = 'plate_blank.png', unique = false, useable = false,
+    type = 'item', image = 'plate_blank.png', unique = false, useable = true,
     shouldClose = false, combinable = nil,
     description = 'Pressed, unprinted, entirely legal until it is not.',
 },
@@ -256,28 +256,28 @@
 
 ['engine_parts'] = {
     name = 'engine_parts', label = 'Engine Parts', weight = 4000,
-    type = 'item', image = 'engine_parts.png', unique = false, useable = false,
+    type = 'item', image = 'engine_parts.png', unique = false, useable = true,
     shouldClose = false, combinable = nil,
     description = 'Cams, pistons and a gasket set.',
 },
 
 ['brake_parts'] = {
     name = 'brake_parts', label = 'Brake Parts', weight = 2200,
-    type = 'item', image = 'brake_parts.png', unique = false, useable = false,
+    type = 'item', image = 'brake_parts.png', unique = false, useable = true,
     shouldClose = false, combinable = nil,
     description = 'Discs, pads and the lines to feed them.',
 },
 
 ['transmission_parts'] = {
     name = 'transmission_parts', label = 'Transmission Parts', weight = 3200,
-    type = 'item', image = 'transmission_parts.png', unique = false, useable = false,
+    type = 'item', image = 'transmission_parts.png', unique = false, useable = true,
     shouldClose = false, combinable = nil,
     description = 'Ratios, synchros and a clutch.',
 },
 
 ['suspension_parts'] = {
     name = 'suspension_parts', label = 'Suspension Parts', weight = 3600,
-    type = 'item', image = 'suspension_parts.png', unique = false, useable = false,
+    type = 'item', image = 'suspension_parts.png', unique = false, useable = true,
     shouldClose = false, combinable = nil,
     description = 'Coilovers, bushes and drop links.',
 },

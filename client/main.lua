@@ -190,6 +190,12 @@ function XSM.ConnectAt(coords, radius)
         if string.lower(blocked) == model then return false, 'That vehicle cannot be worked on.' end
     end
 
+    -- The basket belongs to the car it was built against. It survives the
+    -- panel closing on purpose, so picking up where you left off works —
+    -- but not across cars, or the bumpers you picked for one go on the
+    -- other one's work order.
+    XSM.basket = {}
+    XSM.PushBasket()
     XSM.StopPreview(false)
     XSM.vehicle = vehicle
 
@@ -235,6 +241,12 @@ function XSM.Connect()
         end
     end
 
+    -- The basket belongs to the car it was built against. It survives the
+    -- panel closing on purpose, so picking up where you left off works —
+    -- but not across cars, or the bumpers you picked for one go on the
+    -- other one's work order.
+    XSM.basket = {}
+    XSM.PushBasket()
     XSM.StopPreview(false)
     XSM.vehicle = vehicle
     XSM.PushVehicle()
