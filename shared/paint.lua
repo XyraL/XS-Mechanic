@@ -257,11 +257,14 @@ function Paint.Sheet()
         local id = tonumber(colour.id)
 
         if id and not hidden[id] then
-            local id = colour.family or 'addon'
+            -- `group`, not `id`. Naming it id shadowed the paint index, so an
+            -- add-on colour went into the table with its family name where
+            -- its index should be and never reached the car.
+            local group = colour.family or 'addon'
 
-            local into = family(id, id == 'addon'
+            local into = family(group, group == 'addon'
                 and (Config.Paint.extraLabel or 'Add-ons')
-                or (id:sub(1, 1):upper() .. id:sub(2)))
+                or (group:sub(1, 1):upper() .. group:sub(2)))
 
             into.colours[#into.colours + 1] = {
                 id = id,
