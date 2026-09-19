@@ -580,12 +580,6 @@ Config.Invoices = {
     command = 'invoices',
 }
 
--- ── Self-service ─────────────────────────────────────────────────────────────
-Config.SelfService = {
-    -- A self-service shop pays from the customer's own account. Which one.
-    account = 'bank',   -- bank | cash
-}
-
 -- ── Notifications ────────────────────────────────────────────────────────────
 Config.Notify = {
     -- ox_lib notifications, or hand off to the framework's own.

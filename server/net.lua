@@ -8,17 +8,6 @@ local function shopFor(src, shopId)
     return Store.ByJob(job)
 end
 
--- A bay is open to anyone at a self-service shop, and at an owned shop only
--- while none of its staff are working — which is the same rule the target
--- options use client side.
-local function selfServiceAllowed(shop)
-    if not shop or not shop.enabled then return false end
-    if shop.kind ~= 'owned' then return true end
-    if shop.selfServiceWhenEmpty == false then return false end
-
-    return Team.OnDuty(shop) == 0
-end
-
 --[[ Where the player actually is.
 
      Checked here and not only on the client, because a client that says it is
@@ -141,9 +130,6 @@ local function stateFor(src, mode, shopId)
         earned = 0,
     }
 
-    -- The bay only offers "pay and fit now" where self service is genuinely
-    -- allowed; otherwise the customer's only route is an order to the shop.
-    state.selfService = selfServiceAllowed(shop)
     state.staffOnline = Team.OnDuty(shop)
     state.takesOrders = shop.kind == 'owned' and Team.OnDuty(shop) > 0
 
@@ -327,19 +313,13 @@ lib.callback.register('XS-Mechanic:repair', function(src, data)
     local job = Framework.GetJob(src)
     local isStaff = shop.kind == 'owned' and job == shop.job
 
-    if isStaff then
-        Invoices.AddLine(src, 'Full repair', price, 'Repair')
-        return { ok = true }
+    -- A repair is work, and work is the shop's. A customer at a bay puts one
+    -- on their order and somebody does it.
+    if not isStaff then
+        return { ok = false, error = 'Put it on an order and the shop will do it.' }
     end
 
-    local account = Config.SelfService.account
-
-    if Framework.GetMoney(src, account) < price then
-        return { ok = false, error = ('You need %s.'):format(Util.Money(price)) }
-    end
-
-    Framework.RemoveMoney(src, account, price, 'Mechanic repair')
-    Banking.Add(shop, price, 'Repair', Framework.GetName(src), 'repair')
+    Invoices.AddLine(src, 'Full repair', price, 'Repair')
 
     return { ok = true }
 end)
@@ -758,44 +738,6 @@ end)
 
 -- Paying on the spot. Only where self service is actually allowed, and the
 -- total is worked out here rather than taken from the panel.
-lib.callback.register('XS-Mechanic:checkout', function(src, data)
-    local shop = Store.Get(data and data.shop)
-    if not shop or not shop.enabled then return { ok = false, error = 'That shop is closed.' } end
-
-    if not selfServiceAllowed(shop) then
-        return { ok = false, error = 'Somebody is working. Leave it with them.' }
-    end
-
-    local picks = type(data.picks) == 'table' and data.picks or {}
-    if #picks == 0 then return { ok = false, error = 'Nothing picked.' } end
-
-    local total = 0
-
-    for _, pick in ipairs(picks) do
-        local category = tostring(pick.category or '')
-
-        if Pricing.CategoryEnabled(shop, category) then
-            total = total + (Pricing.For(shop, category, data.model, data.class, pick.index) or 0)
-        end
-    end
-
-    local account = Config.SelfService.account
-
-    if Framework.GetMoney(src, account) < total then
-        return { ok = false, error = ('You need %s.'):format(Util.Money(total)) }
-    end
-
-    Framework.RemoveMoney(src, account, total, 'Mechanic')
-    Banking.Add(shop, total, 'Self service', Framework.GetName(src), 'selfservice')
-
-    Discord.Send('tuning', 'Self service',
-        ('**%s** fitted %d thing(s) at %s for %s'):format(
-            Framework.GetName(src), #picks, shop.name, Util.Money(total)),
-        Discord.Colour.info)
-
-    return { ok = true, message = ('Paid %s.'):format(Util.Money(total)) }
-end)
-
 lib.callback.register('XS-Mechanic:jobs', function(src)
     if not Framework.IsAdmin(src) then return {} end
     return Framework.JobList()

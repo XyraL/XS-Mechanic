@@ -1,5 +1,25 @@
 # Changelog
 
+## 0.7.2
+
+- **The side panel showed every screen at once.** Laying the sheet out in
+  0.7.1 used `body[data-layout="sheet"] .panel`, which outranks the
+  `.panel.on` that decides what is visible, so targeting a car stacked the
+  home apps, the vehicle readout and the tuning list down one column. My
+  regression, from the change that stopped the sheet squashing the parts list.
+- **The home screen is the whole screen.** On a tablet this wide the apps
+  spread into one long row with a page of nothing under it. The wall is four
+  across now, capped and sat in the middle of whatever room it has.
+- **Self service is gone.** A customer at a bay picks what they want and sends
+  it to the shop; that is the only thing a bay does. Paying at a bay and
+  fitting it yourself, repairing your own car at one, the per-shop switch for
+  it and `Config.SelfService` have all been removed. Bays are open to anyone
+  now, because what comes out of one is a work order rather than work done.
+- **Orders and invoices did not know about each other.** The order id was
+  written onto every invoice and never read back, so nothing could show the
+  link. An invoice row says which order it came off, and an order row says
+  which bills have been raised against it.
+
 ## 0.7.1
 
 - **The tablet is the mechanic's, the laptop is the shop's.** Team and Shop are

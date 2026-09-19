@@ -574,7 +574,6 @@
         commission: 10,
         unpaid: 2,
         openOrders: 3,
-        selfService: false,
         staffOnline: 2,
         takesOrders: true,
         basket: [

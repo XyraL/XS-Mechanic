@@ -430,32 +430,6 @@ RegisterNUICallback('submitOrder', function(_, cb)
     cb({ ok = true })
 end)
 
-RegisterNUICallback('checkout', function(_, cb)
-    local result = lib.callback.await('XS-Mechanic:checkout', false, {
-        shop = XSM.shop and XSM.shop.id,
-        plate = XSM.catalogue and XSM.catalogue.plate,
-        model = XSM.catalogue and XSM.catalogue.model,
-        class = XSM.catalogue and XSM.catalogue.class,
-        picks = XSM.basket,
-    })
-
-    if not result or not result.ok then
-        XSM.Toast(result and result.error or 'That did not go through.', 'error')
-        cb({ ok = false })
-        return
-    end
-
-    -- Everything picked is already on the car — that is what the customer has
-    -- been looking at. Paying for it just makes it the truth.
-    Preview.Commit()
-    XSM.basket = {}
-    XSM.PushBasket()
-    XSM.PushVehicle()
-    XSM.Toast(result.message or 'Done.', 'good')
-
-    cb({ ok = true })
-end)
-
 -- Dragging across the car turns it. The panel owns the mouse while it is open,
 -- so the drag is caught there and arrives here as a number of degrees.
 RegisterNUICallback('spinCar', function(data, cb)

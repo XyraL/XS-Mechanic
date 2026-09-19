@@ -13,6 +13,7 @@ local function decode(row)
         customer = row.customer,
         customerName = row.customer_name,
         plate = row.plate,
+        orderId = row.order_id,
         items = Util.Decode(row.items, {}) or {},
         total = row.total,
         status = row.status,

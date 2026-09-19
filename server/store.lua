@@ -21,7 +21,6 @@ local function decodeShop(row)
         categories = data.categories or {},
         parts = data.parts or {},
         commission = data.commission or Config.Invoices.defaultCommission,
-        selfServiceWhenEmpty = data.selfServiceWhenEmpty ~= false,
         blip = data.blip or { enabled = true, sprite = 446, colour = 47, scale = 0.7 },
         bounds = data.bounds,
         area = data.area,
@@ -60,7 +59,6 @@ local function encodeShop(shop)
         categories = shop.categories or {},
         parts = shop.parts or {},
         commission = shop.commission,
-        selfServiceWhenEmpty = shop.selfServiceWhenEmpty,
         priceGrade = shop.priceGrade,
         blip = shop.blip,
         bounds = shop.bounds,
@@ -106,7 +104,6 @@ function Store.Public()
                 bounds = shop.bounds,
                 area = shop.area,
                 categories = shop.categories,
-                selfServiceWhenEmpty = shop.selfServiceWhenEmpty,
             })
         end
     end

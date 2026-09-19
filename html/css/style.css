@@ -1039,10 +1039,14 @@ body[data-layout="sheet"] .side .lines{
    sheet just gains a dead strip. The sheet lays its three parts out with
    flex instead: the list takes what is left and the total takes what it
    needs, up to half. */
-body[data-layout="sheet"] .panel{display:flex;flex-direction:column}
-body[data-layout="sheet"] .panel .tree{flex:none}
-body[data-layout="sheet"] .panel .grid{flex:1 1 auto;min-height:0}
-body[data-layout="sheet"] .panel .side{flex:0 1 auto;max-height:50%;overflow-y:auto}
+/* .on, not .panel. A screen is hidden by `.panel{display:none}` and shown by
+   `.panel.on{display:grid}`, and `body[...] .panel` outranks both — so laying
+   the sheet out here without the .on turned every screen on at once and
+   stacked the home apps, the vehicle and the tuning list down one column. */
+body[data-layout="sheet"] .panel.on{display:flex;flex-direction:column}
+body[data-layout="sheet"] .panel.on .tree{flex:none}
+body[data-layout="sheet"] .panel.on .grid{flex:1 1 auto;min-height:0}
+body[data-layout="sheet"] .panel.on .side{flex:0 1 auto;max-height:50%;overflow-y:auto}
 body[data-layout="sheet"] .side .ln{white-space:normal}
 body[data-layout="sheet"] .side .ln .m{display:block}
 body[data-layout="sheet"] .side .tot{flex-direction:column;align-items:stretch;gap:9px}
@@ -1051,7 +1055,24 @@ body[data-layout="sheet"] .side .go{width:100%}
 
 /* ── The tablet's home screen ──────────────────────────────────────────── */
 
-.apps{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:24px 18px;padding:8px 2px}
+/* The home screen IS the screen, not a strip of icons along the top of one.
+   On a tablet this wide the apps spread into a single row and left a page of
+   nothing under them, so the wall is capped to four across and sat in the
+   middle of whatever room it has.
+
+   Centred with auto MARGINS rather than justify-content, because auto margins
+   only ever absorb space that exists: on a screen too short for the wall,
+   centring clips the top off and there is no way to scroll back up to it. */
+[data-panel="apps"] .grid{
+  display:flex;flex-direction:column;align-items:center;
+  gap:26px;overflow-y:auto;
+}
+[data-panel="apps"] .gh{width:100%;max-width:760px;margin:auto 0 0}
+
+.apps{
+  display:grid;grid-template-columns:repeat(auto-fit,minmax(min(160px,100%),1fr));
+  gap:30px 20px;width:100%;max-width:760px;margin:0 0 auto;
+}
 
 .app{
   position:relative;

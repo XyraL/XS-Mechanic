@@ -125,7 +125,6 @@ function Builder.New()
         commission = Config.Invoices.defaultCommission,
         accent = 'amber',
         enabled = true,
-        selfServiceWhenEmpty = true,
         points = {},
         pricing = {},
         categories = {},

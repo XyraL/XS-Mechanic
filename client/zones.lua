@@ -62,12 +62,10 @@ end
 
 Zones.JobMatches = jobMatches
 
--- A self-service shop is open to anyone. An owned shop is staff only, unless
--- the owner allowed it to fall back when nobody is working.
-local function canUseBay(shop)
-    if shop.kind ~= 'owned' then return true end
-    if jobMatches(shop) then return true end
-    return shop.selfServiceWhenEmpty ~= false and (shop.staffOnline or 0) == 0
+-- A bay is where a customer says what they want doing, so anyone can stand on
+-- one. What comes out of it is a work order for the shop, never work done.
+local function canUseBay()
+    return true
 end
 
 Zones.CanUseBay = canUseBay

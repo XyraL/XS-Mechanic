@@ -78,7 +78,13 @@
                     here ? XS.el('span', { class: 'tag', text: 'CONNECTED' }) : null,
                     owed ? XS.el('span', { class: 'tag warn', text: 'UNBILLED' }) : null,
                 ]),
-                XS.el('div', { class: 'm', text: `${summarise(parts, done)} · ${XS.ago(order.createdAt)}` }),
+                XS.el('div', { class: 'm', text: [
+                    summarise(parts, done),
+                    (order.invoices || []).length
+                        ? (order.invoices || []).map((id) => `Invoice #${id}`).join(', ')
+                        : null,
+                    XS.ago(order.createdAt),
+                ].filter(Boolean).join(' · ') }),
                 total ? XS.track(Math.round((done / total) * 100), done === total ? 'good' : '') : null,
                 lines(order, parts, here),
                 order.notes ? XS.el('div', {

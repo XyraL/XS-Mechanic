@@ -523,24 +523,19 @@
                 text: 'Nothing goes on the car until the shop fits it.',
             }),
 
-            // One button. With staff in you send an order; with the shop empty
-            // and self service allowed, you pay for it yourself.
-            XS.state.takesOrders
-                ? XS.el('button', {
-                    class: 'go', text: 'Send it to the shop',
-                    disabled: !basket.length,
-                    onclick: () => XS.post('submitOrder'),
-                })
-                : XS.el('button', {
-                    class: 'go', text: XS.state.selfService ? 'Pay and fit it yourself' : 'Nobody is in',
-                    disabled: !basket.length || !XS.state.selfService,
-                    onclick: () => XS.post('checkout'),
-                }),
+            // One button, one answer. Nothing here does work to a car — it
+            // asks the shop to.
+            XS.el('button', {
+                class: 'go',
+                text: XS.state.takesOrders ? 'Send it to the shop' : 'Nobody is in',
+                disabled: !basket.length || !XS.state.takesOrders,
+                onclick: () => XS.post('submitOrder'),
+            }),
 
-            !XS.state.takesOrders && !XS.state.selfService
+            !XS.state.takesOrders
                 ? XS.el('div', {
                     style: 'font-size:11px;color:var(--faint);line-height:1.5;margin-top:10px;text-align:center',
-                    text: 'Nobody is working and this shop does not allow self service. Come back later.',
+                    text: 'Nobody is working right now. Come back when somebody is in.',
                 })
                 : null,
         ]));

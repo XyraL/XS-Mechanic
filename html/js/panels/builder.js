@@ -90,16 +90,6 @@
                 XS.el('div', { class: 'hint', text: 'This grade and above can change what the shop charges. The boss always can.' }),
             ]));
 
-            form.append(XS.el('label', { class: 'check' }, [
-                XS.el('input', {
-                    type: 'checkbox', checked: draft.selfServiceWhenEmpty !== false,
-                    onchange: (ev) => set('selfServiceWhenEmpty', ev.target.checked),
-                }),
-                XS.el('div', {}, [
-                    XS.el('div', { class: 'cl', text: 'Self service when nobody is on' }),
-                    XS.el('div', { class: 'cs', text: 'Customers can use the bays themselves while no staff are online.' }),
-                ]),
-            ]));
         }
 
         grid.append(form);

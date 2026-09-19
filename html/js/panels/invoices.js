@@ -41,7 +41,7 @@
 
         if (!shown.length) {
             grid.append(XS.empty('Nothing here',
-                filter === 'unpaid' ? 'Every invoice has been settled.' : 'No invoices match that filter.'));
+                filter === 'unpaid' ? 'Every invoice has been settled.' : 'Nothing sent yet. Bill a work order and it lands here.'));
             host.append(grid);
             return;
         }
@@ -59,7 +59,7 @@
                     XS.el('div', { class: 't', text: invoice.customerName || 'Unknown customer' }),
                     XS.el('div', {
                         class: 'm',
-                        text: `#${invoice.id} · ${invoice.plate || '——'} · ${(invoice.items || []).length} lines · ${XS.ago(invoice.createdAt)}`,
+                        text: `#${invoice.id}${invoice.orderId ? ` · Order #${invoice.orderId}` : ''} · ${invoice.plate || '——'} · ${(invoice.items || []).length} line${(invoice.items || []).length === 1 ? '' : 's'} · ${XS.ago(invoice.createdAt)}`,
                     }),
                 ]),
                 XS.el('div', { class: 'acts' }, [
