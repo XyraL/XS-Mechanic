@@ -328,7 +328,7 @@ lib.callback.register('XS-Mechanic:sendInvoice', function(src, data)
     local shop = shopFor(src, data and data.shop)
     if not shop then return { ok = false, error = 'No shop.' } end
 
-    return Invoices.Send(src, shop, data and data.plate, false)
+    return Invoices.Send(src, shop, data and data.plate, false, data and data.customer)
 end)
 
 lib.callback.register('XS-Mechanic:saveInvoice', function(src, data)
@@ -339,7 +339,8 @@ lib.callback.register('XS-Mechanic:saveInvoice', function(src, data)
 end)
 
 lib.callback.register('XS-Mechanic:resendInvoice', function(src, data)
-    return Invoices.Resend(src, data and data.id)
+    -- data.customer is a chosen player, for a saved draft with nobody on it.
+    return Invoices.Resend(src, data and data.id, data and data.customer)
 end)
 
 lib.callback.register('XS-Mechanic:dropLine', function(src, data)
@@ -373,7 +374,7 @@ lib.callback.register('XS-Mechanic:billOrder', function(src, data)
 end)
 
 lib.callback.register('XS-Mechanic:billRest', function(src, data)
-    return Orders.BillRest(src, data and data.id)
+    return Orders.BillRest(src, data and data.id, data and data.customer)
 end)
 
 lib.callback.register('XS-Mechanic:dropOrderLine', function(src, data)

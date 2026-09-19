@@ -437,9 +437,21 @@ function Orders.Bill(src, data)
     local booked = Orders.Book(src, data)
     if not booked.ok then return booked end
 
-    local billed = Orders.BillRest(src, booked.id)
+    local billed = Orders.BillRest(src, booked.id, data.customer)
 
     if not billed.ok then
+        -- Written down either way. Only the bill is waiting on an answer, so
+        -- the picker comes back rather than an error about it.
+        if billed.needsCustomer then
+            return {
+                ok = false,
+                needsCustomer = true,
+                nearby = billed.nearby,
+                id = booked.id,
+                booked = booked.count,
+            }
+        end
+
         return {
             ok = true,
             id = booked.id,
@@ -458,7 +470,7 @@ function Orders.Bill(src, data)
 end
 
 -- Every line on an order nobody has been charged for yet, as one invoice.
-function Orders.BillRest(src, id)
+function Orders.BillRest(src, id, target)
     local row = MySQL.single.await([[
         SELECT *, UNIX_TIMESTAMP(created_at) AS created_at_unix
         FROM xs_mechanic_orders WHERE id = ?
@@ -481,7 +493,7 @@ function Orders.BillRest(src, id)
 
     if #unbilled == 0 then return { ok = false, error = 'Everything on that one is already billed.' } end
 
-    local result = Invoices.Bill(src, shop, order, unbilled)
+    local result = Invoices.Bill(src, shop, order, unbilled, target)
     if not result.ok then return result end
 
     for _, line in ipairs(unbilled) do line.billed = result.id end

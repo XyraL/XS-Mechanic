@@ -96,7 +96,7 @@
             note: `${invoice.customerName || 'Unknown'} · ${invoice.plate || '——'} · written by ${invoice.mechanicName || 'a mechanic'}`,
             body,
             confirm: invoice.status === 'paid' ? false : 'Resend to customer',
-            onConfirm: () => { XS.post('resendInvoice', { id: invoice.id }); },
+            onConfirm: () => { XS.bill('resendInvoice', { id: invoice.id }); },
         });
     }
 })();

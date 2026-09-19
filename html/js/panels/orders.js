@@ -102,7 +102,7 @@
                 // Booked without billing, or added to since the last bill.
                 owed && order.status !== 'done' ? XS.el('button', {
                     class: 'mini', text: 'Bill it',
-                    onclick: () => XS.post('billOrder', { id: order.id }),
+                    onclick: () => XS.bill('billOrder', { id: order.id }),
                 }) : null,
                 order.status === 'claimed' ? XS.el('button', {
                     class: 'mini', text: 'Finish',

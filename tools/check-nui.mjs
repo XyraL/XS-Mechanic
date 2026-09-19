@@ -33,7 +33,11 @@ const problems = [];
 for (const file of jsFiles) {
     const src = readFileSync(path.join(ROOT, file), 'utf8');
 
-    for (const m of src.matchAll(/XS\.post\(\s*['"]([^'"]+)['"]/g)) {
+    // XS.bill posts too. It wraps the endpoint so it can put a customer
+    // picker up and post it a second time, which hides the name from a plain
+    // XS.post scan — and an endpoint nothing appears to post to reads as dead
+    // code somebody then deletes.
+    for (const m of src.matchAll(/XS\.(?:post|bill)\(\s*['"]([^'"]+)['"]/g)) {
         if (!posted.has(m[1])) posted.set(m[1], file);
     }
 

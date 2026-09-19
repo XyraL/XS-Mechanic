@@ -342,7 +342,7 @@ end)
      Neither one touches the vehicle. What the customer has been looking at is
      a preview, and it goes back to how the car arrived — the car changes when
      a mechanic stands at it with the parts and uses them. ]]
-local function sendBasket(endpoint, cb)
+local function sendBasket(endpoint, data, cb)
     if #XSM.basket == 0 then
         cb({ ok = false })
         return
@@ -354,7 +354,16 @@ local function sendBasket(endpoint, cb)
         model = XSM.catalogue and XSM.catalogue.model,
         class = XSM.catalogue and XSM.catalogue.class,
         picks = XSM.basket,
+        customer = data and data.customer,
     })
+
+    -- Being asked who to bill is not a refusal. The panel puts a list up and
+    -- comes back with an answer, and the basket has to still be here for it.
+    if result and result.needsCustomer then
+        XSM.Refresh()
+        cb(result)
+        return
+    end
 
     if not result or not result.ok then
         XSM.Toast(result and result.error or 'That did not go through.', 'error')
@@ -375,11 +384,11 @@ local function sendBasket(endpoint, cb)
 end
 
 RegisterNUICallback('bookAll', function(_, cb)
-    sendBasket('XS-Mechanic:bookOrder', cb)
+    sendBasket('XS-Mechanic:bookOrder', nil, cb)
 end)
 
-RegisterNUICallback('billAll', function(_, cb)
-    sendBasket('XS-Mechanic:billOrder', cb)
+RegisterNUICallback('billAll', function(data, cb)
+    sendBasket('XS-Mechanic:billOrder', data, cb)
 end)
 
 RegisterNUICallback('billOrder', serverCall('billRest'))

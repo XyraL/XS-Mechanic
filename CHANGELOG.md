@@ -1,5 +1,19 @@
 # Changelog
 
+## 0.7.3
+
+- **Pick who is paying.** A job written against a registered vehicle already
+  knows who it is for and still bills them without asking. One written against
+  an unregistered car used to guess the closest player, or refuse with "nobody
+  close enough" — now the shop gets a list of everyone in range, nearest first
+  with how far away they are, and the mechanic clicks the one who is paying.
+  The same picker covers billing an order, sending an invoice draft and
+  resending a saved one.
+- Cancelling costs nothing. The work order is written either way, and the bill
+  can be sent later from Orders.
+- `tools/check-nui.mjs` reads `XS.bill` as well as `XS.post`, or four live
+  endpoints would have read as dead code.
+
 ## 0.7.2
 
 - **The side panel showed every screen at once.** Laying the sheet out in

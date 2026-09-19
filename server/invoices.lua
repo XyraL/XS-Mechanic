@@ -157,7 +157,57 @@ function Invoices.Nearest(src)
     return best
 end
 
-function Invoices.Send(src, shop, plate, save)
+--[[ Everyone close enough to hand a bill to.
+
+     Invoices.Nearest picks the closest and is right most of the time; this is
+     for the times it is not. Somebody brings a friend's car in, two people are
+     stood at the desk, the owner is parked outside — the mechanic knows who is
+     paying and the script does not. ]]
+function Invoices.Nearby(src)
+    local mechanic = GetPlayerPed(src)
+    if not mechanic or mechanic == 0 then return {} end
+
+    local coords = GetEntityCoords(mechanic)
+    local out = {}
+
+    for _, id in ipairs(GetPlayers()) do
+        id = tonumber(id)
+
+        if id ~= src then
+            local ped = GetPlayerPed(id)
+
+            if ped and ped ~= 0 then
+                local distance = #(coords - GetEntityCoords(ped))
+
+                if distance <= Config.Invoices.customerDistance and Framework.GetCitizenId(id) then
+                    out[#out + 1] = {
+                        source = id,
+                        name = Framework.GetName(id),
+                        distance = math.floor(distance * 10) / 10,
+                    }
+                end
+            end
+        end
+    end
+
+    table.sort(out, function(a, b) return a.distance < b.distance end)
+
+    return out
+end
+
+-- Nobody to hand it to, and the list of who there is instead. The panel turns
+-- this into a picker rather than a dead end.
+local function noCustomer(src)
+    local nearby = Invoices.Nearby(src)
+
+    if #nearby == 0 then
+        return { ok = false, error = 'Nobody close enough to hand it to.' }
+    end
+
+    return { ok = false, needsCustomer = true, nearby = nearby }
+end
+
+function Invoices.Send(src, shop, plate, save, target)
     local draft = Invoices.Draft(src)
 
     if #draft.items == 0 then
@@ -167,11 +217,9 @@ function Invoices.Send(src, shop, plate, save)
     local customerSrc, customerId, customerName
 
     if not save then
-        customerSrc = Invoices.Nearest(src)
+        customerSrc = tonumber(target)
 
-        if not customerSrc then
-            return { ok = false, error = 'Nobody close enough to hand it to.' }
-        end
+        if not customerSrc then return noCustomer(src) end
 
         customerId = Framework.GetCitizenId(customerSrc)
         customerName = Framework.GetName(customerSrc)
@@ -235,7 +283,7 @@ end
      The customer is whoever the order is for, online or not, because they
      agreed to the work when they asked for it. Only an order with nobody on it
      falls back to whoever is stood there. ]]
-function Invoices.Bill(src, shop, order, lines)
+function Invoices.Bill(src, shop, order, lines, target)
     local items, total = {}, 0
 
     for _, line in ipairs(lines or {}) do
@@ -256,11 +304,11 @@ function Invoices.Bill(src, shop, order, lines)
     local customer, customerName = order.customer, order.customerName
 
     if not customer or customer == '' then
-        local nearest = Invoices.Nearest(src)
-        if not nearest then return { ok = false, error = 'Nobody close enough to hand it to.' } end
+        local chosen = tonumber(target)
+        if not chosen then return noCustomer(src) end
 
-        customer = Framework.GetCitizenId(nearest)
-        customerName = Framework.GetName(nearest)
+        customer = Framework.GetCitizenId(chosen)
+        customerName = Framework.GetName(chosen)
 
         if not customer then return { ok = false, error = 'That player is not loaded.' } end
 
@@ -322,7 +370,7 @@ function Invoices.Bill(src, shop, order, lines)
     }
 end
 
-function Invoices.Resend(src, id)
+function Invoices.Resend(src, id, target)
     local row = MySQL.single.await([[
         SELECT *, UNIX_TIMESTAMP(created_at) AS created_at_unix,
                UNIX_TIMESTAMP(paid_at) AS paid_at_unix
@@ -344,10 +392,10 @@ function Invoices.Resend(src, id)
     -- stood in front of the mechanic, the same as a fresh one.
     if invoice.customer == '' or not customerSrc then
         if invoice.customer == '' then
-            local nearest = Invoices.Nearest(src)
-            if not nearest then return { ok = false, error = 'Nobody close enough to hand it to.' } end
+            local chosen = tonumber(target)
+            if not chosen then return noCustomer(src) end
 
-            customerSrc = nearest
+            customerSrc = chosen
 
             MySQL.update.await([[
                 UPDATE xs_mechanic_invoices SET customer = ?, customer_name = ?, status = 'sent' WHERE id = ?

@@ -248,6 +248,51 @@ XS.askPrice = function ({ title, note, price, label, naming }, done) {
     });
 };
 
+//[[ Handing a bill to somebody.
+//
+//   A job written against a registered vehicle already knows who it is for.
+//   One written against an unregistered car does not, and guessing the closest
+//   player gets it wrong often enough to matter — somebody brings a friend's
+//   car in, two people are stood at the desk.
+//
+//   So the server answers "needsCustomer" with everyone in range instead of
+//   refusing, and the mechanic picks. Nothing is lost by cancelling: the work
+//   order is already written, and the bill can be sent later from Orders. ]]
+XS.bill = async function (endpoint, payload) {
+    const result = await XS.post(endpoint, payload || {});
+
+    if (!result || !result.needsCustomer) return result;
+
+    const list = XS.el('div', { style: 'display:flex;flex-direction:column;gap:6px;max-height:300px;overflow-y:auto' });
+
+    for (const person of result.nearby || []) {
+        list.append(XS.el('button', {
+            class: 'row',
+            onclick: () => {
+                XS.closeModal();
+                XS.post(endpoint, Object.assign({}, payload, { customer: person.source }));
+            },
+        }, [
+            XS.el('div', {}, [
+                XS.el('div', { class: 't', text: person.name }),
+                XS.el('div', { class: 'm', text: `${XS.num(person.distance, 1)}m away` }),
+            ]),
+            XS.el('span', { class: 'st', text: 'BILL' }),
+        ]));
+    }
+
+    XS.modal({
+        title: 'Who is paying?',
+        note: result.booked
+            ? `${result.booked} written down against the car. Pick who the bill goes to.`
+            : 'This car is not registered to anybody, so pick who the bill goes to.',
+        confirm: false,
+        body: list,
+    });
+
+    return result;
+};
+
 XS.closeModal = function () {
     const host = document.getElementById('modal');
     host.hidden = true;

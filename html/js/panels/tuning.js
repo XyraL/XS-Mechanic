@@ -591,7 +591,7 @@
                 class: 'go',
                 text: 'Send to customer',
                 disabled: !(draft.items || []).length,
-                onclick: () => XS.post('sendInvoice'),
+                onclick: () => XS.bill('sendInvoice'),
             }),
 
             XS.el('button', {
@@ -657,7 +657,7 @@
             XS.el('button', {
                 class: 'go',
                 text: 'Bill the customer',
-                onclick: () => XS.post('billAll'),
+                onclick: () => XS.bill('billAll'),
             }),
 
             XS.el('button', {
