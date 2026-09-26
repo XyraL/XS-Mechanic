@@ -229,10 +229,11 @@ RegisterCommand('mechanicdebug', function(source)
         Config.Service.enabled and 'yes' or 'no',
         Config.CustomTuning.enabled and 'yes' or 'no',
         Config.Dyno.enabled and 'yes' or 'no'))
-    line(('    invoices %s · live car preview %s · tablet anim %s'):format(
+
+    line(('    invoices %s · tablet anim %s'):format(
         Config.Invoices.enabled and 'yes' or 'no',
-        Config.Tablet.livePreview and 'yes' or 'no',
         Config.Tablet.animation and 'yes' or 'no'))
+
     line(('    crafting %s · stock %s · shop boundaries %s'):format(
         Config.Crafting.enabled and 'yes' or 'no',
         Config.Stock.require and 'yes' or 'no',

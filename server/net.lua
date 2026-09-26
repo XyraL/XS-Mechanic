@@ -79,7 +79,6 @@ local function stateFor(src, mode, shopId)
         levelMultiplier = Config.Pricing.levelMultiplier,
         pricingMode = Config.Pricing.mode,
         serviceEnabled = Config.Service.enabled,
-        livePreview = Config.Tablet.livePreview,
         invoicesEnabled = Config.Invoices.enabled,
         tuningEnabled = Config.CustomTuning.enabled,
         dynoEnabled = Config.Dyno.enabled,
@@ -328,7 +327,8 @@ lib.callback.register('XS-Mechanic:sendInvoice', function(src, data)
     local shop = shopFor(src, data and data.shop)
     if not shop then return { ok = false, error = 'No shop.' } end
 
-    return Invoices.Send(src, shop, data and data.plate, false, data and data.customer)
+    return Invoices.Send(src, shop, data and data.plate, false,
+        data and data.customer, data and data.customerCid)
 end)
 
 lib.callback.register('XS-Mechanic:saveInvoice', function(src, data)
@@ -367,10 +367,6 @@ end)
 
 lib.callback.register('XS-Mechanic:bookOrder', function(src, data)
     return Orders.Book(src, data or {})
-end)
-
-lib.callback.register('XS-Mechanic:billOrder', function(src, data)
-    return Orders.Bill(src, data or {})
 end)
 
 lib.callback.register('XS-Mechanic:billRest', function(src, data)
@@ -416,6 +412,38 @@ lib.callback.register('XS-Mechanic:fitLine', function(src, data)
     end
 
     return Orders.Fit(src, data)
+end)
+
+--[[ Fitting a part with no order behind it.
+
+     Held to exactly the same rules as fitLine — mechanic, at the shop, out of
+     the car, on a bay — because dropping the order does not drop who is allowed
+     to work or where. The only thing missing is the line to tick off.
+
+     The slot and index are checked against the shared mod tables rather than
+     trusted, so a crafted payload cannot fit something the tables do not name,
+     and the part is taken before the client is told yes. ]]
+lib.callback.register('XS-Mechanic:fitFree', function(src, data)
+    data = data or {}
+
+    local shop = Store.ByJob(Framework.GetJob(src))
+    if not shop then return { ok = false, error = 'You are not a mechanic.' } end
+
+    if not atShop(src, shop) then
+        return { ok = false, error = ('You have to be at %s.'):format(shop.name) }
+    end
+
+    local ped = GetPlayerPed(src)
+
+    if ped and ped ~= 0 and GetVehiclePedIsIn(ped, false) ~= 0 then
+        return { ok = false, error = 'Get out of the car first.' }
+    end
+
+    if not onBay(src, shop, data.netId) then
+        return { ok = false, error = 'Put the car on a tuning bay and stand at it.' }
+    end
+
+    return Orders.FitFree(src, shop, data)
 end)
 
 lib.callback.register('XS-Mechanic:craft', function(src, data)

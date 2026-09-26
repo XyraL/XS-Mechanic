@@ -35,7 +35,6 @@ optional('Dyno', 'client/dyno.lua', { running = false, Run = function() end, Sto
 optional('Nitrous', 'client/extras.lua', { active = false, Toggle = function() end, Level = function() return 0 end })
 optional('Lighting', 'client/extras.lua', { Open = function() end, Set = function() end })
 optional('Anim', 'client/anim.lua', { holding = false, Start = function() end, Stop = function() end, Work = function() return true end })
-optional('Showcase', 'client/showcase.lua', { active = false, Start = function() end, Stop = function() end, SetRect = function() end, Spin = function() end, Spun = function() return 0 end, Focus = function() end })
 optional('Catalogue', 'client/catalogue.lua', { Build = function() return nil end, SupportsChameleon = function() return false end, IsElectric = function() return false end })
 optional('Install', 'client/install.lua', { Use = function() end, ByHand = function() end, Pick = function() end })
 

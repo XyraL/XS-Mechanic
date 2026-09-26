@@ -1,5 +1,65 @@
 # Changelog
 
+## 1.0.0
+
+First public release.
+
+- **Work orders are the only way parts get billed.** Tuning used to have a Bill
+  the customer button beside Put it on a work order, which meant a car could be
+  charged for before anybody wrote down what it was having done, and two places
+  to bill from that had to agree with each other. Parts go on an order, the
+  order gets fitted, the order gets billed. Once.
+- **Bill the registered owner, somebody standing there, or a server ID.** The
+  owner is listed first and can be billed even when they are not online — the
+  invoice waits for them. The citizenid is checked against the registration, so
+  the picker cannot be used to bill somebody else's account.
+- **Send the bill through your own invoice resource.** `Config.Bridges.billing`
+  finds okokBilling, esx_billing or qb-phone on its own, and
+  `Config.Invoices.provider.event` takes anything else. The row is still written
+  to `xs_mechanic_invoices` either way, because the shop's books read it.
+- **Fit a part with no work order.** Use a part at a car with nothing written
+  down and it asks what it should go on, narrowed to the slots that part is
+  actually for and read off the car itself. Covers custom tuning packages too,
+  and sends servicing parts to the Service screen. Mechanic, at the shop, on a
+  bay — the same rules as any other work.
+- **A work order narrows the choice.** With engine level 3 on the order, level 2
+  is still listed and cannot be picked. Slots the order says nothing about stay
+  open.
+- **Fit from the order screen.** A Fit button on every line, with the reason in
+  the tooltip when there is no part for it. It finds the car in front of you
+  rather than needing the tablet connected, so the order book on the laptop can
+  fit things.
+- **The car preview is gone.** The panel used to leave a transparent window and
+  put a scripted camera behind it, and swing a second camera onto the car on
+  every single click. There is a car three feet in front of you; the panel now
+  spends that space on what it knows instead.
+- **One Vehicle app.** Tuning, Performance, Stance and Dyno were four icons
+  answering the same question. Repairs and Service stay where they were.
+- **Armour has its own part.** `performance_part` covers engine, transmission
+  and brakes; armour takes `armour_plate`, which is heavier and costs more
+  steel. `engine_parts`, `brake_parts` and `transmission_parts` are gone.
+- **The shelf holds a workshop's worth.** 500 slots and four tonnes, and a part
+  counts whether it is on the shelf or in the mechanic's pockets — the shelf is
+  spent first so nobody loses parts they brought with them.
+- **The current work order is on the HUD**, with how much of it is fitted.
+
+### Fixed
+
+- The Respray tab threw `CHANNELS is not defined` every time it opened.
+- Fitting from a work order spent the part and ticked the line **without putting
+  anything on the car** — the line the client received had no slot or index on
+  it, so there was nothing to apply.
+- Crafting a part left every screen believing the shop still had none of it, so
+  Fit stayed greyed out on something just made.
+- Three places called natives on a vehicle handle that outlives the vehicle,
+  which threw "Tried to access invalid entity" and took the rest of the function
+  with it.
+- The tuning and stance sheets painted wider than the glass and lost the right
+  edge of every row, so prices read `$6,15` and stock read `IN STOC`.
+- Losing the tablet for a single inventory read closed the panel; it takes two
+  now, because an inventory mid-write answers no for a moment.
+- Order rows with a button stood at double height.
+
 ## 0.7.3
 
 - **Pick who is paying.** A job written against a registered vehicle already

@@ -150,17 +150,46 @@
                     XS.el('span', { class: 'c', text: (pick.categoryLabel || pick.category || '').toUpperCase() }),
                     pick.label,
                     pick.fitted ? XS.el('span', { class: 'tag', text: 'FITTED' }) : null,
-                    short ? XS.el('span', { class: 'tag warn', text: 'MAKE ONE' }) : null,
-                    !pick.fitted && pick.needs && !short
-                        ? XS.el('span', { class: 'tag', text: (pick.needsLabel || pick.needs).toUpperCase() })
+
+                    // The part is named whether or not the shop has one. "Make
+                    // one" said what to do and never what to make, which is
+                    // exactly what you need to know walking to the bench — so
+                    // the name is the tag and short just colours it.
+                    !pick.fitted && pick.needs
+                        ? XS.el('span', {
+                            class: short ? 'tag warn' : 'tag',
+                            text: (pick.needsLabel || pick.needs).toUpperCase(),
+                            title: short
+                                ? 'None in stock — make one at the bench'
+                                : 'In stock',
+                        })
                         : null,
                 ]),
                 XS.el('span', { class: 'p', text: XS.money(pick.price) }),
 
+                // Fit from here rather than walking off to use the part.
+                //
+                // Deliberately not gated on being connected to the car. The
+                // laptop never connects to one, so that rule meant the whole
+                // order book on the desk had no way to fit anything. The client
+                // finds the car in front of you and says so if there is none —
+                // a button that explains itself beats a button that is not
+                // there.
+                !pick.fitted && pick.needs && open ? XS.el('button', {
+                    class: 'mini',
+                    text: 'Fit',
+                    disabled: short,
+                    title: short
+                        ? `No ${(pick.needsLabel || pick.needs).toLowerCase()} in stock — make one at the bench`
+                        : `Fit the ${(pick.needsLabel || pick.needs).toLowerCase()} — stand at the car`,
+                    onclick: () => XS.post('fitOrderLine', { id: order.id, line: pick.lid }),
+                }) : null,
+
                 // No part to use, so there is nothing to hand the mechanic —
                 // this is the one thing the tablet still does to a car.
-                !pick.fitted && !pick.needs && here && open ? XS.el('button', {
+                !pick.fitted && !pick.needs && open ? XS.el('button', {
                     class: 'mini', text: 'Do it',
+                    title: 'Stand at the car',
                     onclick: () => XS.post('fitByHand'),
                 }) : null,
 

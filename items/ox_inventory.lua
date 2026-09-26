@@ -315,34 +315,16 @@
     client = { export = 'XS-Mechanic.fit_plate_blank' },
 },
 
--- The modkit upgrades. One part per slot, so a shop stocks engine work and
--- brake work apart and the bench makes them apart.
+-- The modkit upgrades. Engine, brakes and transmission all take the generic
+-- performance part; these two are the ones a shop stocks apart.
 
-['engine_parts'] = {
-    label = 'Engine Parts',
-    weight = 4000,
+['armour_plate'] = {
+    label = 'Armour Plate',
+    weight = 9000,
     stack = true,
     close = false,
-    description = 'Cams, pistons and a gasket set.',
-    client = { export = 'XS-Mechanic.fit_engine_parts' },
-},
-
-['brake_parts'] = {
-    label = 'Brake Parts',
-    weight = 2200,
-    stack = true,
-    close = false,
-    description = 'Discs, pads and the lines to feed them.',
-    client = { export = 'XS-Mechanic.fit_brake_parts' },
-},
-
-['transmission_parts'] = {
-    label = 'Transmission Parts',
-    weight = 3200,
-    stack = true,
-    close = false,
-    description = 'Ratios, synchros and a clutch.',
-    client = { export = 'XS-Mechanic.fit_transmission_parts' },
+    description = 'Ballistic plate, cut to the shell and heavy with it.',
+    client = { export = 'XS-Mechanic.fit_armour_plate' },
 },
 
 ['suspension_parts'] = {

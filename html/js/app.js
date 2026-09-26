@@ -12,12 +12,12 @@
         tablet: [
             { id: 'apps', label: 'Home' },
             { id: 'vehicle', label: 'Vehicle' },
-            { id: 'tuning', label: 'Tuning', at: 'tuning' },
+            { id: 'tuning', label: 'Tuning', at: 'tuning', group: 'vehicle' },
             { id: 'repairs', label: 'Repairs' },
             { id: 'service', label: 'Service', when: () => XS.state.serviceEnabled !== false, badge: () => XS.state.vehicle?.service?.due },
-            { id: 'performance', label: 'Performance', at: 'tuning', when: () => XS.state.tuningEnabled !== false },
-            { id: 'stance', label: 'Stance', at: 'tuning', when: () => XS.state.tuningEnabled !== false },
-            { id: 'dyno', label: 'Dyno', at: 'dyno', when: () => XS.state.dynoEnabled !== false },
+            { id: 'performance', label: 'Performance', at: 'tuning', when: () => XS.state.tuningEnabled !== false, group: 'vehicle' },
+            { id: 'stance', label: 'Stance', at: 'tuning', when: () => XS.state.tuningEnabled !== false, group: 'vehicle' },
+            { id: 'dyno', label: 'Dyno', at: 'dyno', when: () => XS.state.dynoEnabled !== false, group: 'vehicle' },
             { id: 'orders', label: 'Orders', badge: () => XS.state.openOrders },
             { id: 'invoices', label: 'Invoices', badge: () => XS.state.unpaid, when: () => XS.state.invoicesEnabled !== false },
             { id: 'settings', label: 'Settings' },
@@ -44,10 +44,17 @@
 
     // The tabs this player can actually reach, in this mode, right now. The nav
     // bar and the home screen both need the same list.
-    XS.apps = function () {
+    // The screens that live behind one app rather than beside it. Still real
+    // panels, still reachable — they just do not get their own icon.
+    XS.appsIn = function (group) {
+        return XS.apps(true).filter((tab) => tab.group === group);
+    };
+
+    XS.apps = function (withGrouped) {
         const near = XS.state.near || {};
 
         return (TABS[XS.mode] || []).filter((tab) => {
+            if (!withGrouped && tab.group) return false;
             if (tab.boss && !XS.state.isBoss) return false;
             if (tab.when && !tab.when()) return false;
 
@@ -73,7 +80,12 @@
         const back = document.querySelector('[data-back]');
         const title = document.querySelector('[data-title]');
 
-        if (back) back.hidden = home || !XS.apps().some((t) => t.id === 'apps');
+        const owner = (TABS[XS.mode] || []).find((t) => t.id === XS.panel)?.group;
+
+        if (back) {
+            back.hidden = home || !XS.apps().some((t) => t.id === 'apps');
+            back.dataset.to = owner || 'apps';
+        }
         if (title) title.textContent = home || !tab ? 'Mechanic' : tab.label;
 
         // What the tablet is plugged into, the way the reference says it.
@@ -121,11 +133,19 @@
 
         document.body.dataset.layout = shell;
 
+        // Which screen is up, so the stylesheet can size the device to it. The
+        // home screen is two short rows of apps and does not need the glass an
+        // eight column parts list does.
+        //
+        // Deliberately NOT data-panel: the panel sections are [data-panel], and
+        // putting the same attribute on body makes body the first match for
+        // querySelector('[data-panel="apps"]') — which then clears the whole
+        // shell and renders the screen into it.
+        document.body.dataset.screen = XS.panel || '';
+
         const device = document.querySelector('.device');
         if (device) device.dataset.device = shell === 'sheet' ? 'tablet' : shell;
 
-        const stage = document.querySelector('[data-stage]');
-        if (stage) stage.hidden = shell !== 'sheet';
     }
 
     XS.show = function (id) {
@@ -149,9 +169,6 @@
 
         XS.rerender(id);
 
-        // The pane can change shape between panels, so the camera is told
-        // again rather than assuming the window has not moved.
-        requestAnimationFrame(XS.subject.reportViewport);
     };
 
     XS.redraw = function () {
@@ -199,14 +216,15 @@
         document.body.classList.remove('open');
         XS.closeModal();
         XS.subject.hide();
-        XS.post('carView', { active: false });
         XS.post('close');
     };
 
     document.querySelector('[data-close]').addEventListener('click', XS.close);
 
     for (const [selector, go] of [
-        ['[data-back]', () => XS.show('apps')],
+        // Back to whatever owns this screen. Out of Tuning that is Vehicle, not
+        // all the way home — renderNav sets data-to each time it draws.
+        ['[data-back]', (e) => XS.show(e.currentTarget?.dataset.to || 'apps')],
         ['[data-dock-home]', () => XS.show('apps')],
         ['[data-dock-close]', () => XS.close()],
         ['[data-dock-drop]', () => XS.post('disconnect')],
@@ -215,30 +233,6 @@
         if (button) button.addEventListener('click', go);
     }
 
-    // Drag anywhere on the car to turn it. The panel has the mouse while it is
-    // open, so the game cannot be given the drag — it is caught here and the
-    // camera is told how far to walk round.
-    (function turnable() {
-        const stage = document.querySelector('[data-stage]');
-        if (!stage) return;
-
-        let from = null;
-
-        stage.addEventListener('mousedown', (ev) => { from = ev.clientX; });
-        window.addEventListener('mouseup', () => { from = null; });
-
-        window.addEventListener('mousemove', (ev) => {
-            if (from === null) return;
-
-            const by = ev.clientX - from;
-            if (Math.abs(by) < 2) return;
-
-            from = ev.clientX;
-            XS.post('spinCar', { by: by * -0.45 });
-        });
-
-        stage.addEventListener('dblclick', () => XS.post('spinCar', { reset: true }));
-    })();
 
     document.addEventListener('keydown', (ev) => {
         if (ev.key !== 'Escape') return;

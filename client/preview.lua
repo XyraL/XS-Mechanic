@@ -12,21 +12,9 @@ Preview = {}
      one is mid-preview used to hand the first car's settings to the second. ]]
 
 local snapshot = nil
-local camera = nil
 
 -- Degrees around the car from its nose, the same convention the live window
 -- uses: 0 the nose, 90 the driver's side, 180 the boot.
-local ANGLES = {
-    cosmetics   = { pitch = -10.0, yaw = 35.0,  dist = 5.2 },
-    wheels      = { pitch = -6.0,  yaw = 68.0,  dist = 3.6 },
-    performance = { pitch = -28.0, yaw = 18.0,  dist = 4.4 },
-    respray     = { pitch = -8.0,  yaw = 90.0,  dist = 6.4 },
-    lights      = { pitch = -8.0,  yaw = 0.0,   dist = 4.6 },
-    interior    = { pitch = -20.0, yaw = 105.0, dist = 2.6 },
-    livery      = { pitch = -10.0, yaw = 90.0,  dist = 6.0 },
-    plate       = { pitch = -10.0, yaw = 180.0, dist = 3.2 },
-    extras      = { pitch = -10.0, yaw = 35.0,  dist = 5.6 },
-}
 
 -- Changing anything on a vehicle somebody else owns does nothing at all, and
 -- says nothing about it either.
@@ -215,61 +203,18 @@ function Preview.Revert()
     restore(snapshot.entity, snapshot.was)
 end
 
-local function startCam(vehicle, category)
-    if not Config.Tuning.preview then return end
 
-    local angle = ANGLES[category] or ANGLES.cosmetics
 
-    if not camera then
-        camera = CreateCam('DEFAULT_SCRIPTED_CAMERA', true)
-        SetCamActive(camera, true)
-        RenderScriptCams(true, true, 500, true, true)
-    end
+--[[ Nothing to frame.
 
-    local coords = GetEntityCoords(vehicle)
+     This used to swing a scripted camera onto whichever corner of the car the
+     part belonged to, on every single click. With the preview window gone from
+     the panel there is nothing for it to fill, and a camera taking the view
+     away mid-click is the opposite of helpful.
 
-    -- Around the car from its nose. (-sin, cos) is a rotation; (sin, -cos) —
-    -- what this used to be — is a reflection, so the angle it produced moved
-    -- with the car's world heading and the same view framed a different part
-    -- of the car depending on which way it was parked. Same bug the live
-    -- window had; fixing one without the other leaves the two disagreeing.
-    local rad = math.rad(GetEntityHeading(vehicle) + angle.yaw)
-
-    -- tan, not sin: the height that makes a camera look DOWN at angle p from
-    -- horizontal distance d is d * tan(p). sin quietly under-raises it, and the
-    -- steeper the view the further off it gets.
-    local lift = angle.dist * math.tan(math.rad(math.min(70.0, -angle.pitch)))
-
-    SetCamCoord(camera,
-        coords.x + (-math.sin(rad) * angle.dist),
-        coords.y + (math.cos(rad) * angle.dist),
-        coords.z + lift + 0.55)
-
-    PointCamAtEntity(camera, vehicle, 0.0, 0.0, 0.0, true)
-    SetCamFov(camera, 52.0)
-end
-
-function Preview.StopCam()
-    if not camera then return end
-
-    RenderScriptCams(false, true, 500, true, true)
-    SetCamActive(camera, false)
-    DestroyCam(camera, true)
-    camera = nil
-end
-
--- The live window already shows the car from a camera of its own. A second one
--- swinging round on every click would fight it.
-local function framing(vehicle, category)
-    if Showcase.active then return end
-
-    -- The preview camera exists to show somebody the part they are looking at
-    -- in the panel. Fitting a part off a work order goes through the same
-    -- code with the panel shut, and swinging a camera onto the car then —
-    -- with no UI on screen to explain it — is just the view being taken away.
-    if not XSM.open then return end
-
-    startCam(vehicle, category)
+     Kept as a no-op rather than deleted at every call site, so applying a part
+     reads the same everywhere it is done. ]]
+local function framing()
 end
 
 -- Applies a change for looking at only. Nothing is paid for and nothing is
@@ -369,7 +314,6 @@ function XSM.StopPreview(full)
     Preview.Restore()
     XSM.preview = nil
 
-    if full then Preview.StopCam() end
 end
 
 -- One part of the list is paid for and fitted. What is on the car now becomes
@@ -393,7 +337,6 @@ end
 function Preview.Commit()
     snapshot = nil
     XSM.preview = nil
-    Preview.StopCam()
 
     local vehicle = XSM.vehicle
     if vehicle and DoesEntityExist(vehicle) then

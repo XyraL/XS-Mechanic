@@ -110,6 +110,11 @@ function Craft.Make(src, shop, item, amount)
         ('**%s** made %dx %s at %s'):format(Framework.GetName(src), amount, recipe.label, shop.name),
         Discord.Colour.info)
 
+    -- The panel reads its stock numbers once, when it opens. Without this the
+    -- part is on the shelf and every screen still says the shop has none of it,
+    -- so Fit stays greyed out on a part somebody just made.
+    TriggerClientEvent('XS-Mechanic:client:refresh', -1)
+
     return {
         ok = true,
         message = where == 'shelf'

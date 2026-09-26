@@ -7,6 +7,7 @@ Config.Bridges = {
     target    = 'auto',   -- auto | ox_target | qb-target | builtin
     banking   = 'auto',   -- auto | qb-banking | Renewed-Banking | okokBanking | qbx | none
     phone     = 'auto',   -- auto | lb-phone | qs-smartphone | XS-Phone | qb-phone | none
+    billing   = 'auto',   -- auto | okokBilling | esx_billing | qb-phone | none
 }
 
 -- No coordinates live in this file. Every shop, bay, parts counter and
@@ -112,14 +113,6 @@ Config.Tablet = {
     -- Hold a tablet prop and stand like you are reading it while the panel is
     -- open. Cosmetic only; the interface works either way.
     animation = true,
-
-    -- Show the REAL vehicle in the panel, live, with its current paint and
-    -- parts. The panel leaves a transparent window and a scripted camera puts
-    -- the car behind it.
-    --
-    -- The camera takes over the screen while the tablet is open, the same way
-    -- the tuning preview does. Off falls back to a drawn card.
-    livePreview = true,
 }
 
 -- ── The office laptop ────────────────────────────────────────────────────────
@@ -209,13 +202,6 @@ Config.Tuning = {
     -- ones; list any addon EVs here.
     electricModels = { 'dilettante', 'dilettante2', 'khamelion', 'voltic', 'voltic2',
         'cyclone', 'tezeract', 'neon', 'raiden', 'imorgon', 'omnisegt', 'powersurge', 'virtue' },
-
-    -- Let a customer look at a modification before paying for it.
-    --
-    -- Nothing previewed is ever kept. The vehicle is recorded before the first
-    -- change and put back the moment the panel closes, so looking at a respray
-    -- is not a way to get one.
-    preview = true,
 
     -- Seconds to fit one thing, by category. Fitting is not instant: the
     -- mechanic works on the car and the panel steps aside while they do.
@@ -378,6 +364,18 @@ Config.Repair = {
 Config.Stock = {
     require = true,
 
+    -- How big the shop's storage point is. A workshop is a stockroom, not a
+    -- glovebox: it holds bumpers, wheel sets and engine parts by the dozen, and
+    -- a bench that makes ten at a time fills a small shelf in an afternoon.
+    -- Weight is in grams, so 4000000 is four tonnes.
+    storage = { slots = 500, weight = 4000000 },
+
+    -- Where a part can be fitted from. The shelf is the shop's stock; pockets
+    -- are whatever the mechanic is carrying. With both on, a part in either
+    -- place can be used, and the shelf is always spent first so a mechanic's
+    -- own parts are the last resort rather than the first.
+    useFrom = { shelf = true, pockets = true },
+
     -- Which item each kind of work uses up. One per category; set any of them
     -- to '' and that category stops needing anything.
     categoryItems = {
@@ -397,9 +395,11 @@ Config.Stock = {
     -- and the bench makes them apart. Anything not listed falls back to the
     -- category above.
     slotItems = {
-        engine       = 'engine_parts',
-        brakes       = 'brake_parts',
-        transmission = 'transmission_parts',
+        -- Engine, brakes and transmission are the ordinary modkit upgrades and
+        -- share the generic performance part above. Armour is not an upgrade in
+        -- the same sense — it is plate bolted to the shell — so it has a part of
+        -- its own rather than coming off the same shelf as a gearbox.
+        armour       = 'armour_plate',
         suspension   = 'suspension_parts',
         turbo        = 'turbo_kit',
     },
@@ -503,17 +503,11 @@ Config.Crafting = {
         { item = 'ev_coolant',      label = 'EV Coolant',     group = 'Servicing',
           needs = { scrap = 2, glass = 1 } },
 
-        -- The modkit upgrades, one part per slot rather than one part for all
-        -- of them. Level four costs the same as level one to make; what a
-        -- level is worth to the customer is a price, not a recipe.
-        { item = 'engine_parts',       label = 'Engine Parts',       group = 'Upgrades',
-          needs = { steel = 7, scrap = 5 } },
-
-        { item = 'brake_parts',        label = 'Brake Parts',        group = 'Upgrades',
-          needs = { steel = 5, scrap = 3 } },
-
-        { item = 'transmission_parts', label = 'Transmission Parts', group = 'Upgrades',
-          needs = { steel = 6, scrap = 4, rubber = 1 } },
+        -- Engine, brakes and transmission all take the generic performance part
+        -- and are made further up. Level four costs the same as level one to
+        -- make; what a level is worth to the customer is a price, not a recipe.
+        { item = 'armour_plate',       label = 'Armour Plate',       group = 'Upgrades',
+          needs = { steel = 12, scrap = 4 } },
 
         { item = 'suspension_parts',   label = 'Suspension Parts',   group = 'Upgrades',
           needs = { steel = 6, rubber = 3 } },
@@ -556,6 +550,21 @@ Config.Crafting = {
 -- ── Invoices ─────────────────────────────────────────────────────────────────
 Config.Invoices = {
     enabled = true,
+
+    -- Send the bill through your own invoice resource instead of this one.
+    --
+    -- The invoice is still written to xs_mechanic_invoices either way, because
+    -- the shop's own screens and the boss's books read it. This only decides
+    -- who chases the customer for the money.
+    --
+    -- Set event to the server event your billing script listens on and it is
+    -- called with one table: society, shop, mechanic, customer, amount, label,
+    -- plate, invoiceId. Leave it nil and Config.Bridges.billing is used
+    -- instead, which detects the common ones on its own.
+    provider = {
+        event   = nil,
+        society = 'mechanic',
+    },
 
     -- Repairs, servicing and stance are added to a running draft as they are
     -- done, one line each, priced from the shop. The mechanic can edit every

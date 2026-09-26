@@ -33,6 +33,43 @@ function Hud.Update()
         rows[#rows + 1] = { k = 'Service', v = ('%d DUE'):format(due), tone = 'bad' }
     end
 
+    --[[ What this car is booked in for.
+
+         The reason to look at the HUD at all is to know what to do next, and
+         with the panel shut there was no way to see that the car in front of
+         you had been booked in — you had to open the tablet to find out there
+         was nothing left to do, or that there were four parts waiting. ]]
+    local plate = catalogue.plate and string.upper(Util.Trim(catalogue.plate)) or ''
+
+    if plate ~= '' then
+        for _, order in ipairs(XSM.state and XSM.state.orders or {}) do
+            local match = string.upper(Util.Trim(tostring(order.plate or '')))
+
+            if match == plate and (order.status == 'open' or order.status == 'claimed') then
+                local total, done = 0, 0
+
+                for _, line in ipairs(order.requested or {}) do
+                    if type(line) == 'table' then
+                        total = total + 1
+                        if line.fitted then done = done + 1 end
+                    end
+                end
+
+                rows[#rows + 1] = {
+                    k = 'Work order',
+                    v = ('%d of %d fitted'):format(done, total),
+                    tone = done < total and 'warn' or 'good',
+                }
+
+                if (order.quote or 0) > 0 then
+                    rows[#rows + 1] = { k = 'Quoted', v = Util.Money(order.quote) }
+                end
+
+                break
+            end
+        end
+    end
+
     if draft and (draft.total or 0) > 0 then
         rows[#rows + 1] = { k = 'Draft', v = Util.Money(draft.total) }
     end

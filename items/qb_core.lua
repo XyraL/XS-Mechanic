@@ -254,25 +254,11 @@
 -- The modkit upgrades. One part per slot, so a shop stocks engine work and
 -- brake work apart and the bench makes them apart.
 
-['engine_parts'] = {
-    name = 'engine_parts', label = 'Engine Parts', weight = 4000,
-    type = 'item', image = 'engine_parts.png', unique = false, useable = true,
+['armour_plate'] = {
+    name = 'armour_plate', label = 'Armour Plate', weight = 9000,
+    type = 'item', image = 'armour_plate.png', unique = false, useable = true,
     shouldClose = false, combinable = nil,
-    description = 'Cams, pistons and a gasket set.',
-},
-
-['brake_parts'] = {
-    name = 'brake_parts', label = 'Brake Parts', weight = 2200,
-    type = 'item', image = 'brake_parts.png', unique = false, useable = true,
-    shouldClose = false, combinable = nil,
-    description = 'Discs, pads and the lines to feed them.',
-},
-
-['transmission_parts'] = {
-    name = 'transmission_parts', label = 'Transmission Parts', weight = 3200,
-    type = 'item', image = 'transmission_parts.png', unique = false, useable = true,
-    shouldClose = false, combinable = nil,
-    description = 'Ratios, synchros and a clutch.',
+    description = 'Ballistic plate, cut to the shell and heavy with it.',
 },
 
 ['suspension_parts'] = {

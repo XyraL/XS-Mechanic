@@ -36,6 +36,11 @@ delete. Every shop on your server is one you built.
 The **tablet** is an item. It is the tool a mechanic takes to a car — plug into
 whatever is in front of you, read what is fitted, change it, repair it, bill it.
 
+Its home screen is Vehicle, Repairs, Service, Orders, Invoices and Settings.
+Tuning, Performance, Stance and Dyno all live inside **Vehicle**, because they
+are four answers to the same question — what is bolted to this car — and four
+icons for one job is three too many.
+
 The **laptop** is a prop you place in the shop. It runs the business: invoices,
 work orders, staff and the money. No car needed.
 
@@ -64,6 +69,22 @@ fitted adds a line at the shop's price. Edit it, send it, save it for later,
 send it again. The customer gets a prompt and a phone notification, and
 `/invoices` holds anything unpaid. A share goes to the mechanic who wrote it.
 
+Billing asks who is paying and offers three answers: whoever the car is
+registered to — listed first, and billable even when they are not on — anyone
+standing close enough, or a server ID typed in by hand.
+
+If you already run an invoice resource, point this at it and it hands the bill
+over instead of collecting itself. `Config.Bridges.billing` finds okokBilling,
+esx_billing or qb-phone on its own, and `Config.Invoices.provider.event` takes
+anything else — one server event, called with the society, shop, mechanic,
+customer, amount, label, plate and invoice id. The row is still written to
+`xs_mechanic_invoices` either way, because the shop's own screens and the boss's
+books read it. This only decides who chases the customer.
+
+**Parts are never billed from the tuning screen.** They go on a work order, and
+the order is what gets billed, once, from the Orders app — so a car is never
+charged for work nobody wrote down.
+
 **Work orders.** A customer drives into a bay, picks what they want and looks at
 it on their own car, and sends the lot over with a note and an estimate. It
 lands on the tablet of whoever is working, and the mechanic who walks up to that
@@ -80,6 +101,20 @@ not got — somebody just has to go and make one.
 
 A shop with no storage point placed does not run on stock at all, so nothing is
 rationed until there is a shelf to ration it from.
+
+A part counts whether it is on the shelf or in the mechanic's own pockets, and
+the shelf is always spent first, so a mechanic who brought their own parts does
+not quietly lose them to the shop. `Config.Stock.useFrom` turns either half off.
+
+The shelf is 500 slots and four tonnes by default — a workshop is a stockroom,
+not a glovebox, and a bench that makes ten at a time fills a small one in an
+afternoon. `Config.Stock.storage` is the dial.
+
+**Fitting with nothing written down.** Use a part at a car and it looks for a
+work order first. If there is no order, or no line on it wants what you are
+holding, it asks what the part should go on instead of refusing — narrowed to
+the slots that particular part is the part for, read off the car itself. Same
+rules as any other work: mechanic, at the shop, out of the car, on a bay.
 
 **Work happens on a bay.** Fitting anything needs the mechanic stood on a tuning
 bay with the car on it. Reading an invoice or a work order does not.
@@ -193,6 +228,7 @@ below — it uses what your server already has. Out of the box it looks for
     stack = true,
     close = true,
     description = 'A set of tyres and the tools to fit them.',
+    client = { export = 'XS-Mechanic.fit_tyre_kit' },
 },
 
 ['performance_part'] = {
@@ -201,6 +237,7 @@ below — it uses what your server already has. Out of the box it looks for
     stack = true,
     close = true,
     description = 'Whatever the tuning menu asked for.',
+    client = { export = 'XS-Mechanic.fit_performance_part' },
 },
 
 -- Phase 2: servicing parts, custom tuning parts, and the two pocket items.
@@ -283,6 +320,7 @@ below — it uses what your server already has. Out of the box it looks for
     stack = true,
     close = true,
     description = 'Small and revvy.',
+    client = { export = 'XS-Mechanic.fit_i4_engine' },
 },
 
 ['v6_engine'] = {
@@ -291,6 +329,7 @@ below — it uses what your server already has. Out of the box it looks for
     stack = true,
     close = true,
     description = 'The sensible one.',
+    client = { export = 'XS-Mechanic.fit_v6_engine' },
 },
 
 ['v8_engine'] = {
@@ -299,6 +338,7 @@ below — it uses what your server already has. Out of the box it looks for
     stack = true,
     close = true,
     description = 'Torque everywhere.',
+    client = { export = 'XS-Mechanic.fit_v8_engine' },
 },
 
 ['v12_engine'] = {
@@ -307,6 +347,7 @@ below — it uses what your server already has. Out of the box it looks for
     stack = true,
     close = true,
     description = 'Not for a hatchback.',
+    client = { export = 'XS-Mechanic.fit_v12_engine' },
 },
 
 ['electric_motor'] = {
@@ -315,6 +356,7 @@ below — it uses what your server already has. Out of the box it looks for
     stack = true,
     close = true,
     description = 'Instant, and quiet about it.',
+    client = { export = 'XS-Mechanic.fit_electric_motor' },
 },
 
 ['turbo_kit'] = {
@@ -323,6 +365,7 @@ below — it uses what your server already has. Out of the box it looks for
     stack = true,
     close = true,
     description = 'Snail, pipework, wastegate.',
+    client = { export = 'XS-Mechanic.fit_turbo_kit' },
 },
 
 ['drivetrain_kit'] = {
@@ -331,6 +374,7 @@ below — it uses what your server already has. Out of the box it looks for
     stack = true,
     close = true,
     description = 'Changes which wheels do the work.',
+    client = { export = 'XS-Mechanic.fit_drivetrain_kit' },
 },
 
 ['gearbox_kit'] = {
@@ -339,6 +383,7 @@ below — it uses what your server already has. Out of the box it looks for
     stack = true,
     close = true,
     description = 'Ratios you actually chose.',
+    client = { export = 'XS-Mechanic.fit_gearbox_kit' },
 },
 
 ['brake_kit'] = {
@@ -347,6 +392,7 @@ below — it uses what your server already has. Out of the box it looks for
     stack = true,
     close = true,
     description = 'Discs, calipers, braided lines.',
+    client = { export = 'XS-Mechanic.fit_brake_kit' },
 },
 
 ['drift_kit'] = {
@@ -355,6 +401,7 @@ below — it uses what your server already has. Out of the box it looks for
     stack = true,
     close = true,
     description = 'Loose on purpose.',
+    client = { export = 'XS-Mechanic.fit_drift_kit' },
 },
 
 ['nitrous'] = {
@@ -384,6 +431,7 @@ below — it uses what your server already has. Out of the box it looks for
     stack = true,
     close = false,
     description = 'A panel, a bumper, a skirt. Whatever the car is missing.',
+    client = { export = 'XS-Mechanic.fit_body_part' },
 },
 
 ['wheel_set'] = {
@@ -392,6 +440,7 @@ below — it uses what your server already has. Out of the box it looks for
     stack = true,
     close = false,
     description = 'Four of them, boxed.',
+    client = { export = 'XS-Mechanic.fit_wheel_set' },
 },
 
 ['paint_can'] = {
@@ -400,6 +449,7 @@ below — it uses what your server already has. Out of the box it looks for
     stack = true,
     close = false,
     description = 'Mixed to whatever the customer picks.',
+    client = { export = 'XS-Mechanic.fit_paint_can' },
 },
 
 ['vinyl_wrap'] = {
@@ -408,6 +458,7 @@ below — it uses what your server already has. Out of the box it looks for
     stack = true,
     close = false,
     description = 'A roll of it. Bubbles are the fitter, not the vinyl.',
+    client = { export = 'XS-Mechanic.fit_vinyl_wrap' },
 },
 
 ['light_kit'] = {
@@ -416,6 +467,7 @@ below — it uses what your server already has. Out of the box it looks for
     stack = true,
     close = false,
     description = 'Housings, bulbs and the loom to run them.',
+    client = { export = 'XS-Mechanic.fit_light_kit' },
 },
 
 ['interior_part'] = {
@@ -424,6 +476,7 @@ below — it uses what your server already has. Out of the box it looks for
     stack = true,
     close = false,
     description = 'Trim, dials, a wheel. The bits you actually touch.',
+    client = { export = 'XS-Mechanic.fit_interior_part' },
 },
 
 ['plate_blank'] = {
@@ -432,33 +485,19 @@ below — it uses what your server already has. Out of the box it looks for
     stack = true,
     close = false,
     description = 'Pressed, unprinted, entirely legal until it is not.',
+    client = { export = 'XS-Mechanic.fit_plate_blank' },
 },
 
--- The modkit upgrades. One part per slot, so a shop stocks engine work and
--- brake work apart and the bench makes them apart.
+-- The modkit upgrades. Engine, brakes and transmission all take the generic
+-- performance part; these two are the ones a shop stocks apart.
 
-['engine_parts'] = {
-    label = 'Engine Parts',
-    weight = 4000,
+['armour_plate'] = {
+    label = 'Armour Plate',
+    weight = 9000,
     stack = true,
     close = false,
-    description = 'Cams, pistons and a gasket set.',
-},
-
-['brake_parts'] = {
-    label = 'Brake Parts',
-    weight = 2200,
-    stack = true,
-    close = false,
-    description = 'Discs, pads and the lines to feed them.',
-},
-
-['transmission_parts'] = {
-    label = 'Transmission Parts',
-    weight = 3200,
-    stack = true,
-    close = false,
-    description = 'Ratios, synchros and a clutch.',
+    description = 'Ballistic plate, cut to the shell and heavy with it.',
+    client = { export = 'XS-Mechanic.fit_armour_plate' },
 },
 
 ['suspension_parts'] = {
@@ -467,6 +506,7 @@ below — it uses what your server already has. Out of the box it looks for
     stack = true,
     close = false,
     description = 'Coilovers, bushes and drop links.',
+    client = { export = 'XS-Mechanic.fit_suspension_parts' },
 },
 ```
 
@@ -513,14 +553,14 @@ below — it uses what your server already has. Out of the box it looks for
 
 ['tyre_kit'] = {
     name = 'tyre_kit', label = 'Tyre Kit', weight = 5000,
-    type = 'item', image = 'tyre_kit.png', unique = false, useable = false,
+    type = 'item', image = 'tyre_kit.png', unique = false, useable = true,
     shouldClose = true, combinable = nil,
     description = 'A set of tyres and the tools to fit them.',
 },
 
 ['performance_part'] = {
     name = 'performance_part', label = 'Performance Part', weight = 2500,
-    type = 'item', image = 'performance_part.png', unique = false, useable = false,
+    type = 'item', image = 'performance_part.png', unique = false, useable = true,
     shouldClose = true, combinable = nil,
     description = 'Whatever the tuning menu asked for.',
 },
@@ -592,70 +632,70 @@ below — it uses what your server already has. Out of the box it looks for
 
 ['i4_engine'] = {
     name = 'i4_engine', label = 'I4 Engine', weight = 40000,
-    type = 'item', image = 'i4_engine.png', unique = false, useable = false,
+    type = 'item', image = 'i4_engine.png', unique = false, useable = true,
     shouldClose = true, combinable = nil,
     description = 'Small and revvy.',
 },
 
 ['v6_engine'] = {
     name = 'v6_engine', label = 'V6 Engine', weight = 55000,
-    type = 'item', image = 'v6_engine.png', unique = false, useable = false,
+    type = 'item', image = 'v6_engine.png', unique = false, useable = true,
     shouldClose = true, combinable = nil,
     description = 'The sensible one.',
 },
 
 ['v8_engine'] = {
     name = 'v8_engine', label = 'V8 Engine', weight = 70000,
-    type = 'item', image = 'v8_engine.png', unique = false, useable = false,
+    type = 'item', image = 'v8_engine.png', unique = false, useable = true,
     shouldClose = true, combinable = nil,
     description = 'Torque everywhere.',
 },
 
 ['v12_engine'] = {
     name = 'v12_engine', label = 'V12 Engine', weight = 85000,
-    type = 'item', image = 'v12_engine.png', unique = false, useable = false,
+    type = 'item', image = 'v12_engine.png', unique = false, useable = true,
     shouldClose = true, combinable = nil,
     description = 'Not for a hatchback.',
 },
 
 ['electric_motor'] = {
     name = 'electric_motor', label = 'Electric Motor', weight = 60000,
-    type = 'item', image = 'electric_motor.png', unique = false, useable = false,
+    type = 'item', image = 'electric_motor.png', unique = false, useable = true,
     shouldClose = true, combinable = nil,
     description = 'Instant, and quiet about it.',
 },
 
 ['turbo_kit'] = {
     name = 'turbo_kit', label = 'Turbo Kit', weight = 9000,
-    type = 'item', image = 'turbo_kit.png', unique = false, useable = false,
+    type = 'item', image = 'turbo_kit.png', unique = false, useable = true,
     shouldClose = true, combinable = nil,
     description = 'Snail, pipework, wastegate.',
 },
 
 ['drivetrain_kit'] = {
     name = 'drivetrain_kit', label = 'Drivetrain Kit', weight = 15000,
-    type = 'item', image = 'drivetrain_kit.png', unique = false, useable = false,
+    type = 'item', image = 'drivetrain_kit.png', unique = false, useable = true,
     shouldClose = true, combinable = nil,
     description = 'Changes which wheels do the work.',
 },
 
 ['gearbox_kit'] = {
     name = 'gearbox_kit', label = 'Gearbox', weight = 25000,
-    type = 'item', image = 'gearbox_kit.png', unique = false, useable = false,
+    type = 'item', image = 'gearbox_kit.png', unique = false, useable = true,
     shouldClose = true, combinable = nil,
     description = 'Ratios you actually chose.',
 },
 
 ['brake_kit'] = {
     name = 'brake_kit', label = 'Brake Kit', weight = 6000,
-    type = 'item', image = 'brake_kit.png', unique = false, useable = false,
+    type = 'item', image = 'brake_kit.png', unique = false, useable = true,
     shouldClose = true, combinable = nil,
     description = 'Discs, calipers, braided lines.',
 },
 
 ['drift_kit'] = {
     name = 'drift_kit', label = 'Drift Kit', weight = 7000,
-    type = 'item', image = 'drift_kit.png', unique = false, useable = false,
+    type = 'item', image = 'drift_kit.png', unique = false, useable = true,
     shouldClose = true, combinable = nil,
     description = 'Loose on purpose.',
 },
@@ -679,49 +719,49 @@ below — it uses what your server already has. Out of the box it looks for
 
 ['body_part'] = {
     name = 'body_part', label = 'Body Part', weight = 2500,
-    type = 'item', image = 'body_part.png', unique = false, useable = false,
+    type = 'item', image = 'body_part.png', unique = false, useable = true,
     shouldClose = false, combinable = nil,
     description = 'A panel, a bumper, a skirt. Whatever the car is missing.',
 },
 
 ['wheel_set'] = {
     name = 'wheel_set', label = 'Wheel Set', weight = 6000,
-    type = 'item', image = 'wheel_set.png', unique = false, useable = false,
+    type = 'item', image = 'wheel_set.png', unique = false, useable = true,
     shouldClose = false, combinable = nil,
     description = 'Four of them, boxed.',
 },
 
 ['paint_can'] = {
     name = 'paint_can', label = 'Paint Can', weight = 1200,
-    type = 'item', image = 'paint_can.png', unique = false, useable = false,
+    type = 'item', image = 'paint_can.png', unique = false, useable = true,
     shouldClose = false, combinable = nil,
     description = 'Mixed to whatever the customer picks.',
 },
 
 ['vinyl_wrap'] = {
     name = 'vinyl_wrap', label = 'Vinyl Wrap', weight = 900,
-    type = 'item', image = 'vinyl_wrap.png', unique = false, useable = false,
+    type = 'item', image = 'vinyl_wrap.png', unique = false, useable = true,
     shouldClose = false, combinable = nil,
     description = 'A roll of it. Bubbles are the fitter, not the vinyl.',
 },
 
 ['light_kit'] = {
     name = 'light_kit', label = 'Light Kit', weight = 1100,
-    type = 'item', image = 'light_kit.png', unique = false, useable = false,
+    type = 'item', image = 'light_kit.png', unique = false, useable = true,
     shouldClose = false, combinable = nil,
     description = 'Housings, bulbs and the loom to run them.',
 },
 
 ['interior_part'] = {
     name = 'interior_part', label = 'Interior Part', weight = 1400,
-    type = 'item', image = 'interior_part.png', unique = false, useable = false,
+    type = 'item', image = 'interior_part.png', unique = false, useable = true,
     shouldClose = false, combinable = nil,
     description = 'Trim, dials, a wheel. The bits you actually touch.',
 },
 
 ['plate_blank'] = {
     name = 'plate_blank', label = 'Plate Blank', weight = 300,
-    type = 'item', image = 'plate_blank.png', unique = false, useable = false,
+    type = 'item', image = 'plate_blank.png', unique = false, useable = true,
     shouldClose = false, combinable = nil,
     description = 'Pressed, unprinted, entirely legal until it is not.',
 },
@@ -729,30 +769,16 @@ below — it uses what your server already has. Out of the box it looks for
 -- The modkit upgrades. One part per slot, so a shop stocks engine work and
 -- brake work apart and the bench makes them apart.
 
-['engine_parts'] = {
-    name = 'engine_parts', label = 'Engine Parts', weight = 4000,
-    type = 'item', image = 'engine_parts.png', unique = false, useable = false,
+['armour_plate'] = {
+    name = 'armour_plate', label = 'Armour Plate', weight = 9000,
+    type = 'item', image = 'armour_plate.png', unique = false, useable = true,
     shouldClose = false, combinable = nil,
-    description = 'Cams, pistons and a gasket set.',
-},
-
-['brake_parts'] = {
-    name = 'brake_parts', label = 'Brake Parts', weight = 2200,
-    type = 'item', image = 'brake_parts.png', unique = false, useable = false,
-    shouldClose = false, combinable = nil,
-    description = 'Discs, pads and the lines to feed them.',
-},
-
-['transmission_parts'] = {
-    name = 'transmission_parts', label = 'Transmission Parts', weight = 3200,
-    type = 'item', image = 'transmission_parts.png', unique = false, useable = false,
-    shouldClose = false, combinable = nil,
-    description = 'Ratios, synchros and a clutch.',
+    description = 'Ballistic plate, cut to the shell and heavy with it.',
 },
 
 ['suspension_parts'] = {
     name = 'suspension_parts', label = 'Suspension Parts', weight = 3600,
-    type = 'item', image = 'suspension_parts.png', unique = false, useable = false,
+    type = 'item', image = 'suspension_parts.png', unique = false, useable = true,
     shouldClose = false, combinable = nil,
     description = 'Coilovers, bushes and drop links.',
 },
@@ -774,7 +800,7 @@ duct_tape         nitrous      lighting_remote
 The same blocks live in `items/` in the folder if you would rather open them
 there.
 
-**Images.** All 35 ship in `inventory_images/`, named to match the item names
+**Images.** All 37 ship in `inventory_images/`, named to match the item names
 above. Copy them into your inventory's image folder:
 
 | Inventory | Where |

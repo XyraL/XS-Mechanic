@@ -5,137 +5,23 @@ XS.subject = (function () {
     const host = document.querySelector('[data-subject]');
     const split = document.querySelector('[data-split]');
 
-    // Every layer of paint stacked behind the car window. The window itself is
-    // transparent, but a transparent box over an opaque one is still opaque —
-    // which is why the live preview showed a dark rectangle instead of a car.
-    function layers() {
-        return [
-            document.querySelector('.device .skin'),
-            document.querySelector('.frame'),
-        ];
-    }
-
-    // The hole is written into each layer in its own pixels, because each one
-    // sits somewhere different on screen.
-    function cut(rect) {
-        for (const layer of layers()) {
-            if (!layer) continue;
-
-            if (!rect) {
-                layer.style.setProperty('--cw', '0px');
-                layer.style.setProperty('--ch', '0px');
-                continue;
-            }
-
-            const box = layer.getBoundingClientRect();
-
-            layer.style.setProperty('--cx', `${rect.left - box.left}px`);
-            layer.style.setProperty('--cy', `${rect.top - box.top}px`);
-            layer.style.setProperty('--cw', `${rect.width}px`);
-            layer.style.setProperty('--ch', `${rect.height}px`);
-        }
-    }
-
     // Where the live-camera window sits on screen, as fractions of the
     // viewport. Lua needs this to frame the real vehicle inside it, and it has
     // to be measured rather than assumed — the panel scales with the screen.
-    function reportViewport() {
-        //[[ In the sheet layout the whole screen is the car and the panel is a
-        //   sheet over one edge of it. There is no window to punch — the
-        //   "window" is everything the sheet is not standing on, and the same
-        //   framing maths puts the car in the middle of that. ]]
-        if (document.body.dataset.layout === 'sheet') {
-            cut(null);
-
-            const sheet = document.querySelector('.device');
-            const edge = sheet ? sheet.getBoundingClientRect().right + 24 : 0;
-            const width = Math.max(window.innerWidth - edge, 200);
-
-            XS.post('carView', {
-                active: true,
-                x: (edge + width / 2) / window.innerWidth,
-                y: 0.5,
-                w: width / window.innerWidth,
-                h: 1,
-                focus: XS.focus || 'full',
-            });
-
-            return;
-        }
-
-        const view = host.querySelector('[data-view]');
-
-        if (!view) {
-            cut(null);
-            XS.post('carView', { active: false });
-            return;
-        }
-
-        const r = view.getBoundingClientRect();
-
-        // A hidden pane reports zeros; sending those would aim the camera at
-        // the corner of the screen and cut a hole in the corner of the shell.
-        if (r.width < 10 || r.height < 10) return;
-
-        cut(r);
-
-        XS.post('carView', {
-            active: true,
-            x: (r.left + r.width / 2) / window.innerWidth,
-            y: (r.top + r.height / 2) / window.innerHeight,
-            w: r.width / window.innerWidth,
-            h: r.height / window.innerHeight,
-            focus: XS.focus || 'full',
-        });
-    }
-
-    // What the window is actually showing, in words, so it reads as a camera
-    // rather than a gap.
-    const VIEW_NAME = {
-        frontBumper: 'front', grille: 'front', xenon: 'front', lights: 'front',
-        hood: 'engine bay', engine: 'engine bay', turbo: 'engine bay',
-        engineBlock: 'engine bay', airFilter: 'engine bay', struts: 'engine bay',
-        rearBumper: 'rear', spoiler: 'rear', exhaust: 'rear', trunk: 'rear',
-        plate: 'plate', plateHolder: 'plate',
-        sideSkirt: 'side', fender: 'side', rightFender: 'side', archCover: 'side',
-        windows: 'side', livery: 'side', respray: 'side', stance: 'side',
-        wheels: 'wheels', frontWheels: 'wheels', backWheels: 'wheels',
-        brakes: 'wheels', suspension: 'wheels', tyreSmoke: 'wheels', hydraulics: 'wheels',
-        roof: 'roof', rollCage: 'roof',
-        seats: 'interior', steeringWheel: 'interior', dashboard: 'interior',
-        dial: 'interior', shifter: 'interior', speakers: 'interior',
-        doorSpeaker: 'interior', trimDesign: 'interior', ornaments: 'interior',
-        interior: 'interior', horn: 'interior', trim: 'interior',
-    };
 
     // Which part of the car the window should be looking at. The panel sets it
     // when the category or the slot changes and the camera walks round to it.
-    function look(at) {
-        if (XS.focus === at) return;
-
-        XS.focus = at;
-
-        const hint = host.querySelector('[data-view] .hint');
-        if (hint) hint.textContent = VIEW_NAME[at] || 'live';
-
-        reportViewport();
-    }
-
-    function hide() {
-        cut(null);
-    }
+    // Hovering a part used to swing a camera to that corner of the car. It is
+    // kept as a no-op because the tuning panel calls it on every hover, and a
+    // missing function there would take the row render down with it.
+    function look() {}
 
     function car(vehicle) {
-        const live = XS.state.livePreview !== false;
-        const hero = XS.el('div', { class: live ? 'hero live' : 'hero' });
-
-        if (live) {
-            hero.append(XS.el('div', { class: 'view', 'data-view': true }, [
-                XS.el('div', { class: 'hint', text: VIEW_NAME[XS.focus] || 'live' }),
-            ]));
-        } else {
-            hero.append(XS.el('div', { class: 'art', html: DRAWING }));
-        }
+        // No picture of the car. There is one three feet in front of you, and a
+        // window cut through the panel to show it again cost a camera, a hole
+        // punched through every layer of the shell, and a viewport measured on
+        // every redraw — to tell you what you could already see.
+        const hero = XS.el('div', { class: 'hero bare' });
 
         hero.append(XS.el('div', { class: 'meta' }, [
             XS.el('span', { class: 'plate', text: vehicle.plate || '——' }),
@@ -257,17 +143,18 @@ XS.subject = (function () {
         if (XS.mode === 'builder') {
             split.className = 'split';
             shops();
-            reportViewport();
-            return;
         }
 
         // The home screen, the laptop and the bench are not pointed at a car,
         // so they get the whole width rather than an empty column. A wall of
         // apps next to a column of car stats is two ideas fighting.
-        if (XS.panel === 'apps' || XS.mode === 'desk' || XS.mode === 'bench') {
+        //
+        // Work orders are the shop's book, not one car's page. It lists jobs
+        // across several plates, so a render of whichever one happens to be
+        // connected is answering a question the screen is not asking.
+        if (XS.panel === 'apps' || XS.panel === 'orders'
+            || XS.mode === 'desk' || XS.mode === 'bench') {
             split.className = 'split wide';
-            reportViewport();
-            return;
         }
 
         split.className = 'split';
@@ -285,30 +172,11 @@ XS.subject = (function () {
                 }));
             }
 
-            reportViewport();
-            return;
         }
 
         car(XS.state.vehicle);
 
-        // After layout, so the rect is real.
-        requestAnimationFrame(reportViewport);
     }
 
-    const DRAWING = `
-<svg viewBox="0 0 640 210" xmlns="http://www.w3.org/2000/svg">
-  <defs><linearGradient id="carbody" x1="0" y1="0" x2="0" y2="1">
-    <stop offset="0" stop-color="#3d566f"/><stop offset="1" stop-color="#16222f"/>
-  </linearGradient></defs>
-  <path d="M40 158c-6-28 2-45 15-52l80-13c21-25 55-40 105-42 51-2 91 10 122 30l80 15c25 6 38 21 40 44 1 13-4 21-15 23l-36 2c-4-25-21-38-42-38s-38 13-42 38H228c-4-25-21-38-42-38s-38 13-42 38l-86-2c-9 0-14-5-15-13Z" fill="url(#carbody)"/>
-  <path d="M160 92c19-21 48-32 84-34 38-2 68 8 93 25l-15 13-147 2-15-6Z" fill="#4a7ba8" opacity=".85"/>
-  <circle cx="186" cy="160" r="38" fill="#070c14"/><circle cx="186" cy="160" r="22" fill="#22374d"/>
-  <circle cx="186" cy="160" r="9" fill="#2f81f7" fill-opacity=".6"/>
-  <circle cx="430" cy="160" r="38" fill="#070c14"/><circle cx="430" cy="160" r="22" fill="#22374d"/>
-  <circle cx="430" cy="160" r="9" fill="#2f81f7" fill-opacity=".6"/>
-</svg>`;
-
-    window.addEventListener('resize', () => requestAnimationFrame(reportViewport));
-
-    return { redraw, reportViewport, hide, look };
+    return { redraw, look };
 })();

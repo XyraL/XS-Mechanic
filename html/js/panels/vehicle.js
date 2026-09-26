@@ -17,7 +17,31 @@
             return;
         }
 
-        grid.append(XS.el('div', { class: 'gh' }, [
+        // Everything that bolts to this car, in one place. Tuning, Performance,
+        // Stance and Dyno used to be four icons on the home screen answering
+        // the same question, so they sit behind this one now.
+        const sections = XS.appsIn ? XS.appsIn('vehicle') : [];
+
+        if (sections.length) {
+            grid.append(XS.el('div', { class: 'gh' }, [
+                XS.el('h2', { text: 'Work' }),
+                XS.el('div', { class: 'cap', text: 'What goes on this car' }),
+            ]));
+
+            const row = XS.el('div', { class: 'tabs' });
+
+            for (const section of sections) {
+                row.append(XS.el('button', {
+                    class: 'tn',
+                    text: section.label,
+                    onclick: () => XS.show(section.id),
+                }));
+            }
+
+            grid.append(row);
+        }
+
+        grid.append(XS.el('div', { class: 'gh', style: sections.length ? 'margin-top:22px' : null }, [
             XS.el('h2', { text: 'Identity' }),
             XS.el('div', { class: 'cap', text: car.model }),
         ]));

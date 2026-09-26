@@ -265,6 +265,31 @@ XS.bill = async function (endpoint, payload) {
 
     const list = XS.el('div', { style: 'display:flex;flex-direction:column;gap:6px;max-height:300px;overflow-y:auto' });
 
+    const send = (extra) => {
+        XS.closeModal();
+        XS.post(endpoint, Object.assign({}, payload, extra));
+    };
+
+    // Whoever the car is registered to, first, because that is usually the
+    // answer. They do not have to be standing here for the bill to be theirs.
+    if (result.owner) {
+        list.append(XS.el('button', {
+            class: 'row',
+            onclick: () => send(result.owner.source
+                ? { customer: result.owner.source }
+                : { customerCid: result.owner.cid }),
+        }, [
+            XS.el('div', {}, [
+                XS.el('div', { class: 't', text: result.owner.name }),
+                XS.el('div', {
+                    class: 'm',
+                    text: result.owner.source ? 'Registered owner · here' : 'Registered owner · not on',
+                }),
+            ]),
+            XS.el('span', { class: 'st', text: 'OWNER' }),
+        ]));
+    }
+
     for (const person of result.nearby || []) {
         list.append(XS.el('button', {
             class: 'row',
@@ -280,6 +305,31 @@ XS.bill = async function (endpoint, payload) {
             XS.el('span', { class: 'st', text: 'BILL' }),
         ]));
     }
+
+    // The fallback for somebody who is neither the owner nor close enough to
+    // be listed — the mechanic reads their ID off the screen and types it.
+    const idField = XS.el('input', {
+        class: 'in',
+        type: 'text',
+        inputmode: 'numeric',
+        placeholder: 'Server ID',
+        style: 'flex:1',
+    });
+
+    const byId = () => {
+        const id = parseInt(idField.value, 10);
+        if (!Number.isFinite(id) || id <= 0) { idField.focus(); return; }
+        send({ customer: id });
+    };
+
+    idField.addEventListener('keydown', (e) => { if (e.key === 'Enter') byId(); });
+
+    list.append(XS.el('div', {
+        style: 'display:flex;gap:6px;align-items:center;margin-top:4px',
+    }, [
+        idField,
+        XS.el('button', { class: 'mini', text: 'Bill ID', onclick: byId }),
+    ]));
 
     XS.modal({
         title: 'Who is paying?',

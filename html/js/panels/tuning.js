@@ -4,6 +4,17 @@
     // live on the Performance screen next to the packages that do the same job.
     const MECHANICAL = new Set(['performance']);
 
+    // The four respray channels, as [what Lua calls it, the label, where the
+    // current value sits on the paint object]. Three columns because two of
+    // them disagree: the part id is 'pearl' and 'wheel', but the values come
+    // back as 'pearlescent' and 'wheelColour'.
+    const CHANNELS = [
+        ['primary',   'Primary',   'primary'],
+        ['secondary', 'Secondary', 'secondary'],
+        ['pearl',     'Pearl',     'pearlescent'],
+        ['wheel',     'Wheels',    'wheelColour'],
+    ];
+
     XS.panels.tuning = function (host) {
         XS.clear(host);
 
@@ -196,11 +207,15 @@
     function stockNote(stock) {
         if (!stock) return null;
 
+        // The count trails the label rather than leading it, because the labels
+        // are a mix of singular, plural and mass nouns — Body Part, Brake Pads,
+        // Glass — so "6 Body Part in stock" is wrong and no pluralising rule
+        // gets all three right.
         return XS.el('span', {
             class: 'stk',
             text: stock.count > 0
-                ? ` · ${XS.num(stock.count)} ${stock.label} in stock`
-                : ` · no ${stock.label} — one has to be made`,
+                ? ` · ${stock.label} ×${XS.num(stock.count)} in stock`
+                : ` · no ${stock.label} — has to be made`,
         });
     }
 
@@ -652,23 +667,20 @@
                 XS.el('span', { text: XS.money(total) }),
             ]),
 
-            // Both buttons write the same work order against this car.
-            // Billing is what the first one adds on top.
+            // Parts go on a work order and nowhere else. Billing used to be a
+            // second button here, which meant a car could be charged for before
+            // anybody had written down what it was having done — and left two
+            // places to bill from that had to agree. The order is the one
+            // record now: fit off it, bill off it, finish it.
             XS.el('button', {
                 class: 'go',
-                text: 'Bill the customer',
-                onclick: () => XS.bill('billAll'),
-            }),
-
-            XS.el('button', {
-                class: 'sub',
                 text: 'Put it on a work order',
                 onclick: () => XS.post('bookAll'),
             }),
 
             XS.el('div', {
                 style: 'font-size:11px;color:var(--faint);line-height:1.5;margin-top:10px;text-align:center',
-                text: 'Nothing goes on the car from here. Make the parts, then fit them at the car.',
+                text: 'Nothing goes on the car from here. It goes on the order — fit the parts at the car, then bill it from Orders.',
             }),
         ]));
 

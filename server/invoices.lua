@@ -197,17 +197,40 @@ end
 
 -- Nobody to hand it to, and the list of who there is instead. The panel turns
 -- this into a picker rather than a dead end.
-local function noCustomer(src)
-    local nearby = Invoices.Nearby(src)
+local function ownerOf(plate)
+    local cid = plate and plate ~= '' and Vehicles.OwnerOf(plate) or nil
+    if not cid then return nil end
 
-    if #nearby == 0 then
+    local online
+
+    for _, id in ipairs(GetPlayers()) do
+        id = tonumber(id)
+        if Framework.GetCitizenId(id) == cid then online = id break end
+    end
+
+    return {
+        cid = cid,
+        name = Framework.GetNameByCitizenId(cid) or 'Registered owner',
+        source = online,
+    }
+end
+
+local function noCustomer(src, plate, offline)
+    local nearby = Invoices.Nearby(src)
+    local owner = ownerOf(plate)
+
+    -- An owner who is not here can only be offered where the bill can be left
+    -- against their name. Handing a live invoice to nobody is not a thing.
+    if owner and not owner.source and not offline then owner = nil end
+
+    if #nearby == 0 and not owner then
         return { ok = false, error = 'Nobody close enough to hand it to.' }
     end
 
-    return { ok = false, needsCustomer = true, nearby = nearby }
+    return { ok = false, needsCustomer = true, nearby = nearby, owner = owner }
 end
 
-function Invoices.Send(src, shop, plate, save, target)
+function Invoices.Send(src, shop, plate, save, target, targetCid)
     local draft = Invoices.Draft(src)
 
     if #draft.items == 0 then
@@ -217,15 +240,36 @@ function Invoices.Send(src, shop, plate, save, target)
     local customerSrc, customerId, customerName
 
     if not save then
-        customerSrc = tonumber(target)
+        -- A citizenid wins when given: that is the registered owner being
+        -- billed by name rather than a body being pointed at.
+        --
+        -- It is checked against the registration rather than believed. The
+        -- citizenid arrives from the panel, and without this a crafted message
+        -- would bill any player on the server for any amount.
+        if targetCid and targetCid ~= '' then
+            customerId = tostring(targetCid)
 
-        if not customerSrc then return noCustomer(src) end
+            if customerId ~= (Vehicles.OwnerOf(plate or '') or '') then
+                return { ok = false, error = 'That is not who the car is registered to.' }
+            end
 
-        customerId = Framework.GetCitizenId(customerSrc)
-        customerName = Framework.GetName(customerSrc)
+            customerName = Framework.GetNameByCitizenId(customerId) or 'Customer'
 
-        if not customerId then
-            return { ok = false, error = 'That player is not loaded.' }
+            for _, id in ipairs(GetPlayers()) do
+                id = tonumber(id)
+                if Framework.GetCitizenId(id) == customerId then customerSrc = id break end
+            end
+        else
+            customerSrc = tonumber(target)
+
+            if not customerSrc then return noCustomer(src, plate, true) end
+
+            customerId = Framework.GetCitizenId(customerSrc)
+            customerName = Framework.GetName(customerSrc)
+
+            if not customerId then
+                return { ok = false, error = 'That player is not loaded.' }
+            end
         end
     end
 
@@ -253,6 +297,24 @@ function Invoices.Send(src, shop, plate, save, target)
 
     if save then
         return { ok = true, message = 'Saved for later.' }
+    end
+
+    -- Billed to somebody who is not on. The row is written and waiting; there
+    -- is just nobody to show it to yet.
+    if not customerSrc then
+        return { ok = true, message = ('Billed to %s. They will see it next time they log in.'):format(customerName) }
+    end
+
+    -- Hand it to whatever the server bills through. The row above is already
+    -- written, so a server with its own invoice resource gets the bill there
+    -- and the shop still has its own record of it.
+    if Billing.Send(src, customerSrc, draft.total, ('%s — %s'):format(shop.name, plate or 'work'), {
+        society    = (Config.Invoices.provider or {}).society,
+        shopName   = shop.name,
+        plate      = plate,
+        invoiceId  = id,
+    }) then
+        return { ok = true, message = ('Billed to %s.'):format(customerName) }
     end
 
     TriggerClientEvent('XS-Mechanic:client:invoice', customerSrc, {
@@ -305,7 +367,7 @@ function Invoices.Bill(src, shop, order, lines, target)
 
     if not customer or customer == '' then
         local chosen = tonumber(target)
-        if not chosen then return noCustomer(src) end
+        if not chosen then return noCustomer(src, order.plate) end
 
         customer = Framework.GetCitizenId(chosen)
         customerName = Framework.GetName(chosen)
@@ -393,7 +455,7 @@ function Invoices.Resend(src, id, target)
     if invoice.customer == '' or not customerSrc then
         if invoice.customer == '' then
             local chosen = tonumber(target)
-            if not chosen then return noCustomer(src) end
+            if not chosen then return noCustomer(src, row.plate) end
 
             customerSrc = chosen
 

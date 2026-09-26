@@ -169,7 +169,7 @@ end)
 RegisterNUICallback('saveStance', function(data, cb)
     local result = lib.callback.await('XS-Mechanic:saveStance', false, {
         shop = XSM.shop and XSM.shop.id,
-        netId = XSM.vehicle and VehToNet(XSM.vehicle),
+        netId = XSM.Vehicle() and VehToNet(XSM.Vehicle()),
         plate = XSM.catalogue and XSM.catalogue.plate,
         model = XSM.catalogue and XSM.catalogue.model,
         class = XSM.catalogue and XSM.catalogue.class,
@@ -387,10 +387,6 @@ RegisterNUICallback('bookAll', function(_, cb)
     sendBasket('XS-Mechanic:bookOrder', nil, cb)
 end)
 
-RegisterNUICallback('billAll', function(data, cb)
-    sendBasket('XS-Mechanic:billOrder', data, cb)
-end)
-
 RegisterNUICallback('billOrder', serverCall('billRest'))
 
 -- The lines with no part behind them. Everything else is fitted by using the
@@ -400,6 +396,14 @@ RegisterNUICallback('fitByHand', function(_, cb)
 
     XSM.Close()
     Install.ByHand()
+end)
+
+-- One line off the work order screen, with the car in front of you.
+RegisterNUICallback('fitOrderLine', function(data, cb)
+    cb({ ok = true })
+
+    XSM.Close()
+    Install.Line(tonumber(data and data.id), tonumber(data and data.line))
 end)
 
 RegisterNUICallback('submitOrder', function(_, cb)
@@ -439,21 +443,6 @@ RegisterNUICallback('submitOrder', function(_, cb)
     cb({ ok = true })
 end)
 
--- Dragging across the car turns it. The panel owns the mouse while it is open,
--- so the drag is caught there and arrives here as a number of degrees.
-RegisterNUICallback('spinCar', function(data, cb)
-    if data and data.reset then
-        Showcase.Spin(-Showcase.Spun())
-    else
-        Showcase.Spin(tonumber(data and data.by) or 0)
-    end
-
-    cb({ ok = true })
-end)
 
 -- The page measures where its transparent window is and posts it; the camera
 -- frames the real vehicle into that rectangle.
-RegisterNUICallback('carView', function(data, cb)
-    Showcase.SetRect(data)
-    cb({ ok = true })
-end)

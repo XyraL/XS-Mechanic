@@ -36,24 +36,68 @@ function Stock.Enabled(shop)
     return Stock.StashOf(shop) ~= nil
 end
 
+--[[ A shop with a storage point used to read only the shelf, so a part in the
+     mechanic's own pockets was invisible and could not be fitted. Both are
+     counted now, and Config.Stock.useFrom decides which of them count. ]]
+local function sources(shop)
+    local from = Config.Stock and Config.Stock.useFrom or {}
+    local useShelf = from.shelf ~= false
+    local usePockets = from.pockets ~= false
+
+    local stash = useShelf and Stock.StashOf(shop) or nil
+
+    -- With no storage point there is no shelf to read, so pockets are the
+    -- stock whatever the config says — otherwise a one-room shop can fit
+    -- nothing at all.
+    if not stash then usePockets = true end
+
+    return stash, usePockets
+end
+
 function Stock.Count(shop, item, src)
     if not item or item == '' then return 0 end
 
-    local stash = Stock.StashOf(shop)
-    if stash then return Inventory.StashCount(stash, item) end
+    local stash, usePockets = sources(shop)
 
-    return Inventory.Count(src, item)
+    local total = 0
+    if stash then total = total + Inventory.StashCount(stash, item) end
+    if usePockets and src then total = total + Inventory.Count(src, item) end
+
+    return total
 end
 
+--[[ Spend the shelf first, then the mechanic's own pockets for whatever is
+     left. A part someone brought with them is the last resort rather than the
+     first, so a shop does not quietly eat a mechanic's stock while its own
+     shelf is full.
+
+     If the pockets half fails, whatever came off the shelf goes back: a half
+     taken payment leaves the shop short and fits nothing. ]]
 function Stock.Take(shop, item, amount, src)
     if not item or item == '' then return true end
 
-    amount = amount or 1
+    amount = math.max(1, math.floor(tonumber(amount) or 1))
 
-    local stash = Stock.StashOf(shop)
-    if stash then return Inventory.StashRemove(stash, item, amount) end
+    local stash, usePockets = sources(shop)
+    local left = amount
 
-    return Inventory.Remove(src, item, amount)
+    local fromShelf = 0
+    if stash then
+        fromShelf = math.min(left, Inventory.StashCount(stash, item))
+
+        if fromShelf > 0 then
+            if not Inventory.StashRemove(stash, item, fromShelf) then return false end
+            left = left - fromShelf
+        end
+    end
+
+    if left <= 0 then return true end
+
+    if usePockets and src and Inventory.Remove(src, item, left) then return true end
+
+    if fromShelf > 0 then Inventory.StashAdd(stash, item, fromShelf) end
+
+    return false
 end
 
 --[[ A made part goes on the shelf. With nowhere to put it, the mechanic keeps

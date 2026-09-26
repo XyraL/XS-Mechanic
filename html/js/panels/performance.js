@@ -163,8 +163,8 @@
                     ? XS.el('span', {
                         class: 'stk',
                         text: stock.count > 0
-                            ? ` · ${XS.num(stock.count)} ${stock.label} in stock`
-                            : ` · no ${stock.label} — one has to be made`,
+                            ? ` · ${stock.label} ×${XS.num(stock.count)} in stock`
+                            : ` · no ${stock.label} — has to be made`,
                     })
                     : null,
             ]),

@@ -428,47 +428,6 @@ function Orders.Book(src, data)
     return { ok = true, id = id, count = #priced, total = total, added = priced, appended = existing ~= nil }
 end
 
---[[ Writing it down and billing for it in one press.
-
-     The order is always written. Billing is what the button adds: one invoice
-     for every line on that order nobody has been charged for yet, which is the
-     lines just added plus anything booked earlier and not billed. ]]
-function Orders.Bill(src, data)
-    local booked = Orders.Book(src, data)
-    if not booked.ok then return booked end
-
-    local billed = Orders.BillRest(src, booked.id, data.customer)
-
-    if not billed.ok then
-        -- Written down either way. Only the bill is waiting on an answer, so
-        -- the picker comes back rather than an error about it.
-        if billed.needsCustomer then
-            return {
-                ok = false,
-                needsCustomer = true,
-                nearby = billed.nearby,
-                id = booked.id,
-                booked = booked.count,
-            }
-        end
-
-        return {
-            ok = true,
-            id = booked.id,
-            count = booked.count,
-            message = ('%d written down. %s'):format(booked.count, billed.error or 'Not billed.'),
-        }
-    end
-
-    return {
-        ok = true,
-        id = booked.id,
-        count = booked.count,
-        total = billed.total,
-        message = billed.message,
-    }
-end
-
 -- Every line on an order nobody has been charged for yet, as one invoice.
 function Orders.BillRest(src, id, target)
     local row = MySQL.single.await([[
@@ -537,7 +496,9 @@ function Orders.Candidates(src, data)
             return { ok = false, error = "That is another shop's order." }
         end
 
-        return { ok = false, error = ('Nothing written down for %s.'):format(plate) }
+        -- noOrder tells the client this is silence rather than a refusal, so a
+        -- part can ask what it should go on instead of giving up.
+        return { ok = false, noOrder = true, error = ('Nothing written down for %s.'):format(plate) }
     end
 
     local out = {}
@@ -557,6 +518,15 @@ function Orders.Candidates(src, data)
                         if line.fitted then
                             wanted = true
                         else
+                            --[[ Everything the client needs to actually put it
+                                 on, not just enough to name it.
+
+                                 This used to send the label, the category and
+                                 the price. Preview.Show then had no slot and no
+                                 index to match on, so it set nothing, returned
+                                 true anyway, and fitting off a work order spent
+                                 the part and ticked the line while leaving the
+                                 car exactly as it was. ]]
                             out[#out + 1] = {
                                 orderId = order.id,
                                 lid = line.lid,
@@ -565,6 +535,19 @@ function Orders.Candidates(src, data)
                                 categoryLabel = line.categoryLabel,
                                 price = line.price,
                                 tuning = line.tuning,
+
+                                slot = line.slot,
+                                slotId = line.slotId,
+                                index = line.index,
+                                wheelType = line.wheelType,
+                                legacy = line.legacy,
+                                plain = line.plain,
+                                paint = line.paint,
+                                part = line.part,
+                                custom = line.custom,
+                                hex = line.hex,
+                                extra = line.extra,
+                                on = line.on,
                             }
                         end
                     end
@@ -579,7 +562,9 @@ function Orders.Candidates(src, data)
 
             -- Grabbed the wrong thing, and nothing left to do with the right
             -- thing, are different problems with different answers.
-            return { ok = false, error = wanted
+            -- Same again: the order exists but has no line for what is in your
+            -- hand, which is still a car you can fit a part to.
+            return { ok = false, noOrder = true, error = wanted
                 and ('Nothing left for a %s.'):format(label)
                 or ('Nothing on this order needs a %s.'):format(label) }
         end
@@ -634,8 +619,13 @@ function Orders.Fit(src, data)
     end
 
     -- Taken last. A part that could not go on is a part you still have.
-    if item and not Inventory.Remove(src, item, 1) then
-        return { ok = false, error = ('You do not have a %s.'):format(string.lower(Parts.Label(item))) }
+    --
+    -- Through the shop's stock rather than straight out of pockets, so a part
+    -- sitting on the shelf can be fitted. Fitting by using the item means it
+    -- was in your pockets anyway; fitting from the order screen usually means
+    -- it was not.
+    if item and not Stock.Take(shop, item, 1, src) then
+        return { ok = false, error = ('No %s on the shelf or on you.'):format(string.lower(Parts.Label(item))) }
     end
 
     found.fitted = true
@@ -676,6 +666,78 @@ function Orders.Fit(src, data)
             and ('%s on. Order #%d done.'):format(found.label, order.id)
             or ('%s on. %d left on the order.'):format(found.label, left),
     }
+end
+
+--[[ Fitting one part with no order behind it.
+
+     Everything an order would have carried has to be established here instead,
+     and none of it is taken from the client: the slot is looked up in the
+     shared tables by id, the category comes from the table rather than the
+     message, and the part that gets spent is whatever those two say it is. A
+     message naming a category it does not belong to buys nothing.
+
+     There is no line to tick off and nobody to bill — this is work that was
+     never written down, which is the whole point of it. ]]
+function Orders.FitFree(src, shop, data)
+    local plate = tostring(data.plate or '')
+    local model = tostring(data.model or '')
+
+    --[[ A custom tuning package, fitted with nothing written down.
+
+         It has no mod slot, so the mod-slot checks below do not apply and would
+         reject it. CustomTuning does its own validating — the option has to
+         exist, be allowed on this model, and not already be on — and it only
+         wants a plate and a model off the order, so a bare one is enough. ]]
+    if type(data.tuning) == 'table' then
+        local result = CustomTuning.FitOff(src, shop,
+            { plate = plate, model = model },
+            { tuning = { category = data.tuning.category, option = data.tuning.option } })
+
+        if not result.ok then return result end
+
+        Discord.Send('tuning', 'Fitted off the books',
+            ('**%s** fitted a %s package to `%s` at %s with no work order'):format(
+                Framework.GetName(src), tostring(data.tuning.category), plate, shop.name),
+            Discord.Colour.info)
+
+        return result
+    end
+
+    local slotId = tostring(data.slotId or '')
+    local entry
+
+    for _, candidate in ipairs(Mods.Slots) do
+        if candidate.id == slotId then entry = candidate break end
+    end
+
+    if not entry then return { ok = false, error = 'That is not a part of the car.' } end
+
+    local index = tonumber(data.index)
+    if not index or index < -1 or index > 60 then
+        return { ok = false, error = 'That is not a part.' }
+    end
+
+    if model ~= '' and Mods.SlotBlocked(entry.slot, model) then
+        return { ok = false, error = 'That does not go on this car.' }
+    end
+
+    -- The category is the table's, never the message's.
+    local item = Parts.ItemFor(entry.category, entry.id)
+
+    if item and not Stock.Take(shop, item, 1, src) then
+        return { ok = false, error = ('No %s on the shelf or on you.'):format(string.lower(Parts.Label(item))) }
+    end
+
+    Discord.Send('tuning', 'Fitted off the books',
+        ('**%s** fitted %s to `%s` at %s with no work order'):format(
+            Framework.GetName(src), entry.label, plate, shop.name),
+        Discord.Colour.info)
+
+    -- A part came off the shelf, so every open panel's stock numbers are now
+    -- one out of date.
+    TriggerClientEvent('XS-Mechanic:client:refresh', -1)
+
+    return { ok = true, message = ('%s on.'):format(entry.label) }
 end
 
 local function claimable(src, id)

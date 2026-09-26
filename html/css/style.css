@@ -88,6 +88,15 @@ button{cursor:pointer;border:0;background:none}
 }
 #root.open .device{transform:scale(1)}
 
+/* The home screen is two short rows of apps. At the size every other screen
+   needs, most of the glass sat empty under them, so this one screen — and only
+   this one — comes in. Anything with a parts list, an order book or a car on it
+   keeps the full size. */
+body[data-screen="apps"] .device{
+  width:min(1080px,82vw);
+  height:min(640px,78vh);
+}
+
 .device .skin{
   position:absolute;inset:0;z-index:0;
   border-radius:inherit;pointer-events:none;
@@ -141,6 +150,11 @@ button{cursor:pointer;border:0;background:none}
   overflow:hidden;
   display:grid;
   grid-template-rows:52px minmax(0,1fr) auto;
+  /* A grid with rows and no column gets one implicit column sized to its
+     content, which the sheet cannot afford: that shell is a fixed 360px, so
+     the tuning and stance panels were painting ~24px wider than the glass and
+     losing the right edge of every row behind overflow:hidden. */
+  grid-template-columns:minmax(0,1fr);
   box-shadow:
     0 0 0 1px #04070c,
     0 0 0 4px #17191d,
@@ -775,12 +789,19 @@ body.open #hud{display:none}
 .tag.warn{background:color-mix(in srgb,var(--warn) 22%,transparent);color:var(--warn)}
 
 .ol{
-  display:grid;grid-template-columns:minmax(0,1fr) auto auto;gap:12px;align-items:center;
+  /* Name, price, then room for BOTH an action and the remove button. With only
+     three tracks a row carrying either Fit or Do it alongside the × pushed the
+     × onto a second line and stood the row up to double height. Empty auto
+     tracks collapse, so rows with fewer children are unchanged. */
+  display:grid;grid-template-columns:minmax(0,1fr) auto auto auto;gap:12px;align-items:center;
   font-size:12px;padding:6px 10px;border-radius:6px;
   background:var(--sunk);border:1px solid var(--line);
 }
 .ol .c{font:10px/1 var(--mono);letter-spacing:.08em;color:var(--faint);margin-right:8px}
 .ol .p{font:600 12px/1 var(--mono);color:var(--accent2)}
+/* .mini is the shop's general button and is sized for a section header. Inside
+   a line of an order it sets the row height, so it comes in here only. */
+.ol .mini{padding:4px 11px;font-size:11px}
 .ol .del{
   width:20px;height:20px;border-radius:5px;color:var(--faint);
   display:grid;place-items:center;font-size:14px;line-height:1;transition:.15s;

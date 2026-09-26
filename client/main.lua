@@ -10,6 +10,27 @@ XSM = {
     preview = nil,
 }
 
+--[[ The connected vehicle, but only if it is still there.
+
+     XSM.vehicle holds a handle, and a handle outlives the entity: once the car
+     is deleted or streams out, the number is still a number and `if XSM.vehicle`
+     is still true. Passing that to a native throws "Tried to access invalid
+     entity" and takes the rest of the function with it.
+
+     The stale handle is dropped on the way past, so nothing downstream keeps
+     asking about a car that is gone. ]]
+function XSM.Vehicle()
+    local vehicle = XSM.vehicle
+    if not vehicle then return nil end
+
+    if not DoesEntityExist(vehicle) then
+        XSM.vehicle = nil
+        return nil
+    end
+
+    return vehicle
+end
+
 function XSM.Notify(message, kind)
     Framework.Notify(message, kind)
 end
@@ -32,7 +53,6 @@ function XSM.Close()
     XSM.Send('close')
     XSM.StopPreview(true)
     Anim.Stop()
-    Showcase.Stop()
     Craft.Close()
 end
 
@@ -58,9 +78,8 @@ function XSM.Open(mode, shopId)
     XSM.Send('open', { mode = mode, state = payload.state })
 
     if mode == 'tablet' then Anim.Start() end
-    if XSM.vehicle then Showcase.Start(XSM.vehicle) end
 
-    if XSM.vehicle then XSM.PushVehicle() end
+    if XSM.Vehicle() then XSM.PushVehicle() end
 end
 
 function XSM.Show(panel)
@@ -79,7 +98,6 @@ function XSM.Hide()
     XSM.Send('close')
     SetNuiFocus(false, false)
     Anim.Stop()
-    Showcase.Stop()
 end
 
 function XSM.Unhide(panel)
@@ -89,7 +107,8 @@ function XSM.Unhide(panel)
     XSM.Send('open', { mode = XSM.mode, state = XSM.state, panel = panel })
 
     if XSM.mode == 'tablet' then Anim.Start() end
-    if XSM.vehicle then Showcase.Start(XSM.vehicle) end
+
+
 end
 
 function XSM.Refresh()
@@ -252,13 +271,11 @@ function XSM.Connect()
     XSM.StopPreview(false)
     XSM.vehicle = vehicle
     XSM.PushVehicle()
-    if XSM.open then Showcase.Start(vehicle) end
     XSM.Toast('Connected to ' .. (XSM.catalogue and XSM.catalogue.name or 'the vehicle') .. '.', 'good')
     return true
 end
 
 function XSM.Disconnect()
-    Showcase.Stop()
     XSM.StopPreview(true)
     XSM.vehicle = nil
     XSM.catalogue = nil
@@ -365,6 +382,8 @@ end)
 -- The tablet is an item, so losing it while the panel is open should close the
 -- panel. Config.Tablet.checkSeconds = 0 checks only on opening.
 CreateThread(function()
+    local missed = 0
+
     while true do
         local gap = Config.Tablet.checkSeconds or 0
         Wait(gap > 0 and gap * 1000 or 5000)
@@ -372,9 +391,25 @@ CreateThread(function()
         if gap > 0 and XSM.open and XSM.mode ~= 'builder' and Config.Tablet.item ~= '' then
             local holding = lib.callback.await('XS-Mechanic:holdingTablet', false)
 
+            --[[ Two misses in a row, not one.
+
+                 This is the only thing in the resource that shuts the panel
+                 without somebody pressing something, so it has to be sure. An
+                 inventory mid-write answers "no" for a moment — the tablet is
+                 in a slot that is being moved, or the stash it is sitting in is
+                 saving — and closing on that single answer throws the mechanic
+                 out of the screen they are working in, with a message saying
+                 they no longer have an item that is in their pocket. ]]
             if holding == false then
-                XSM.Notify('You no longer have the tablet.', 'error')
-                XSM.Close()
+                missed = missed + 1
+
+                if missed >= 2 then
+                    XSM.Notify('You no longer have the tablet.', 'error')
+                    XSM.Close()
+                    missed = 0
+                end
+            else
+                missed = 0
             end
         end
     end

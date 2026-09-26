@@ -82,8 +82,9 @@ if IsDuplicityVersion() then
     -- covers a restart having forgotten it.
     function Inventory.RegisterStash(id, label, slots, weight)
         if Inventory.name ~= 'ox_inventory' then return end
+        local size = Config.Stock and Config.Stock.storage or {}
         pcall(function()
-            exports.ox_inventory:RegisterStash(id, label, slots or 50, weight or 100000)
+            exports.ox_inventory:RegisterStash(id, label, slots or size.slots or 500, weight or size.weight or 4000000)
         end)
     end
 
@@ -100,7 +101,7 @@ if IsDuplicityVersion() then
     function Inventory.StashCount(id, item)
         if not Inventory.StashReady() or not item or item == '' then return 0 end
 
-        Inventory.RegisterStash(id, 'Shop storage', 60, 200000)
+        Inventory.RegisterStash(id, 'Shop storage')
 
         local count = 0
 
@@ -114,7 +115,7 @@ if IsDuplicityVersion() then
     function Inventory.StashAdd(id, item, amount)
         if not Inventory.StashReady() then return false end
 
-        Inventory.RegisterStash(id, 'Shop storage', 60, 200000)
+        Inventory.RegisterStash(id, 'Shop storage')
 
         local ok, added = pcall(function()
             return exports.ox_inventory:AddItem(id, item, amount or 1)
