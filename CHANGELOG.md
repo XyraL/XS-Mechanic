@@ -20,6 +20,13 @@
   callback with fake data, and pushed an `open` the moment the page loaded. It
   now runs only on hosts that serve the demo, so anything it does not
   recognise is treated as the game.
+- **A panel nothing opened could not be closed.** `XSM.Close` began
+  `if not XSM.open then return end`, which is backwards: when the page puts
+  something on screen that Lua never asked for, `XSM.open` is false, so the
+  close callback returned without releasing NUI focus and there was no way to
+  dismiss it. Closing now always lets go of the screen. The interface is also
+  told to close on its ready handshake whenever Lua has not opened it, so the
+  page does not get to decide it is open.
 - **A checker for both.** `tools/check-nuiapi.mjs` fails on any `XS.*` the
   interface calls that nothing defines. Neither bug was caught by the other
   fourteen: parsing a file proves it is valid JavaScript and says nothing about

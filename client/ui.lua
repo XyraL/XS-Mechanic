@@ -9,6 +9,17 @@ end)
 
 RegisterNUICallback('close', function(_, cb)
     XSM.Close()
+    --[[ Nothing has asked for the panel at this point, so whatever the page
+         has put up comes straight back down.
+
+         The interface is not the authority on whether it is open. A page that
+         opens itself on load leaves the resource holding NUI focus it never
+         took, and no way in for the player to give it back. ]]
+    if not XSM.open then
+        SetNuiFocus(false, false)
+        XSM.Send('close')
+    end
+
     cb({ ok = true })
 end)
 

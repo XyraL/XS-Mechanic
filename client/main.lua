@@ -45,9 +45,16 @@ function XSM.Toast(message, kind)
     XSM.Send('toast', { message = message, kind = kind })
 end
 
-function XSM.Close()
-    if not XSM.open then return end
+--[[ Closing always lets go of the screen, even when nothing here thinks the
+     panel is open.
 
+     That guard used to be `if not XSM.open then return end`, which is exactly
+     backwards: if the page has put something on screen that nothing in Lua
+     asked for, XSM.open is false, so the close callback returned without
+     calling SetNuiFocus and the panel could not be dismissed at all. The one
+     case the guard was meant to make cheap is the one case where doing the
+     work anyway is free. ]]
+function XSM.Close()
     XSM.open = false
     SetNuiFocus(false, false)
     XSM.Send('close')
