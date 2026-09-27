@@ -4,11 +4,6 @@ RegisterNUICallback('ready', function(data, cb)
             :format(tostring(data and data.host), tostring(data and data.native), tostring(data and data.mock)))
     end
 
-    cb({ ok = true })
-end)
-
-RegisterNUICallback('close', function(_, cb)
-    XSM.Close()
     --[[ Nothing has asked for the panel at this point, so whatever the page
          has put up comes straight back down.
 
@@ -18,6 +13,25 @@ RegisterNUICallback('close', function(_, cb)
     if not XSM.open then
         SetNuiFocus(false, false)
         XSM.Send('close')
+    end
+
+    cb({ ok = true, debug = Config.Debug == true })
+end)
+
+RegisterNUICallback('close', function(_, cb)
+    XSM.Close()
+    cb({ ok = true })
+end)
+
+--[[ What the page is doing on its own, printed where it can be read.
+
+     Only wired up when Config.Debug is on, and only the page decides to send
+     it. Whether anything opened the panel — and what the shell looks like
+     when nothing has — cannot be seen from either console otherwise. ]]
+RegisterNUICallback('diag', function(data, cb)
+    if Config.Debug then
+        print(('[XS-Mechanic] NUI %s — %s'):format(
+            tostring(data and data.what), tostring(data and data.detail)))
     end
 
     cb({ ok = true })

@@ -296,5 +296,39 @@
         host: location.hostname,
         native: typeof GetParentResourceName === 'function',
         mock: document.body.classList.contains('standalone'),
+    }).then((reply) => {
+        if (!reply || !reply.debug) return;
+
+        // Who opened the panel, and what the shell is doing when nobody has.
+        // Both answers live in the page and nowhere a console can reach.
+        const open = XS.open;
+
+        XS.open = function (payload) {
+            XS.post('diag', {
+                what: 'open called',
+                detail: `mode ${payload?.mode || '?'}, panel ${payload?.panel || '?'}, `
+                    + `keys ${Object.keys(payload?.state || {}).length} — `
+                    + String(new Error().stack || '').split('\n').slice(1, 4).join(' | '),
+            });
+
+            return open.apply(this, arguments);
+        };
+
+        setTimeout(() => {
+            const sheets = [...document.styleSheets];
+            let rootRule = null;
+
+            for (const sheet of sheets) {
+                let rules;
+                try { rules = sheet.cssRules; } catch { continue; }
+                for (const rule of rules) if (rule.selectorText === '#root') rootRule = rule.style.opacity;
+            }
+
+            XS.post('diag', {
+                what: 'shell after 2s',
+                detail: `class "${root.className || 'none'}", opacity ${getComputedStyle(root).opacity}, `
+                    + `sheets ${sheets.length}, #root rule opacity ${rootRule === null ? 'NOT FOUND' : rootRule}`,
+            });
+        }, 2000);
     });
 })();
