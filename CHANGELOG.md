@@ -1,5 +1,22 @@
 # Changelog
 
+## 1.0.1
+
+- **The tablet would not close.** `XS.subject.hide` went with the camera window
+  in 1.0.0 and two calls to it stayed behind. `XS.close()` threw before it got
+  to the line that tells Lua, so the panel vanished off the screen while the
+  resource still thought it was open: NUI focus stayed captured, and the
+  mechanic was left holding a tablet prop nothing knew how to put away.
+- **The car column crashed with nothing connected.** The same commit removed a
+  viewport measurement that sat next to three `return`s and took them with it,
+  so every branch of the left pane fell through into the one that draws a car
+  and read a plate off nothing. Opening the tablet away from a vehicle drew an
+  empty shell.
+- **A checker for both.** `tools/check-nuiapi.mjs` fails on any `XS.*` the
+  interface calls that nothing defines. Neither bug was caught by the other
+  fourteen: parsing a file proves it is valid JavaScript and says nothing about
+  whether the function it calls exists.
+
 ## 1.0.0
 
 First public release.

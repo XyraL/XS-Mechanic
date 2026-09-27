@@ -143,6 +143,7 @@ XS.subject = (function () {
         if (XS.mode === 'builder') {
             split.className = 'split';
             shops();
+            return;
         }
 
         // The home screen, the laptop and the bench are not pointed at a car,
@@ -155,6 +156,7 @@ XS.subject = (function () {
         if (XS.panel === 'apps' || XS.panel === 'orders'
             || XS.mode === 'desk' || XS.mode === 'bench') {
             split.className = 'split wide';
+            return;
         }
 
         split.className = 'split';
@@ -172,6 +174,7 @@ XS.subject = (function () {
                 }));
             }
 
+            return;
         }
 
         car(XS.state.vehicle);

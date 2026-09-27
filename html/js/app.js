@@ -215,7 +215,6 @@
         root.classList.remove('open');
         document.body.classList.remove('open');
         XS.closeModal();
-        XS.subject.hide();
         XS.post('close');
     };
 
@@ -255,7 +254,6 @@
                 root.classList.remove('open');
                 document.body.classList.remove('open');
                 XS.closeModal();
-                XS.subject.hide();
                 break;
 
             case 'state':
