@@ -289,5 +289,12 @@
         }
     });
 
-    XS.post('ready');
+    // What the page can see about where it is running. The one question worth
+    // asking first when the interface misbehaves is whether it knows it is in
+    // game at all, and it is the one thing nobody can check from the console.
+    XS.post('ready', {
+        host: location.hostname,
+        native: typeof GetParentResourceName === 'function',
+        mock: document.body.classList.contains('standalone'),
+    });
 })();

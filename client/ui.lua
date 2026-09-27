@@ -1,4 +1,9 @@
-RegisterNUICallback('ready', function(_, cb)
+RegisterNUICallback('ready', function(data, cb)
+    if Config.Debug then
+        print(('[XS-Mechanic] NUI ready — host %s, native %s, mock %s')
+            :format(tostring(data and data.host), tostring(data and data.native), tostring(data and data.mock)))
+    end
+
     cb({ ok = true })
 end)
 
