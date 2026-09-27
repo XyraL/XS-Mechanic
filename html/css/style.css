@@ -940,20 +940,6 @@ body.open #hud{display:none}
    to the top left of it. There is no window to punch and nothing to cut: the
    sheet is opaque, and everything that is not the sheet is simply not painted. */
 
-.stage{
-  position:fixed;inset:0;z-index:1;
-  cursor:grab;
-}
-.stage:active{cursor:grabbing}
-.stage .hint{
-  position:absolute;left:50%;bottom:26px;transform:translateX(-50%);
-  padding:9px 16px;border-radius:20px;
-  background:rgba(8,13,22,.72);border:1px solid var(--line2);
-  font:10.5px/1 var(--mono);letter-spacing:.1em;text-transform:uppercase;
-  color:var(--dim);white-space:nowrap;pointer-events:none;
-  opacity:.85;
-}
-
 body[data-layout="sheet"] #root{place-items:start;padding:22px}
 body[data-layout="sheet"] .device{
   width:360px;height:auto;max-height:calc(100vh - 44px);

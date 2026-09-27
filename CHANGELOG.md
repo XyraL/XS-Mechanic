@@ -2,6 +2,31 @@
 
 ## 1.0.1
 
+- **The tablet was on screen from resource start and could not be dismissed.**
+  Removing the car preview in 1.0.0 deleted two lines of the drag-to-turn stage
+  and left its closing `</div>` behind. That tag closed `#root` two lines after
+  it opened, so the whole tablet became a child of `<body>` — outside the only
+  rule that hides it, painted the moment the page loaded, and unreachable by
+  every close path, all of which just toggle a class on `#root`. One line
+  deleted. `tools/check-html.mjs` now balances the markup and asserts the
+  tablet sits inside `#root`, because nothing else in the suite reads HTML.
+- **`Tried to access invalid entity` on the server.** The `entityCreated`
+  handler called `GetEntityType` before checking the entity still existed, and
+  an entity created and deleted on the same tick still fires the event.
+- **Every vehicle's model was recorded blank.** The same handler passed
+  `GetEntityModel(entity) and '' or ''` — always `''` — and because it reaches
+  a car before anything else asks about it, that was what every profile got
+  cached with. The server cannot read the display name; it now passes nothing,
+  and the first caller that knows the name fills it in.
+- **A cancelled craft bricked the bench for the session.** The panel was
+  stepped aside with `XSM.open` still set, and the cancel path then called
+  `XSM.Open`, which returns early on that flag. It now puts the same screen
+  back the way a finished craft does.
+- **The browser mock no longer ships in the resource.** `html/js/mock.js` — the
+  sample shop the interface is developed against — is now the website's demo
+  stub, where it can only ever be a demo. It was not the cause of any of the
+  above, but a file that hijacks `window.fetch` and posts an `open` on load has
+  no business deciding for itself whether it is inside a running server.
 - **The tablet would not close.** `XS.subject.hide` went with the camera window
   in 1.0.0 and two calls to it stayed behind. `XS.close()` threw before it got
   to the line that tells Lua, so the panel vanished off the screen while the
@@ -12,14 +37,6 @@
   so every branch of the left pane fell through into the one that draws a car
   and read a plate off nothing. Opening the tablet away from a vehicle drew an
   empty shell.
-- **The tablet opened by itself on spawn.** `html/js/mock.js` is the browser
-  preview's stand-in data, and it decided whether it was in game the wrong way
-  round: it bailed if `GetParentResourceName` existed or if the hostname
-  equalled the resource name. FiveM serves NUI from `cfx-nui-xs-mechanic`,
-  which is neither, so it ran — took over `window.fetch`, answered every NUI
-  callback with fake data, and pushed an `open` the moment the page loaded. It
-  now runs only on hosts that serve the demo, so anything it does not
-  recognise is treated as the game.
 - **A panel nothing opened could not be closed.** `XSM.Close` began
   `if not XSM.open then return end`, which is backwards: when the page puts
   something on screen that Lua never asked for, `XSM.open` is false, so the

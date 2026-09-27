@@ -85,7 +85,6 @@ ui_page 'html/index.html'
 files {
     'html/index.html',
     'html/css/style.css',
-    'html/js/mock.js',
     'html/js/core.js',
     'html/js/app.js',
     'html/js/hud.js',

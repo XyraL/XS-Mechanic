@@ -40,12 +40,27 @@ function Vehicles.Profile(plate, model)
     plate = Util.Trim(plate or '')
     if plate == '' then return nil end
 
-    if cache[plate] then return cache[plate] end
+    if cache[plate] then return Vehicles.Name(cache[plate], model) end
 
     local row = MySQL.single.await('SELECT * FROM xs_mechanic_vehicles WHERE plate = ?', { plate })
     local profile = row and decode(row) or blank(plate, model)
 
     cache[plate] = profile
+    return Vehicles.Name(profile, model)
+end
+
+-- The first caller who knows what the car is gets to say so. entityCreated
+-- reaches every vehicle before anything else does and cannot read the model
+-- name from the server, so the profile it caches has none — and the cache is
+-- checked before the argument, so the name the client sends later was being
+-- thrown away. Only ever fills a blank; never overwrites a name.
+function Vehicles.Name(profile, model)
+    if not profile then return profile end
+
+    if (profile.model == nil or profile.model == '') and model and model ~= '' then
+        profile.model = string.lower(model)
+    end
+
     return profile
 end
 
@@ -107,6 +122,10 @@ end
 -- Every vehicle that comes into existence gets its profile attached, whoever
 -- spawned it. No garage hooks, no spawner integration.
 AddEventHandler('entityCreated', function(entity)
+    -- The handle can already be dead by the time this runs — an entity that
+    -- was created and deleted on the same tick still fires the event — and
+    -- GetEntityType on a dead handle is a script error, not a nil.
+    if not entity or entity == 0 or not DoesEntityExist(entity) then return end
     if GetEntityType(entity) ~= 2 then return end
 
     CreateThread(function()
@@ -116,8 +135,12 @@ AddEventHandler('entityCreated', function(entity)
         local plate = Util.Trim(GetVehicleNumberPlateText(entity) or '')
         if plate == '' then return end
 
-        local model = string.lower(GetEntityModel(entity) and '' or '')
-        Vehicles.Push(entity, plate, model)
+        -- No model from here. The server only has the hash, and the name the
+        -- rest of the resource stores comes from a client that can read it.
+        -- This used to pass `GetEntityModel(entity) and '' or ''`, which is
+        -- always '' — and because this event runs before anything else asks
+        -- about the car, that '' was what every profile got cached with.
+        Vehicles.Push(entity, plate, nil)
     end)
 end)
 

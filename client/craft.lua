@@ -78,7 +78,12 @@ RegisterNUICallback('craft', function(data, cb)
 
     if seconds > 0 then
         if not Anim.Work(seconds * amount, 'Making it') then
-            XSM.Open('bench', XSM.shop and XSM.shop.id)
+            -- The panel was stepped aside, not closed: XSM.open is still true,
+            -- which is exactly why XSM.Open used to return without doing
+            -- anything here. A cancelled craft left the bench shut, focus
+            -- gone, and the flag set — so nothing could open it again all
+            -- session. Put the same screen back the way the success path does.
+            XSM.Unhide('craft')
             cb({ ok = false })
             return
         end

@@ -324,10 +324,18 @@
                 for (const rule of rules) if (rule.selectorText === '#root') rootRule = rule.style.opacity;
             }
 
+            // The tablet itself, not just its gate. This report once said
+            // "#root closed, opacity 0" while a tablet sat on screen — because
+            // a stray tag had put .device outside #root, and this was only
+            // measuring the box it was supposed to be in.
+            const device = document.querySelector('.device');
+
             XS.post('diag', {
                 what: 'shell after 2s',
-                detail: `class "${root.className || 'none'}", opacity ${getComputedStyle(root).opacity}, `
-                    + `sheets ${sheets.length}, #root rule opacity ${rootRule === null ? 'NOT FOUND' : rootRule}`,
+                detail: `#root class "${root.className || 'none'}", opacity ${getComputedStyle(root).opacity}, `
+                    + `sheets ${sheets.length}, #root rule opacity ${rootRule === null ? 'NOT FOUND' : rootRule}; `
+                    + `.device parent ${device?.parentElement?.id ? '#' + device.parentElement.id : (device?.parentElement?.tagName || 'MISSING')}, `
+                    + `opacity ${device ? getComputedStyle(device).opacity : '?'}`,
             });
         }, 2000);
     });
