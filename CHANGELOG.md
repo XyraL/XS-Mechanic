@@ -12,6 +12,14 @@
   so every branch of the left pane fell through into the one that draws a car
   and read a plate off nothing. Opening the tablet away from a vehicle drew an
   empty shell.
+- **The tablet opened by itself on spawn.** `html/js/mock.js` is the browser
+  preview's stand-in data, and it decided whether it was in game the wrong way
+  round: it bailed if `GetParentResourceName` existed or if the hostname
+  equalled the resource name. FiveM serves NUI from `cfx-nui-xs-mechanic`,
+  which is neither, so it ran — took over `window.fetch`, answered every NUI
+  callback with fake data, and pushed an `open` the moment the page loaded. It
+  now runs only on hosts that serve the demo, so anything it does not
+  recognise is treated as the game.
 - **A checker for both.** `tools/check-nuiapi.mjs` fails on any `XS.*` the
   interface calls that nothing defines. Neither bug was caught by the other
   fourteen: parsing a file proves it is valid JavaScript and says nothing about

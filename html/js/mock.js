@@ -1,12 +1,22 @@
 (function () {
     const RESOURCE = 'XS-Mechanic';
 
-    // In game this file loads but must do nothing. GetParentResourceName is the
-    // real signal; the hostname check is a backstop and both sides are folded
-    // to lower case, because the browser lowercases the URL host while the
-    // native returns the resource's real casing.
+    /*  In game this file loads and must do nothing, and the decision is made
+        the safe way round: it runs on the hosts that serve the demo and
+        nowhere else. An unrecognised host is treated as the game.
+
+        It used to be the other way round — bail if GetParentResourceName
+        exists, or if the hostname equals the resource name — and both missed.
+        FiveM serves NUI from cfx-nui-xs-mechanic, which never equalled
+        'xs-mechanic', and the native is not there yet when the first script
+        tag runs. So neither guard fired, the fetch override below swallowed
+        every NUI callback, and ROUTES.ready posted an 'open' as the page
+        loaded: the tablet came up on spawn, on duty, with a demo shop and
+        somebody else's name on it.  */
+    const DEMO_HOSTS = /^(localhost|127\.0\.0\.1|\[::1\]|(.+\.)?xyralscripts\.dev|(.+\.)?workers\.dev)$/i;
+
     if (typeof GetParentResourceName === 'function') return;
-    if (location.hostname.toLowerCase() === RESOURCE.toLowerCase()) return;
+    if (!DEMO_HOSTS.test(location.hostname)) return;
 
     window.GetParentResourceName = () => RESOURCE;
 
