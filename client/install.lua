@@ -524,6 +524,7 @@ function Install.ByHand()
         local found = lib.callback.await('XS-Mechanic:orderLines', false, {
             plate = Util.Trim(GetVehicleNumberPlateText(vehicle) or ''),
             model = string.lower(GetDisplayNameFromVehicleModel(GetEntityModel(vehicle)) or ''),
+            byHand = true,
         })
 
         if not found or not found.ok then

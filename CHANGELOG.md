@@ -32,6 +32,16 @@
   through its documented event now, from the mechanic sending it.
 - **Storage never opened on qs-inventory.** It needs the stash registered on the
   server for that player first, and nothing did.
+- **Fit on an order line said there was nothing to do by hand.** Asking for the
+  lines on a car without naming a part got the by-hand answer — only lines that
+  need no part — so Fit found nothing on any line that did. By hand now says it
+  is by hand, and Fit gets the whole order. The same fix makes an ordered slot
+  lock the other choices for that part, which it was meant to all along.
+- **One point that failed to build took every point after it.** A laptop model
+  slow to stream in threw, and every target after it went unbuilt with nothing
+  said. Each point is built on its own now and a failure is printed. With
+  Config.Debug on, staff points hidden because you do not hold the shop job are
+  listed too.
 
 ## 1.0.1
 

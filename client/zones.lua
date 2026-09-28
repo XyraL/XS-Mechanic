@@ -235,11 +235,33 @@ local function visibleTo(shop, point)
     return jobMatches(shop)
 end
 
+local function buildPoint(shop, point, hidden)
+    if not visibleTo(shop, point) then
+        hidden[#hidden + 1] = ('%s in %s (needs job "%s")'):format(point.kind, shop.name or shop.id, shop.job or '')
+        return
+    end
+
+    if point.kind == 'laptop' then
+        spawnLaptop(shop, point)
+        return
+    end
+
+    local options = optionsFor(shop, point)
+    if #options == 0 then return end
+
+    local id = ('xsmech_%s_%s'):format(shop.id, point.id)
+
+    Target.AddSphere(id, point.coords, point.radius or 2.5, options)
+    registered[id] = { shop = shop, point = point, options = options }
+end
+
 function Zones.Rebuild()
     Target.Clear()
     clearProps()
     clearBlips()
     registered = {}
+
+    local hidden = {}
 
     for _, shop in ipairs(XSM.shops or {}) do
         if shop.blip and shop.blip.enabled and shop.bounds then
@@ -254,22 +276,24 @@ function Zones.Rebuild()
             blips[shop.id] = blip
         end
 
+        -- One point at a time. A laptop model that does not stream in inside
+        -- lib.requestModel's timeout throws, and that used to end the loop —
+        -- every point after it, in every shop, went unbuilt with no sign why.
         for _, point in ipairs(shop.points or {}) do
-            if not visibleTo(shop, point) then
-                -- Not theirs to see.
-            elseif point.kind == 'laptop' then
-                spawnLaptop(shop, point)
-            else
-                local options = optionsFor(shop, point)
+            local ok, err = pcall(buildPoint, shop, point, hidden)
 
-                if #options > 0 then
-                    local id = ('xsmech_%s_%s'):format(shop.id, point.id)
-
-                    Target.AddSphere(id, point.coords, point.radius or 2.5, options)
-                    registered[id] = { shop = shop, point = point, options = options }
-                end
+            if not ok then
+                print(('^1[XS-Mechanic]^0 %s point in %s was not built: %s'):format(
+                    tostring(point.kind), tostring(shop.name or shop.id), tostring(err)))
             end
         end
+    end
+
+    -- Staff points are only registered for the shop's job, so an admin who
+    -- places one without that job sees nothing there. Say so.
+    if Config.Debug and #hidden > 0 then
+        print(('[XS-Mechanic] %d staff point(s) not shown — your job is "%s": %s'):format(
+            #hidden, tostring(Framework.GetJob() or 'none'), table.concat(hidden, ', ')))
     end
 end
 

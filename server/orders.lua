@@ -479,6 +479,13 @@ function Orders.Candidates(src, data)
     local item = data.item and tostring(data.item) or nil
     local model = tostring(data.model or '')
 
+    -- Asked with no item, this is one of two questions: everything still to
+    -- fit on the car (Fit on a line, and the lookup that narrows what a part
+    -- can go on), or only what needs no part (by hand). Both used to get the
+    -- by-hand answer, so pressing Fit on any line that needed a part found
+    -- nothing and said there was nothing to do by hand.
+    local byHand = not item and data.byHand == true
+
     local rows = MySQL.query.await([[
         SELECT *, UNIX_TIMESTAMP(created_at) AS created_at_unix
         FROM xs_mechanic_orders
@@ -513,8 +520,13 @@ function Orders.Candidates(src, data)
             for _, line in ipairs(order.requested) do
                 if type(line) == 'table' then
                     local needs = Orders.ItemFor(shop, line)
+                    local match
 
-                    if needs == item then
+                    if item then match = needs == item
+                    elseif byHand then match = needs == nil
+                    else match = true end
+
+                    if match then
                         if line.fitted then
                             wanted = true
                         else
@@ -530,6 +542,7 @@ function Orders.Candidates(src, data)
                             out[#out + 1] = {
                                 orderId = order.id,
                                 lid = line.lid,
+                                needs = needs,
                                 label = line.label,
                                 category = line.category,
                                 categoryLabel = line.categoryLabel,
@@ -569,7 +582,11 @@ function Orders.Candidates(src, data)
                 or ('Nothing on this order needs a %s.'):format(label) }
         end
 
-        return { ok = false, error = 'Nothing on this order to do by hand.' }
+        if byHand then return { ok = false, error = 'Nothing on this order to do by hand.' } end
+
+        return { ok = false, error = wanted
+            and 'Everything on this order is already fitted.'
+            or 'Nothing on this order left to fit.' }
     end
 
     return { ok = true, lines = out, orders = #rows }
