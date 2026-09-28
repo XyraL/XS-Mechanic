@@ -307,6 +307,15 @@ RegisterNetEvent('XS-Mechanic:client:openTablet', function()
     XSM.Open('tablet')
 end)
 
+-- okokBilling's invoice is written by the player sending it, so it has to be
+-- raised from this client. The server decides who, what and how much.
+RegisterNetEvent('XS-Mechanic:client:okokInvoice', function(bill)
+    if type(bill) ~= 'table' then return end
+
+    TriggerServerEvent('okokBilling:CreateCustomInvoice',
+        bill.target, bill.price, bill.reason, bill.from, bill.society, bill.societyName)
+end)
+
 AddEventHandler('onResourceStop', function(resource)
     if resource ~= GetCurrentResourceName() then return end
     SetNuiFocus(false, false)

@@ -88,6 +88,33 @@ if IsDuplicityVersion() then
         end)
     end
 
+    --[[ qs-inventory registers a stash per player, from the server, and will
+         not open one that has not been — its docs say so in as many words.
+         Nothing here ever did: the server half above only knows ox, and the
+         client called RegisterStash itself with the wrong arguments, so
+         Storage never opened. Only a storage point of a shop whose job this
+         player holds gets registered. ]]
+    if Inventory.name == 'qs-inventory' then
+        lib.callback.register('XS-Mechanic:qsStash', function(src, id, slots, weight)
+            local job = Framework.GetJob(src)
+
+            for _, shop in ipairs(Store.All()) do
+                for _, point in ipairs(shop.points or {}) do
+                    if point.kind == 'storage' and ('xsmech_%s_%s'):format(shop.id, point.id) == id then
+                        if shop.job == '' or shop.job ~= job then return false end
+
+                        local ok = pcall(function()
+                            exports['qs-inventory']:RegisterStash(src, id, tonumber(slots) or 60, tonumber(weight) or 200000)
+                        end)
+                        return ok
+                    end
+                end
+            end
+
+            return false
+        end)
+    end
+
     --[[ Reading and writing a stash without anybody opening it.
 
          Only ox_inventory answers this. The others keep stash contents in
@@ -145,8 +172,15 @@ else
             return
         end
 
+        -- Registered by the server for this player first, then opened the way
+        -- Quasar documents it: the server event, then the current stash.
         if Inventory.name == 'qs-inventory' then
-            exports['qs-inventory']:RegisterStash(id, slots or 50, weight or 100000)
+            if not lib.callback.await('XS-Mechanic:qsStash', false, id, slots or 60, weight or 200000) then
+                return
+            end
+
+            TriggerServerEvent('inventory:server:OpenInventory', 'stash', id, { maxweight = weight or 200000, slots = slots or 60 })
+            TriggerEvent('inventory:client:SetCurrentStash', id)
             return
         end
 

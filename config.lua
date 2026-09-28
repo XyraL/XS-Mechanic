@@ -5,7 +5,7 @@ Config.Bridges = {
     framework = 'auto',   -- auto | qbox | qbcore
     inventory = 'auto',   -- auto | ox_inventory | qb-inventory | qs-inventory | codem-inventory | core_inventory | ps-inventory
     target    = 'auto',   -- auto | ox_target | qb-target | builtin
-    banking   = 'auto',   -- auto | qb-banking | Renewed-Banking | okokBanking | qbx | none
+    banking   = 'auto',   -- auto | qb-banking | Renewed-Banking | okokBanking | qb-management | none (the shop keeps its own ledger)
     phone     = 'auto',   -- auto | lb-phone | qs-smartphone | XS-Phone | qb-phone | none
     billing   = 'auto',   -- auto | okokBilling | esx_billing | qb-phone | none
 }

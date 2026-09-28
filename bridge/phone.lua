@@ -25,21 +25,25 @@ function Phone.Notify(src, title, message)
     if not citizenid then return false end
 
     local ok = pcall(function()
+        -- SendNotification(target, data): who it is for, then what. This used
+        -- to pass one table with the number tucked inside it, so data arrived
+        -- as nil and nothing was ever shown.
         if Phone.name == 'lb-phone' then
             local number = exports['lb-phone']:GetEquippedPhoneNumber(src)
             if not number then return end
 
-            exports['lb-phone']:SendNotification({
-                number = number,
-                app = 'Messages',
+            exports['lb-phone']:SendNotification(number, {
+                app = 'Mail',
                 title = title,
                 content = message,
             })
             return
         end
 
+        -- Notify(target, data) returns false for anything but a table, which is
+        -- what it was getting: the title as a bare string.
         if Phone.name == 'XS-Phone' then
-            exports['XS-Phone']:Notify(src, title, message)
+            exports['XS-Phone']:Notify(src, { app = 'mail', title = title, body = message })
             return
         end
 

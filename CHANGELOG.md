@@ -18,6 +18,20 @@
 - **The work order box was crushed to a sliver.** It shrank with the parts list,
   and a long list took it down to the top edge of the button. It keeps its size
   now and the list scrolls instead.
+- **Shop money on Qbox without Renewed-Banking went nowhere.** The bridge fell
+  back to qbx_management, which has no money functions at all. The balance read
+  0, so the shop could never spend, and deposits vanished. With no banking
+  resource the shop keeps its own ledger now, which is what that case is for.
+- **Deposits to an account the bank did not have were lost.** Renewed-Banking and
+  qb-banking only make accounts for jobs that existed when they started, and
+  turn anything else down quietly. The account is made first now, and a
+  deposit only goes in the shop history once the bank has taken it.
+- **Phone notifications never arrived.** Both lb-phone and XS-Phone were being
+  called with the wrong arguments.
+- **okokBilling never got the bill.** It has no export for it; the invoice goes
+  through its documented event now, from the mechanic sending it.
+- **Storage never opened on qs-inventory.** It needs the stash registered on the
+  server for that player first, and nothing did.
 
 ## 1.0.1
 

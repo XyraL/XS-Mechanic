@@ -72,12 +72,23 @@ function Billing.Send(src, customerSrc, amount, label, meta)
         if ok then return true end
     end
 
+    -- okokBilling has no export for this. The call here used to be
+    -- exports['okokBilling']:CreateInvoice, which does not exist, inside a
+    -- pcall — so every bill quietly stayed internal. Its documented way in is
+    -- okokBilling:CreateCustomInvoice, raised from the client of the player
+    -- writing the invoice, so the mechanic's own client raises it.
     if Billing.name == 'okokBilling' then
-        local ok = pcall(function()
-            exports['okokBilling']:CreateInvoice(
-                src, customerSrc, meta.society or 'mechanic', label, amount)
-        end)
-        if ok then return true end
+        if not customerSrc or not GetPlayerName(customerSrc) then return false end
+
+        TriggerClientEvent('XS-Mechanic:client:okokInvoice', src, {
+            target = customerSrc,
+            price = amount,
+            reason = label,
+            from = meta.shopName or 'Mechanic',
+            society = meta.society,
+            societyName = meta.shopName,
+        })
+        return true
     end
 
     if Billing.name == 'esx_billing' then
