@@ -2,55 +2,21 @@
 
 ## 1.0.2
 
-- **Going on duty threw `No such export ToggleDuty in resource qbx_core`.** qbx_core
-  has no ToggleDuty. Duty goes through its real API, `SetJobDuty`, now. The QBCore
-  side never worked either: it sent the server event `QBCore:ToggleDuty` to the
-  client, where nothing listens. Both sides tell you which way it went.
-- **Clicking a part in Tuning sent you back to the home screen.** Tuning,
-  Performance, Stance and Dyno live inside Vehicle, and the check that throws you
-  out of an app you have walked away from did not count them. Every click pushes
-  the list back from the game, which redraws, which went home. Opening straight
-  into the Dyno from the dyno bay did the same.
-- **One slot at a time.** Tuning stacked every slot in a category down one list —
-  the bumpers were somewhere under the spoilers. The slots are tabs now, with a
-  step either side, and a dot on any slot that has something on the list. Wheel
-  types work the same way. Coming into Tuning starts on Cosmetics.
-- **The work order box was crushed to a sliver.** It shrank with the parts list,
-  and a long list took it down to the top edge of the button. It keeps its size
-  now and the list scrolls instead.
-- **Shop money on Qbox without Renewed-Banking went nowhere.** The bridge fell
-  back to qbx_management, which has no money functions at all. The balance read
-  0, so the shop could never spend, and deposits vanished. With no banking
-  resource the shop keeps its own ledger now, which is what that case is for.
-- **Deposits to an account the bank did not have were lost.** Renewed-Banking and
-  qb-banking only make accounts for jobs that existed when they started, and
-  turn anything else down quietly. The account is made first now, and a
-  deposit only goes in the shop history once the bank has taken it.
-- **Phone notifications never arrived.** Both lb-phone and XS-Phone were being
-  called with the wrong arguments.
-- **okokBilling never got the bill.** It has no export for it; the invoice goes
-  through its documented event now, from the mechanic sending it.
-- **Storage never opened on qs-inventory.** It needs the stash registered on the
-  server for that player first, and nothing did.
-- **Fit on an order line said there was nothing to do by hand.** Asking for the
-  lines on a car without naming a part got the by-hand answer — only lines that
-  need no part — so Fit found nothing on any line that did. By hand now says it
-  is by hand, and Fit gets the whole order. The same fix makes an ordered slot
-  lock the other choices for that part, which it was meant to all along.
-- **One point that failed to build took every point after it.** A laptop model
-  slow to stream in threw, and every target after it went unbuilt with nothing
-  said. Each point is built on its own now and a failure is printed. With
-  Config.Debug on, staff points hidden because you do not hold the shop job are
-  listed too.
-- **An order closed itself the moment the last part went on.** A closed order
-  hides its Bill button, so a job fitted before it was billed could not be
-  billed at all. Closing is your call now: Finish it, or bill it once
-  everything is on and that closes it. Finish works on an order a customer
-  sent, too — it only took ones that had been claimed. An order that is
-  already closed but not billed gets its Bill button back.
-- **"Waiting on parts." on a finished job.** That was the order's note, written
-  in when the shop booked it and never changed. Orders are booked without one
-  now, and the old placeholder is cleared on start.
+Bug fixes.
+
+- Fixed the duty station not working
+- Fixed an issue with the tuning menu kicking back to the homepage of the tablet
+- Tuning categories are now tabs, so you browse one at a time. Cosmetics opens first
+- Fixed the "Put it on a work order" button being too small
+- Fixed the Fit button on work orders saying there was nothing to fit
+- Work orders no longer finish by themselves after the last part goes on. Finish or bill them when you're ready
+- Fixed "Waiting on parts" showing on finished orders
+- Fixed shop money not working on Qbox servers without a banking script
+- Fixed shop payments sometimes not reaching the shop's bank account
+- Fixed phone notifications not showing on lb-phone and XS-Phone
+- Fixed invoices not being sent to okokBilling
+- Fixed storage not opening with qs-inventory
+- Fixed shop points sometimes not loading in
 
 ## 1.0.1
 
