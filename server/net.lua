@@ -594,14 +594,13 @@ RegisterNetEvent('XS-Mechanic:server:duty', function(shopId)
     local shop = Store.Get(shopId)
     if not shop then return end
 
-    local job = Framework.GetJob(src)
+    local job, onDuty = Framework.GetJob(src)
     if job ~= shop.job then return end
 
-    if Framework.name == 'qbox' then
-        exports.qbx_core:ToggleDuty(src)
-    else
-        TriggerClientEvent('QBCore:ToggleDuty', src)
-    end
+    if not Framework.SetDuty(src, not onDuty) then return end
+
+    Framework.Notify(src, onDuty and 'You are off duty.' or 'You are on duty.', 'inform')
+    TriggerClientEvent('XS-Mechanic:client:refresh', src)
 end)
 
 -- The client owns the vehicle entity, so it is the only side that can read the

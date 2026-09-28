@@ -32,6 +32,13 @@
             return;
         }
 
+        // A different car carries different slots, so the place kept on the
+        // last one means nothing here.
+        if (XS.state.tuneFor !== car.plate) {
+            XS.state.tuneFor = car.plate;
+            XS.panels.tuning.enter();
+        }
+
         const prices = XS.state.prices || {};
         const groups = buildGroups(cat);
 
@@ -41,15 +48,124 @@
 
         const group = groups.find((g) => g.id === XS.state.tuneGroup);
 
-        // The window goes and looks at whatever is on screen. A slot is more
-        // specific than a category, so a spoiler sends the camera round the
-        // back rather than to "cosmetics" in general.
-        XS.subject.look(XS.state.tuneSlot || group?.id || 'full');
-
         host.append(renderTree(groups));
+
+        const strip = renderStrip(group);
+        if (strip) host.append(strip);
+
         host.append(renderGrid(group, prices));
         host.append(renderDraft());
     };
+
+    // Coming in from another screen starts at the first category — Cosmetics
+    // — and the first thing in it. Clicking about inside Tuning keeps the place.
+    XS.panels.tuning.enter = function () {
+        XS.state.tuneGroup = null;
+        XS.state.tuneTabs = {};
+        XS.state.wheelType = null;
+    };
+
+    // One slot on screen at a time. The panel used to stack every slot in the
+    // category down one list — seventeen of them for a car with a full kit —
+    // and the bumpers were somewhere under the spoilers.
+    function slotOf(group) {
+        const slots = group.slots || [];
+        const kept = (XS.state.tuneTabs || {})[group.id];
+        return slots.find((slot) => slot.id === kept) || slots[0] || null;
+    }
+
+    function wheelTypeOf(group) {
+        const types = group.wheels.types;
+
+        if (!types.some((type) => type.type === XS.state.wheelType)) {
+            const fitted = types.find((type) => type.type === group.wheels.currentType);
+            XS.state.wheelType = (fitted || types[0] || {}).type ?? null;
+        }
+
+        return types.find((type) => type.type === XS.state.wheelType) || null;
+    }
+
+    function picked(test) {
+        return (XS.state.basket || []).some(test);
+    }
+
+    // The slots of the chosen category as a row of tabs, with a step either
+    // side. The class names the slot, so keepScroll puts a list back where it
+    // was after a click inside it and starts a different one at the top.
+    function renderStrip(group) {
+        if (!group) return null;
+
+        let items;
+        let active;
+        let choose;
+
+        if (group.id === 'wheels') {
+            items = group.wheels.types.map((type) => ({
+                id: type.type,
+                label: type.label,
+                picked: picked((p) => p.slotId === 'wheels' && p.wheelType === type.type),
+            }));
+            active = wheelTypeOf(group)?.type;
+            choose = (id) => { XS.state.wheelType = id; };
+        } else if (group.slots && group.slots.length > 1) {
+            items = group.slots.map((slot) => ({
+                id: slot.id,
+                label: slot.label,
+                picked: picked((p) => p.slotId === slot.id),
+            }));
+            active = slotOf(group)?.id;
+            choose = (id) => { (XS.state.tuneTabs ||= {})[group.id] = id; };
+        } else {
+            return null;
+        }
+
+        const at = items.findIndex((item) => item.id === active);
+
+        const go = (i) => {
+            if (i < 0 || i >= items.length || i === at) return;
+            choose(items[i].id);
+            XS.rerender('tuning');
+        };
+
+        const rail = XS.el('div', { class: 'rail' });
+
+        for (const [i, item] of items.entries()) {
+            rail.append(XS.el('button', {
+                class: `sl ${i === at ? 'on' : ''} ${item.picked ? 'picked' : ''}`,
+                title: item.picked ? `${item.label} — on the list` : item.label,
+                onclick: () => go(i),
+            }, [item.label]));
+        }
+
+        // A mouse has one wheel. Over the row it scrolls the row.
+        rail.addEventListener('wheel', (ev) => {
+            if (Math.abs(ev.deltaY) <= Math.abs(ev.deltaX)) return;
+            rail.scrollLeft += ev.deltaY;
+            ev.preventDefault();
+        }, { passive: false });
+
+        requestAnimationFrame(() => {
+            const on = rail.querySelector('.sl.on');
+            if (on) rail.scrollLeft = on.offsetLeft - (rail.clientWidth - on.offsetWidth) / 2;
+        });
+
+        return XS.el('nav', { class: 'slots' }, [
+            XS.el('button', {
+                class: 'step', text: '‹', title: 'Previous',
+                disabled: at <= 0, onclick: () => go(at - 1),
+            }),
+            rail,
+            XS.el('button', {
+                class: 'step', text: '›', title: 'Next',
+                disabled: at < 0 || at >= items.length - 1, onclick: () => go(at + 1),
+            }),
+        ]);
+    }
+
+    function gridFor(...parts) {
+        const key = parts.map((part) => String(part ?? '').toLowerCase().replace(/[^a-z0-9_-]+/g, '-')).join('-');
+        return XS.el('section', { class: `grid at-${key}` });
+    }
 
     // The catalogue arrives as a flat list of slots the model actually carries.
     // Grouping happens here so the tree and the grid agree without the server
@@ -147,57 +263,61 @@
     }
 
     function renderGrid(group, prices) {
-        const grid = XS.el('section', { class: 'grid' });
-
         if (!group) {
+            const grid = gridFor('none');
             grid.append(XS.empty('Nothing to fit',
                 'This model carries no parts in the categories this shop offers.'));
             return grid;
         }
 
-        if (group.id === 'respray') return renderRespray(grid, group, prices);
-        if (group.id === 'wheels') return renderWheels(grid, group, prices);
-        if (group.id === 'extras') return renderExtras(grid, group, prices);
+        if (group.id === 'respray') return renderRespray(gridFor('respray', XS.state.paintChannel, XS.state.paintFamily), group, prices);
+        if (group.id === 'wheels') return renderWheels(gridFor('wheels', wheelTypeOf(group)?.type), group, prices);
+        if (group.id === 'extras') return renderExtras(gridFor('extras'), group, prices);
 
-        for (const slot of group.slots) {
-            const stock = XS.stockFor(group.id, slot.id);
-            const dry = !!stock && stock.count < 1;
+        const slot = slotOf(group);
+        const grid = gridFor(group.id, slot?.id);
 
-            grid.append(XS.el('div', { class: 'gh' }, [
-                XS.el('h2', { text: `${group.label} · ${slot.label}` }),
-                XS.el('div', { class: 'cap' }, [
-                    `${slot.options.length} read from model`,
-                    stockNote(stock),
-                ]),
-                pricer(group),
-            ]));
-
-            const cards = XS.el('div', { class: 'cards' });
-
-            for (const option of slot.options) {
-                const fitted = slot.current === option.index;
-                const price = option.index === -1 ? null : priceFor(prices, group.id, option.index);
-
-                cards.append(XS.el('button', {
-                    class: `c ${XS.isPreviewing(slot.id, option.index) ? 'on' : ''} ${dry && option.index !== -1 ? 'dry' : ''}`,
-                    onmouseenter: () => XS.subject.look(slot.id),
-                    onclick: () => choose(slot, option, group.id, price),
-                }, [
-                    XS.el('div', { class: 'idx', text: option.index === -1 ? 'STOCK' : `IDX ${String(option.index).padStart(2, '0')}` }),
-                    XS.el('div', { class: 'nm', text: option.label }),
-                    XS.el('div', { class: 'fr' }, [
-                        XS.el('span', { class: 'pr', text: price === null ? '—' : XS.money(price) }),
-                        XS.el('span', {
-                            class: `st ${fitted ? 'f' : XS.isPreviewing(slot.id, option.index) ? 'p' : ''}`,
-                            text: fitted ? 'FITTED' : XS.isPreviewing(slot.id, option.index) ? 'PICKED' : 'STOCK',
-                        }),
-                    ]),
-                ]));
-            }
-
-            grid.append(cards);
+        if (!slot) {
+            grid.append(XS.empty('Nothing to fit', 'This model carries nothing in this category.'));
+            return grid;
         }
 
+        const stock = XS.stockFor(group.id, slot.id);
+        const dry = !!stock && stock.count < 1;
+
+        grid.append(XS.el('div', { class: 'gh' }, [
+            XS.el('h2', { text: `${group.label} · ${slot.label}` }),
+            XS.el('div', { class: 'cap' }, [
+                `${slot.options.length} read from model`,
+                stockNote(stock),
+            ]),
+            pricer(group),
+        ]));
+
+        const cards = XS.el('div', { class: 'cards' });
+
+        for (const option of slot.options) {
+            const fitted = slot.current === option.index;
+            const price = option.index === -1 ? null : priceFor(prices, group.id, option.index);
+
+            cards.append(XS.el('button', {
+                class: `c ${XS.isPreviewing(slot.id, option.index) ? 'on' : ''} ${dry && option.index !== -1 ? 'dry' : ''}`,
+                onmouseenter: () => XS.subject.look(slot.id),
+                onclick: () => choose(slot, option, group.id, price),
+            }, [
+                XS.el('div', { class: 'idx', text: option.index === -1 ? 'STOCK' : `IDX ${String(option.index).padStart(2, '0')}` }),
+                XS.el('div', { class: 'nm', text: option.label }),
+                XS.el('div', { class: 'fr' }, [
+                    XS.el('span', { class: 'pr', text: price === null ? '—' : XS.money(price) }),
+                    XS.el('span', {
+                        class: `st ${fitted ? 'f' : XS.isPreviewing(slot.id, option.index) ? 'p' : ''}`,
+                        text: fitted ? 'FITTED' : XS.isPreviewing(slot.id, option.index) ? 'PICKED' : 'STOCK',
+                    }),
+                ]),
+            ]));
+        }
+
+        grid.append(cards);
         return grid;
     }
 
@@ -337,38 +457,21 @@
         const wheels = group.wheels;
         const price = prices.wheels || 0;
 
-        if (!XS.state.wheelType && XS.state.wheelType !== 0) XS.state.wheelType = wheels.currentType;
+        // The types are the tabs above. The body is the designs of one.
+        const chosen = wheelTypeOf(group);
 
-        grid.append(XS.el('div', { class: 'gh' }, [
-            XS.el('h2', { text: 'Wheels · Type' }),
-            XS.el('div', { class: 'cap' }, [`${wheels.types.length} fitted to model`, stockNote(XS.stockFor('wheels'))]),
-            pricer(group),
-        ]));
-
-        const types = XS.el('div', { class: 'cards' });
-
-        for (const type of wheels.types) {
-            types.append(XS.el('button', {
-                class: `c ${XS.state.wheelType === type.type ? 'on' : ''}`,
-                onclick: () => { XS.state.wheelType = type.type; XS.rerender('tuning'); },
-            }, [
-                XS.el('div', { class: 'idx', text: `TYPE ${String(type.type).padStart(2, '0')}` }),
-                XS.el('div', { class: 'nm', text: type.label }),
-                XS.el('div', { class: 'fr' }, [
-                    XS.el('span', { class: 'pr', text: `${type.options.length} designs` }),
-                    XS.el('span', { class: `st ${wheels.currentType === type.type ? 'f' : ''}`, text: wheels.currentType === type.type ? 'FITTED' : '' }),
-                ]),
-            ]));
+        if (!chosen) {
+            grid.append(XS.empty('No wheels', 'This model takes no wheel types this shop offers.'));
+            return grid;
         }
-
-        grid.append(types);
-
-        const chosen = wheels.types.find((t) => t.type === XS.state.wheelType);
-        if (!chosen) return grid;
 
         grid.append(XS.el('div', { class: 'gh' }, [
             XS.el('h2', { text: `Wheels · ${chosen.label}` }),
-            XS.el('div', { class: 'cap', text: `${chosen.options.length} designs` }),
+            XS.el('div', { class: 'cap' }, [
+                `${chosen.options.length} designs${wheels.currentType === chosen.type ? ' · fitted type' : ''}`,
+                stockNote(XS.stockFor('wheels')),
+            ]),
+            pricer(group),
         ]));
 
         const cards = XS.el('div', { class: 'cards' });

@@ -149,6 +149,10 @@
     }
 
     XS.show = function (id) {
+        // Arriving at a screen, as opposed to redrawing the one already up. A
+        // screen that keeps a place — which tab, which slot — starts it over.
+        if (id !== XS.panel) XS.panels[id]?.enter?.();
+
         XS.panel = id;
         dress();
 
@@ -188,7 +192,16 @@
         // An app you have walked away from cannot stay on screen — the bay
         // apps go when you leave the bay, and standing on a dead panel is
         // worse than being put back on the home screen.
-        if (!XS.apps().some((tab) => tab.id === XS.panel)) {
+        //
+        // apps(true), because Tuning, Performance, Stance and Dyno live behind
+        // Vehicle rather than on the home screen. Asking apps() left them out,
+        // so every redraw while one was open — a click on a part pushes the
+        // basket back, and that redraws — decided it was unreachable and went
+        // home. One that really has gone goes back to the app it lives in.
+        if (!XS.apps(true).some((tab) => tab.id === XS.panel)) {
+            const owner = (TABS[XS.mode] || []).find((tab) => tab.id === XS.panel)?.group;
+
+            if (owner && XS.apps().some((tab) => tab.id === owner)) { XS.show(owner); return; }
             if (XS.apps().some((tab) => tab.id === 'apps')) { XS.show('apps'); return; }
         }
 

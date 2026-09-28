@@ -60,6 +60,30 @@ if IsDuplicityVersion() then
         return job.name, job.onduty and true or false, (job.grade and (job.grade.level or job.grade)) or 0
     end
 
+    --[[ On or off duty, decided here rather than by the framework's toggle.
+
+         qbx_core has no ToggleDuty export — its API is SetJobDuty, which also
+         fires QBCore:Server:SetDuty and QBCore:Client:SetDuty itself. qb-core's
+         Player:SetJobDuty fires neither, so they are sent here, the same way
+         qb-core's own QBCore:ToggleDuty handler does. Anything counting who is
+         on duty — dispatch, job counts — listens for those. ]]
+    function Framework.SetDuty(src, onDuty)
+        onDuty = onDuty and true or false
+
+        if Framework.name == 'qbox' then
+            exports.qbx_core:SetJobDuty(src, onDuty)
+            return true
+        end
+
+        local player = Framework.GetPlayer(src)
+        if not player then return false end
+
+        player.Functions.SetJobDuty(onDuty)
+        TriggerEvent('QBCore:Server:SetDuty', src, onDuty)
+        TriggerClientEvent('QBCore:Client:SetDuty', src, onDuty)
+        return true
+    end
+
     function Framework.IsBoss(src, jobName, bossGrade)
         local name, _, grade = Framework.GetJob(src)
         if name ~= jobName then return false end

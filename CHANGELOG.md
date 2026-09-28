@@ -1,5 +1,24 @@
 # Changelog
 
+## 1.0.2
+
+- **Going on duty threw `No such export ToggleDuty in resource qbx_core`.** qbx_core
+  has no ToggleDuty. Duty goes through its real API, `SetJobDuty`, now. The QBCore
+  side never worked either: it sent the server event `QBCore:ToggleDuty` to the
+  client, where nothing listens. Both sides tell you which way it went.
+- **Clicking a part in Tuning sent you back to the home screen.** Tuning,
+  Performance, Stance and Dyno live inside Vehicle, and the check that throws you
+  out of an app you have walked away from did not count them. Every click pushes
+  the list back from the game, which redraws, which went home. Opening straight
+  into the Dyno from the dyno bay did the same.
+- **One slot at a time.** Tuning stacked every slot in a category down one list —
+  the bumpers were somewhere under the spoilers. The slots are tabs now, with a
+  step either side, and a dot on any slot that has something on the list. Wheel
+  types work the same way. Coming into Tuning starts on Cosmetics.
+- **The work order box was crushed to a sliver.** It shrank with the parts list,
+  and a long list took it down to the top edge of the button. It keeps its size
+  now and the list scrolls instead.
+
 ## 1.0.1
 
 - **The tablet was on screen from resource start and could not be dismissed.**
