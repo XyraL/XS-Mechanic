@@ -42,6 +42,15 @@
   said. Each point is built on its own now and a failure is printed. With
   Config.Debug on, staff points hidden because you do not hold the shop job are
   listed too.
+- **An order closed itself the moment the last part went on.** A closed order
+  hides its Bill button, so a job fitted before it was billed could not be
+  billed at all. Closing is your call now: Finish it, or bill it once
+  everything is on and that closes it. Finish works on an order a customer
+  sent, too — it only took ones that had been claimed. An order that is
+  already closed but not billed gets its Bill button back.
+- **"Waiting on parts." on a finished job.** That was the order's note, written
+  in when the shop booked it and never changed. Orders are booked without one
+  now, and the old placeholder is cleared on start.
 
 ## 1.0.1
 

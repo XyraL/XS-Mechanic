@@ -146,6 +146,13 @@ function DB.Ensure()
         end
     end
 
+    -- Orders the shop booked used to be written with "Waiting on parts." as
+    -- their note — a status nothing ever updated, still there on a finished
+    -- job. It is not a note anyone wrote, so it goes.
+    pcall(function()
+        MySQL.update.await("UPDATE xs_mechanic_orders SET notes = '' WHERE notes = 'Waiting on parts.'")
+    end)
+
     DB.ready = true
     return true
 end

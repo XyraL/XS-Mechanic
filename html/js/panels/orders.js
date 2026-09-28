@@ -100,14 +100,20 @@
                     onclick: () => XS.post('claimOrder', { id: order.id }),
                 }) : null,
                 // Booked without billing, or added to since the last bill.
-                owed && order.status !== 'done' ? XS.el('button', {
+                // Whatever the status: a finished job nobody was charged for
+                // still has to be billable.
+                owed ? XS.el('button', {
                     class: 'mini', text: 'Bill it',
                     onclick: () => XS.bill('billOrder', { id: order.id }),
                 }) : null,
-                order.status === 'claimed' ? XS.el('button', {
-                    class: 'mini', text: 'Finish',
-                    onclick: () => XS.post('finishOrder', { id: order.id }),
-                }) : null,
+                // An order a customer sent is never claimed by fitting it, so
+                // one with everything on gets Finish whether or not it was.
+                order.status === 'claimed' || (order.status === 'open' && total > 0 && done === total)
+                    ? XS.el('button', {
+                        class: 'mini', text: 'Finish',
+                        onclick: () => XS.post('finishOrder', { id: order.id }),
+                    })
+                    : null,
             ]),
         ]);
     }

@@ -412,7 +412,7 @@ function Orders.Book(src, data)
             plate,
             tostring(data.model or ''):sub(1, 64),
             json.encode(priced),
-            tostring(data.notes or 'Waiting on parts.'):sub(1, 300),
+            tostring(data.notes or ''):sub(1, 300),
             total,
             me,
             Framework.GetName(src),
@@ -426,6 +426,21 @@ function Orders.Book(src, data)
     TriggerClientEvent('XS-Mechanic:client:refresh', -1)
 
     return { ok = true, id = id, count = #priced, total = total, added = priced, appended = existing ~= nil }
+end
+
+-- Done, and the customer told their car is ready.
+local function close(id, customer, shop)
+    MySQL.update.await("UPDATE xs_mechanic_orders SET status = 'done' WHERE id = ?", { id })
+
+    for _, playerId in ipairs(GetPlayers()) do
+        playerId = tonumber(playerId)
+
+        if Framework.GetCitizenId(playerId) == customer then
+            Framework.Notify(playerId, ('%s have finished with your vehicle.'):format(shop and shop.name or 'The mechanic'), 'success')
+            Phone.Notify(playerId, shop and shop.name or 'Mechanic', 'Your vehicle is ready.')
+            break
+        end
+    end
 end
 
 -- Every line on an order nobody has been charged for yet, as one invoice.
@@ -458,6 +473,14 @@ function Orders.BillRest(src, id, target)
     for _, line in ipairs(unbilled) do line.billed = result.id end
 
     save(order.id, order.requested)
+
+    -- Billing a job with everything on it is the end of the job. Billed with
+    -- work still to fit, it stays open for the rest.
+    local total, fitted = Orders.Counts(order)
+
+    if order.status ~= 'done' and total > 0 and fitted == total then
+        close(order.id, order.customer, shop)
+    end
 
     TriggerClientEvent('XS-Mechanic:client:refresh', -1)
 
@@ -651,22 +674,12 @@ function Orders.Fit(src, data)
 
     save(order.id, order.requested)
 
+    -- The last part going on does not close the order. It used to, and a done
+    -- order hides its Bill button — so a job fitted before it was billed
+    -- could not be billed at all. Closing it is the mechanic's call: Finish,
+    -- or bill it once everything is on.
     local total, done = Orders.Counts(order)
     local left = total - done
-
-    if left == 0 then
-        MySQL.update.await("UPDATE xs_mechanic_orders SET status = 'done' WHERE id = ?", { order.id })
-
-        for _, playerId in ipairs(GetPlayers()) do
-            playerId = tonumber(playerId)
-
-            if Framework.GetCitizenId(playerId) == order.customer then
-                Framework.Notify(playerId, ('%s have finished with your vehicle.'):format(shop.name), 'success')
-                Phone.Notify(playerId, shop.name, 'Your vehicle is ready.')
-                break
-            end
-        end
-    end
 
     Discord.Send('tuning', 'Work fitted',
         ('**%s** fitted %s to `%s` at %s'):format(
@@ -680,7 +693,7 @@ function Orders.Fit(src, data)
         left = left,
         done = left == 0,
         message = left == 0
-            and ('%s on. Order #%d done.'):format(found.label, order.id)
+            and ('%s on. Everything on order #%d is fitted — bill it or finish it.'):format(found.label, order.id)
             or ('%s on. %d left on the order.'):format(found.label, left),
     }
 end
@@ -824,26 +837,16 @@ function Orders.DropLine(src, id, lid)
     return { ok = true, message = ('%s taken off.'):format(dropped.label or 'Line') }
 end
 
--- Closing an order by hand. It closes itself when the last line goes on, so
--- this is for the one the shop cannot finish.
+-- Closing an order by hand. An order a customer sent is never claimed just by
+-- fitting it, so this takes open as well as claimed — it only took claimed,
+-- which left a fully fitted open order with nothing that could close it.
 function Orders.Finish(src, id)
     local row, err = claimable(src, id)
     if not row then return { ok = false, error = err } end
 
-    if row.status ~= 'claimed' then return { ok = false, error = 'That one is not in progress.' } end
+    if row.status == 'done' then return { ok = false, error = 'That one is finished.' } end
 
-    MySQL.update.await("UPDATE xs_mechanic_orders SET status = 'done' WHERE id = ?", { id })
-
-    for _, playerId in ipairs(GetPlayers()) do
-        playerId = tonumber(playerId)
-
-        if Framework.GetCitizenId(playerId) == row.customer then
-            local shop = Store.Get(row.shop_id)
-            Framework.Notify(playerId, ('%s have finished with your vehicle.'):format(shop and shop.name or 'The mechanic'), 'success')
-            Phone.Notify(playerId, shop and shop.name or 'Mechanic', 'Your vehicle is ready.')
-            break
-        end
-    end
+    close(id, row.customer, Store.Get(row.shop_id))
 
     TriggerClientEvent('XS-Mechanic:client:refresh', -1)
 
