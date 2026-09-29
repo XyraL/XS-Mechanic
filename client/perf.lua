@@ -46,7 +46,7 @@ local function collectFields(options)
 end
 
 function Perf.Apply(vehicle, profile)
-    if not vehicle or vehicle == 0 or not DoesEntityExist(vehicle) then return end
+    if not vehicle or vehicle == 0 or not DoesEntityExist(vehicle) or not IsEntityAVehicle(vehicle) then return end
 
     profile = profile or {}
 
@@ -136,13 +136,16 @@ end
      A bag that arrives before its entity does is normal and needs no waiting:
      the handler fires again when the vehicle streams in. The short retry below
      is only for the tick-level race where the bag lands a frame early. ]]
+-- A network id is reused once its car is gone, so the bag's name can resolve
+-- to a ped or a prop. Only a vehicle gets a profile applied — the wheel natives
+-- warn on anything else, once per wheel, on every player's console.
 AddStateBagChangeHandler('xsmech', nil, function(bagName, _, value)
     if type(value) ~= 'table' then return end
 
     local entity = GetEntityFromStateBagName(bagName)
 
     if entity ~= 0 then
-        Perf.Apply(entity, value)
+        if IsEntityAVehicle(entity) then Perf.Apply(entity, value) end
         return
     end
 
@@ -153,7 +156,7 @@ AddStateBagChangeHandler('xsmech', nil, function(bagName, _, value)
             local found = GetEntityFromStateBagName(bagName)
 
             if found ~= 0 then
-                Perf.Apply(found, value)
+                if IsEntityAVehicle(found) then Perf.Apply(found, value) end
                 return
             end
         end

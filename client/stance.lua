@@ -113,7 +113,7 @@ end
 -- and it has to be a real instruction rather than a decision to leave things
 -- alone.
 function Stance.Reset(vehicle)
-    if not vehicle or vehicle == 0 or not DoesEntityExist(vehicle) then return end
+    if not vehicle or vehicle == 0 or not DoesEntityExist(vehicle) or not IsEntityAVehicle(vehicle) then return end
 
     local was = factory(vehicle)
 
@@ -133,7 +133,7 @@ function Stance.Reset(vehicle)
 end
 
 function Stance.Apply(vehicle, stance)
-    if not vehicle or vehicle == 0 or not DoesEntityExist(vehicle) then return end
+    if not vehicle or vehicle == 0 or not DoesEntityExist(vehicle) or not IsEntityAVehicle(vehicle) then return end
 
     -- Read the factory setup BEFORE changing anything, even when what is being
     -- applied is nothing.
@@ -170,7 +170,7 @@ end
 -- nothing normalises to nil, and the caller means "what it had", which is not
 -- always the factory setup.
 function Stance.Restore(vehicle, stance)
-    if not vehicle or vehicle == 0 or not DoesEntityExist(vehicle) then return end
+    if not vehicle or vehicle == 0 or not DoesEntityExist(vehicle) or not IsEntityAVehicle(vehicle) then return end
 
     if type(stance) ~= 'table' then
         Stance.Reset(vehicle)
@@ -183,7 +183,7 @@ end
 -- The fitted stance, as a difference from factory, which is the same shape the
 -- profile stores and the editor edits.
 function Stance.Read(vehicle)
-    if not vehicle or vehicle == 0 or not DoesEntityExist(vehicle) then return Stance.Empty() end
+    if not vehicle or vehicle == 0 or not DoesEntityExist(vehicle) or not IsEntityAVehicle(vehicle) then return Stance.Empty() end
 
     local was = factory(vehicle)
     local now = readWheels(vehicle)
