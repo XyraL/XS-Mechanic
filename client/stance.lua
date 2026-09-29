@@ -109,11 +109,27 @@ function Stance.Normalise(stance)
     return out
 end
 
--- Puts the car back on its factory suspension. This is what "no stance" means,
--- and it has to be a real instruction rather than a decision to leave things
--- alone.
+-- The cars this client has actually put a stance on, by handle, with the model
+-- so a recycled handle is not mistaken for one of them.
+local changed = {}
+
+local function isChanged(vehicle)
+    return changed[vehicle] ~= nil and changed[vehicle] == GetEntityModel(vehicle)
+end
+
+-- SetVehicleSuspensionHeight writes through the vehicle's wheel array without
+-- checking it has one. The wheel natives check the count first; this one does
+-- not, so a boat, a helicopter or a car still streaming in crashed it.
+local function usable(vehicle)
+    return vehicle and vehicle ~= 0 and DoesEntityExist(vehicle) and IsEntityAVehicle(vehicle)
+        and (GetVehicleNumberOfWheels(vehicle) or 0) > 0
+end
+
+-- Puts the car back on its factory suspension — but only a car this resource
+-- changed. Every profiled car that streams in is applied with no stance, and
+-- "resetting" those wrote to cars nothing here had touched.
 function Stance.Reset(vehicle)
-    if not vehicle or vehicle == 0 or not DoesEntityExist(vehicle) or not IsEntityAVehicle(vehicle) then return end
+    if not usable(vehicle) or not isChanged(vehicle) then return end
 
     local was = factory(vehicle)
 
@@ -130,14 +146,12 @@ function Stance.Reset(vehicle)
             end)
         end
     end
+
+    changed[vehicle] = nil
 end
 
 function Stance.Apply(vehicle, stance)
-    if not vehicle or vehicle == 0 or not DoesEntityExist(vehicle) or not IsEntityAVehicle(vehicle) then return end
-
-    -- Read the factory setup BEFORE changing anything, even when what is being
-    -- applied is nothing.
-    local was = factory(vehicle)
+    if not usable(vehicle) then return end
 
     stance = Stance.Normalise(stance)
 
@@ -145,6 +159,12 @@ function Stance.Apply(vehicle, stance)
         Stance.Reset(vehicle)
         return
     end
+
+    -- The factory setup is read before the first change, so a stance of
+    -- nothing can still put the car back exactly.
+    local was = factory(vehicle)
+
+    changed[vehicle] = GetEntityModel(vehicle)
 
     SetVehicleSuspensionHeight(vehicle, was.raise + stance.height)
 
@@ -204,6 +224,7 @@ end
 
 function Stance.Forget(vehicle)
     stock[vehicle] = nil
+    changed[vehicle] = nil
 end
 
 -- Handles are recycled. Anything that no longer exists is dropped rather than
@@ -214,6 +235,10 @@ CreateThread(function()
 
         for entity in pairs(stock) do
             if not DoesEntityExist(entity) then stock[entity] = nil end
+        end
+
+        for entity in pairs(changed) do
+            if not DoesEntityExist(entity) then changed[entity] = nil end
         end
     end
 end)

@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.0.4
+
+- Fixed a random SetVehicleSuspensionHeight script error popping up while driving
+
 ## 1.0.3
 
 - Fixed "makeWheelFunction: Can not read from an entity that is not a vehicle" spamming the F8 console
