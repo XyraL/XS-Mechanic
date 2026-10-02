@@ -128,13 +128,13 @@
             ]),
         ]));
 
-        if (XS.state.ledgerOnly) {
-            grid.append(XS.el('div', { style: 'margin:16px 0' }, [
-                XS.el('button', { class: 'mini hot', text: 'Withdraw', onclick: () => move('withdraw') }),
-                ' ',
-                XS.el('button', { class: 'mini', text: 'Deposit', onclick: () => move('deposit') }),
-            ]));
-        }
+        // Into and out of whatever holds the money — the shop's own ledger or
+        // the banking script's account. Only the boss sees this tab.
+        grid.append(XS.el('div', { style: 'margin:16px 0' }, [
+            XS.el('button', { class: 'mini hot', text: 'Withdraw', onclick: () => move('withdraw') }),
+            ' ',
+            XS.el('button', { class: 'mini', text: 'Deposit', onclick: () => move('deposit') }),
+        ]));
 
         grid.append(XS.el('div', { class: 'gh', style: 'margin-top:22px' }, [
             XS.el('h2', { text: 'Recent movements' }),

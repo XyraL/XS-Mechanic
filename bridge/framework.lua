@@ -84,6 +84,33 @@ if IsDuplicityVersion() then
         return true
     end
 
+    -- A job's highest grade, and the lowest grade the framework flags as boss.
+    -- Qbox keys grades by number and QBCore by string, so both are read.
+    function Framework.JobGrades(jobName)
+        local def
+
+        pcall(function()
+            if Framework.name == 'qbox' then
+                def = exports.qbx_core:GetJob(jobName)
+            elseif Framework.core and Framework.core.Shared then
+                def = Framework.core.Shared.Jobs[jobName]
+            end
+        end)
+
+        local top, boss
+
+        for key, grade in pairs(type(def) == 'table' and type(def.grades) == 'table' and def.grades or {}) do
+            local level = tonumber(key)
+
+            if level then
+                if not top or level > top then top = level end
+                if type(grade) == 'table' and grade.isboss and (not boss or level < boss) then boss = level end
+            end
+        end
+
+        return top, boss
+    end
+
     function Framework.IsBoss(src, jobName, bossGrade)
         local name, _, grade = Framework.GetJob(src)
         if name ~= jobName then return false end
@@ -92,7 +119,14 @@ if IsDuplicityVersion() then
         local job = player and player.PlayerData and player.PlayerData.job
         if job and job.isboss then return true end
 
-        return grade >= (bossGrade or 99)
+        -- A boss grade above the job's last grade is one nobody can hold. Plenty
+        -- of custom jobs stop at 2, and on the default boss grade of 3 those
+        -- shops had no boss at all — no Team app, no shop money.
+        local need = tonumber(bossGrade) or 99
+        local top = Framework.JobGrades(jobName)
+        if top and need > top then need = top end
+
+        return grade >= need
     end
 
     function Framework.GetName(src)
@@ -333,9 +367,13 @@ if IsDuplicityVersion() then
             end
 
             for name, job in pairs(jobs or {}) do
+                local top, boss = Framework.JobGrades(name)
+
                 out[#out + 1] = {
                     name = name,
                     label = type(job) == 'table' and (job.label or job.name) or name,
+                    top = top,
+                    boss = boss,
                 }
             end
         end)

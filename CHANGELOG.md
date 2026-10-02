@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.0.5
+
+- Withdraw and Deposit on the laptop now work with banking scripts too
+- Fixed shop owners on custom jobs not getting the Team app and shop money
+- The shop builder now shows how high the picked job's grades go
+
 ## 1.0.4
 
 - Fixed a random SetVehicleSuspensionHeight script error popping up while driving

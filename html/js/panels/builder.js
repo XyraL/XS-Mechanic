@@ -69,7 +69,7 @@
                         type: 'number', value: String(draft.bossGrade ?? 3), min: '0',
                         onchange: (ev) => set('bossGrade', Number(ev.target.value) || 0),
                     }),
-                    XS.el('div', { class: 'hint', text: 'This grade and above get the Team app and the shop money.' }),
+                    XS.el('div', { class: 'hint', text: bossHint(draft) }),
                 ]),
                 XS.el('div', { class: 'field' }, [
                     XS.el('label', { text: 'Commission %' }),
@@ -198,6 +198,21 @@
         ]));
 
         return wrap;
+    }
+
+    // What the boss grade means for the job picked. Custom jobs often stop short
+    // of the default of 3, so the hint says how high this one goes.
+    function bossHint(draft) {
+        const base = 'This grade and above get the Team app and the shop money.';
+        const job = (draft.jobs || []).find((j) => j.name === draft.job);
+
+        if (!job || typeof job.top !== 'number') return base;
+
+        const want = draft.bossGrade ?? 3;
+
+        return want > job.top
+            ? `${base} ${job.label} only goes up to grade ${job.top}, so grade ${job.top} counts as boss.`
+            : `${base} ${job.label} goes up to grade ${job.top}.`;
     }
 
     // A dropdown of the framework's real jobs, so nobody has to remember how a

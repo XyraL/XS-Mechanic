@@ -141,15 +141,16 @@ function Team.Money(src, shopId, kind, amount)
     if not shop then return { ok = false, error = 'That shop is gone.' } end
     if not Team.IsBoss(src, shop) then return { ok = false, error = 'Only the boss can do that.' } end
 
-    if not Banking.LedgerOnly() then
-        return { ok = false, error = 'Use your banking resource for that.' }
-    end
+    if kind ~= 'withdraw' and kind ~= 'deposit' then return { ok = false, error = 'Withdraw or deposit.' } end
 
     amount = math.floor(tonumber(amount) or 0)
     if amount <= 0 then return { ok = false, error = 'Enter an amount.' } end
 
     local name = Framework.GetName(src)
 
+    -- Through whatever holds the money: the shop's own ledger, or the banking
+    -- script's society account. This used to be ledger-only, so on a server
+    -- with a banking script the boss had no way to move money from here.
     if kind == 'withdraw' then
         if not Banking.Remove(shop, amount, 'Withdrawn by the boss', name, 'withdraw') then
             return { ok = false, error = 'The shop does not have that.' }
@@ -163,8 +164,16 @@ function Team.Money(src, shopId, kind, amount)
         return { ok = false, error = 'You do not have that.' }
     end
 
-    Framework.RemoveMoney(src, 'bank', amount, 'Mechanic shop deposit')
-    Banking.Add(shop, amount, 'Deposited by the boss', name, 'deposit')
+    if not Framework.RemoveMoney(src, 'bank', amount, 'Mechanic shop deposit') then
+        return { ok = false, error = 'You do not have that.' }
+    end
+
+    -- Taken from the boss first so it is never in two places at once. If the
+    -- account will not take it, it goes straight back.
+    if not Banking.Add(shop, amount, 'Deposited by the boss', name, 'deposit') then
+        Framework.AddMoney(src, 'bank', amount, 'Mechanic shop deposit returned')
+        return { ok = false, error = 'The shop account would not take that.' }
+    end
 
     return { ok = true, message = ('Deposited %s.'):format(Util.Money(amount)) }
 end
