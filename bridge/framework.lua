@@ -85,8 +85,9 @@ if IsDuplicityVersion() then
     end
 
     -- A job's highest grade, and the lowest grade the framework flags as boss.
-    -- Qbox keys grades by number and QBCore by string, so both are read.
-    function Framework.JobGrades(jobName)
+    -- Qbox keys grades by number and QBCore by string, so both are read. Not
+    -- JobGrades: that name is the grade LIST the Team app shows, further down.
+    function Framework.JobLimits(jobName)
         local def
 
         pcall(function()
@@ -123,7 +124,7 @@ if IsDuplicityVersion() then
         -- of custom jobs stop at 2, and on the default boss grade of 3 those
         -- shops had no boss at all — no Team app, no shop money.
         local need = tonumber(bossGrade) or 99
-        local top = Framework.JobGrades(jobName)
+        local top = Framework.JobLimits(jobName)
         if top and need > top then need = top end
 
         return grade >= need
@@ -367,7 +368,7 @@ if IsDuplicityVersion() then
             end
 
             for name, job in pairs(jobs or {}) do
-                local top, boss = Framework.JobGrades(name)
+                local top, boss = Framework.JobLimits(name)
 
                 out[#out + 1] = {
                     name = name,

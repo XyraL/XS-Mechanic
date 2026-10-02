@@ -5,7 +5,7 @@ import { fileURLToPath } from 'node:url';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 
-const CHECKS = ['check-manifest.mjs', 'check-events.mjs', 'check-fallbacks.mjs', 'check-nui.mjs', 'check-items.mjs', 'check-parts.mjs', 'check-craftable.mjs', 'check-returns.mjs', 'check-netids.mjs', 'check-runtime.mjs', 'check-natives.mjs', 'check-config.mjs', 'check-lua.mjs', 'check-js.mjs', 'check-nuiapi.mjs', 'check-html.mjs'];
+const CHECKS = ['check-manifest.mjs', 'check-events.mjs', 'check-fallbacks.mjs', 'check-nui.mjs', 'check-items.mjs', 'check-parts.mjs', 'check-craftable.mjs', 'check-returns.mjs', 'check-netids.mjs', 'check-runtime.mjs', 'check-natives.mjs', 'check-config.mjs', 'check-lua.mjs', 'check-js.mjs', 'check-nuiapi.mjs', 'check-html.mjs', 'check-dupes.mjs'];
 
 let failed = 0;
 

@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.0.6
+
+- Fixed mechanics who are not the boss being unable to open the tablet in 1.0.5
+
 ## 1.0.5
 
 - Withdraw and Deposit on the laptop now work with banking scripts too
