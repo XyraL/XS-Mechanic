@@ -351,6 +351,14 @@ Config.Repair = {
     wash = { enabled = true, seconds = 6, item = 'cleaning_kit', price = 150 },
 }
 
+-- Service stations: free drive-in bays for a department's own cars, built
+-- in the shop builder. Which jobs use one and what it does are set there.
+Config.Stations = {
+    -- Seconds. How long a repair and a wash take, sat in the car.
+    repairSeconds = 6,
+    washSeconds = 4,
+}
+
 -- ── Stock ────────────────────────────────────────────────────────────────────
 -- A shop can only fit what it has on the shelf. The shelf is the shop's own
 -- storage point, so a mechanic stocks it the same way they stock anything else:

@@ -3,7 +3,11 @@
         XS.clear(host);
 
         const car = XS.state.vehicle;
-        const sheet = car?.tuning || [];
+        const station = XS.mode === 'station';
+
+        // A station fits the upgrades the car itself takes. The packages are
+        // the shop's special order and are charged for, so a station has none.
+        const sheet = station ? [] : (car?.tuning || []);
 
         const chosen = XS.state.tuneCategory
             && sheet.some((c) => c.id === XS.state.tuneCategory)
@@ -11,6 +15,10 @@
             : (sheet[0] && sheet[0].id);
 
         const slots = (XS.state.catalogue?.slots || []).filter((s) => s.category === 'performance');
+
+        if (station && slots.length && !slots.some((s) => s.id === XS.state.tuneCategory)) {
+            XS.state.tuneCategory = slots[0].id;
+        }
 
         const tree = XS.el('aside', { class: 'tree' });
 
@@ -191,7 +199,7 @@
                 XS.el('div', { class: 'idx', text: option.index === -1 ? 'STOCK' : `LEVEL ${option.index + 1}` }),
                 XS.el('div', { class: 'nm', text: option.label }),
                 XS.el('div', { class: 'fr' }, [
-                    XS.el('span', { class: 'pr', text: price === null ? '—' : XS.money(price) }),
+                    XS.mode === 'station' ? null : XS.el('span', { class: 'pr', text: price === null ? '—' : XS.money(price) }),
                     XS.el('span', {
                         class: `st ${fitted ? 'f' : picked ? 'p' : ''}`,
                         text: fitted ? 'FITTED' : picked ? 'PICKED' : 'STOCK',
@@ -204,6 +212,7 @@
     }
 
     function queue() {
+        if (XS.mode === 'station') return XS.renderStation();
         if (!XS.renderQueue || !(XS.state.basket || []).length) return null;
         return XS.renderQueue();
     }

@@ -55,7 +55,7 @@
             }),
             XS.el('span', { class: 'sw' }),
             XS.el('span', { class: 'lb', text: 'Enable stancing' }),
-            XS.el('span', { class: 'pr', text: XS.money((XS.state.prices || {}).stance || 0) }),
+            XS.mode === 'station' ? null : XS.el('span', { class: 'pr', text: XS.money((XS.state.prices || {}).stance || 0) }),
         ]));
 
         grid.append(XS.el('label', { class: 'toggle' }, [

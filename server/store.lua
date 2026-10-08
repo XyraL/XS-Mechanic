@@ -25,6 +25,8 @@ local function decodeShop(row)
         bounds = data.bounds,
         area = data.area,
         tuningPrices = data.tuningPrices or {},
+        stationJobs = data.stationJobs or {},
+        offers = data.offers or {},
     }
 end
 
@@ -64,6 +66,8 @@ local function encodeShop(shop)
         bounds = shop.bounds,
         area = shop.area,
         tuningPrices = shop.tuningPrices or {},
+        stationJobs = shop.stationJobs or {},
+        offers = shop.offers or {},
     })
 end
 
@@ -104,6 +108,8 @@ function Store.Public()
                 bounds = shop.bounds,
                 area = shop.area,
                 categories = shop.categories,
+                stationJobs = shop.stationJobs,
+                offers = shop.offers,
             })
         end
     end

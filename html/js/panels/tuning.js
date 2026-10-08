@@ -15,6 +15,12 @@
         ['wheel',     'Wheels',    'wheelColour'],
     ];
 
+    // A service station charges nothing, so it shows no prices at all.
+    const free = () => XS.mode === 'station';
+
+    // Which station toggle each category falls under.
+    const OFFER = { respray: 'paint', wheels: 'wheels' };
+
     XS.panels.tuning = function (host) {
         XS.clear(host);
 
@@ -233,6 +239,11 @@
             out.push({ id, label, section, slots, count: slots.length });
         }
 
+        if (free()) {
+            const offers = XS.state.offers || {};
+            return out.filter((group) => offers[OFFER[group.id] || 'parts']);
+        }
+
         return out;
     }
 
@@ -308,7 +319,7 @@
                 XS.el('div', { class: 'idx', text: option.index === -1 ? 'STOCK' : `IDX ${String(option.index).padStart(2, '0')}` }),
                 XS.el('div', { class: 'nm', text: option.label }),
                 XS.el('div', { class: 'fr' }, [
-                    XS.el('span', { class: 'pr', text: price === null ? '—' : XS.money(price) }),
+                    free() ? null : XS.el('span', { class: 'pr', text: price === null ? '—' : XS.money(price) }),
                     XS.el('span', {
                         class: `st ${fitted ? 'f' : XS.isPreviewing(slot.id, option.index) ? 'p' : ''}`,
                         text: fitted ? 'FITTED' : XS.isPreviewing(slot.id, option.index) ? 'PICKED' : 'STOCK',
@@ -360,7 +371,7 @@
 
         grid.append(XS.el('div', { class: 'gh' }, [
             XS.el('h2', { text: 'Respray' }),
-            XS.el('div', { class: 'cap' }, [XS.money(price), stockNote(XS.stockFor('respray'))]),
+            XS.el('div', { class: 'cap' }, [free() ? null : XS.money(price), stockNote(XS.stockFor('respray'))]),
             pricer(group),
         ]));
 
@@ -490,7 +501,7 @@
                 XS.el('div', { class: 'idx', text: `IDX ${String(option.index).padStart(2, '0')}` }),
                 XS.el('div', { class: 'nm', text: option.label }),
                 XS.el('div', { class: 'fr' }, [
-                    XS.el('span', { class: 'pr', text: XS.money(price) }),
+                    free() ? null : XS.el('span', { class: 'pr', text: XS.money(price) }),
                     XS.el('span', { class: `st ${fitted ? 'f' : ''}`, text: fitted ? 'FITTED' : 'STOCK' }),
                 ]),
             ]));
@@ -519,7 +530,7 @@
                 XS.el('div', { class: 'idx', text: `EXTRA ${String(extra.id).padStart(2, '0')}` }),
                 XS.el('div', { class: 'nm', text: `Extra ${extra.id}` }),
                 XS.el('div', { class: 'fr' }, [
-                    XS.el('span', { class: 'pr', text: XS.money(price) }),
+                    free() ? null : XS.el('span', { class: 'pr', text: XS.money(price) }),
                     XS.el('span', { class: `st ${extra.on ? 'f' : ''}`, text: extra.on ? 'ON' : 'OFF' }),
                 ]),
             ]));
@@ -662,6 +673,7 @@
     }
 
     function renderDraft() {
+        if (free()) return XS.renderStation();
         if (XS.mode === 'bay') return renderBasket();
         if ((XS.state.basket || []).length) return XS.renderQueue();
 
@@ -721,6 +733,63 @@
 
         return side;
     }
+
+    // A service station: what is on the car but not kept yet, and Apply. It is
+    // free and it is not an order — closing without applying puts the car back.
+    XS.renderStation = function () {
+        const side = XS.el('aside', { class: 'side' });
+        const picks = XS.state.basket || [];
+
+        side.append(XS.el('div', { class: 'sh' }, [
+            XS.el('span', { class: 't', text: 'Changes' }),
+            picks.length
+                ? XS.el('button', {
+                    class: 'sub', style: 'padding:4px 9px;font-size:11px',
+                    text: 'Undo all',
+                    onclick: () => XS.post('clearPicks'),
+                })
+                : null,
+        ]));
+
+        const lines = XS.el('div', { class: 'lines' });
+
+        for (const [i, item] of picks.entries()) {
+            lines.append(XS.el('div', { class: 'ln' }, [
+                XS.el('div', {}, [
+                    XS.el('div', { class: 'd', text: item.label }),
+                    XS.el('div', { class: 'm', text: item.categoryLabel || item.category }),
+                ]),
+                XS.el('button', {
+                    class: 'del', text: '×', title: 'Take it back off',
+                    onclick: () => XS.post('dropPick', { index: i }),
+                }),
+            ]));
+        }
+
+        if (!picks.length) {
+            lines.append(XS.el('div', {
+                style: 'padding:14px 4px;text-align:center;color:var(--faint);font-size:12px;line-height:1.6',
+                text: 'Pick anything and it goes straight on the car.',
+            }));
+        }
+
+        side.append(lines);
+
+        side.append(XS.el('div', { class: 'tot' }, [
+            XS.el('button', {
+                class: 'go',
+                text: picks.length ? `Apply ${picks.length} change${picks.length === 1 ? '' : 's'}` : 'Apply',
+                disabled: !picks.length,
+                onclick: () => XS.post('stationApply'),
+            }),
+            XS.el('div', {
+                style: 'font-size:11px;color:var(--faint);line-height:1.5;margin-top:10px;text-align:center',
+                text: 'Free. Close without applying and it goes back how it came in.',
+            }),
+        ]));
+
+        return side;
+    };
 
     // What the mechanic has picked but not fitted yet. Clicking parts builds a
     // list the same way a customer's does — a front bumper and a rear bumper

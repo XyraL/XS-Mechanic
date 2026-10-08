@@ -17,6 +17,21 @@ local busy = false
 -- stood at it, otherwise whatever you are stood at — using a part IS the act
 -- of connecting to a car, and asking somebody to open the tablet first to tell
 -- it something it can see for itself is a step for nothing.
+-- How far you are from the car's body, not from its middle. Measured from the
+-- centre, standing at a bumper or a wheel on anything longer than a hatchback
+-- read as not being at the car at all.
+local REACH = 2.0
+
+local function fromBody(vehicle, coords)
+    local min, max = GetModelDimensions(GetEntityModel(vehicle))
+    local at = GetOffsetFromEntityGivenWorldCoords(vehicle, coords.x, coords.y, coords.z)
+
+    local dx = math.max(min.x - at.x, 0.0, at.x - max.x)
+    local dy = math.max(min.y - at.y, 0.0, at.y - max.y)
+
+    return math.sqrt(dx * dx + dy * dy)
+end
+
 local function carInFront()
     -- Sat in it is not stood at it. Nothing about fitting a part works from
     -- the driver's seat, and the animation plays into the roof.
@@ -26,13 +41,24 @@ local function carInFront()
 
     local coords = GetEntityCoords(cache.ped)
 
-    if XSM.vehicle and DoesEntityExist(XSM.vehicle)
-        and #(coords - GetEntityCoords(XSM.vehicle)) <= 5.0 then
+    -- The car the tablet is plugged into wins whenever you are at it.
+    if XSM.vehicle and DoesEntityExist(XSM.vehicle) and fromBody(XSM.vehicle, coords) <= REACH then
         return XSM.vehicle
     end
 
-    local vehicle = lib.getClosestVehicle(coords, 3.0, true)
-    if not vehicle or vehicle == 0 then return nil end
+    local vehicle, nearest
+
+    for _, entity in ipairs(GetGamePool('CVehicle')) do
+        if #(coords - GetEntityCoords(entity)) < 12.0 then
+            local gap = fromBody(entity, coords)
+
+            if gap <= REACH and (not nearest or gap < nearest) then
+                vehicle, nearest = entity, gap
+            end
+        end
+    end
+
+    if not vehicle then return nil end
 
     if XSM.vehicle ~= vehicle then
         XSM.StopPreview(false)

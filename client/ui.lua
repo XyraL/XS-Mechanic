@@ -63,17 +63,33 @@ RegisterNUICallback('settings', function(data, cb)
 end)
 
 RegisterNUICallback('repair', function(_, cb)
+    cb({ ok = true })
+
+    if XSM.mode == 'station' then
+        Stations.Repair()
+        return
+    end
+
     XSM.Close()
 
     if XSM.shop then Repair.AtBay(XSM.shop, nil) end
-
-    cb({ ok = true })
 end)
 
 RegisterNUICallback('openWash', function(_, cb)
+    cb({ ok = true })
+
+    if XSM.mode == 'station' then
+        Stations.Wash()
+        return
+    end
+
     XSM.Close()
     Repair.Wash()
+end)
+
+RegisterNUICallback('stationApply', function(_, cb)
     cb({ ok = true })
+    Stations.Apply()
 end)
 
 local function serverCall(name)

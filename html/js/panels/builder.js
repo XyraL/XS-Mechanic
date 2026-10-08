@@ -50,6 +50,7 @@
                 XS.el('select', { onchange: (ev) => set('kind', ev.target.value) }, [
                     XS.el('option', { value: 'owned', selected: draft.kind === 'owned', text: 'Owned — runs off a job' }),
                     XS.el('option', { value: 'self', selected: draft.kind === 'self', text: 'Self service — anyone' }),
+                    XS.el('option', { value: 'station', selected: draft.kind === 'station', text: 'Service station — free, for chosen jobs' }),
                 ]),
             ]),
             draft.kind === 'owned' ? XS.el('div', { class: 'field' }, [
@@ -92,9 +93,11 @@
 
         }
 
+        if (draft.kind === 'station') form.append(stationFields(draft, set));
+
         grid.append(form);
 
-        grid.append(boundary(draft));
+        if (draft.kind !== 'station') grid.append(boundary(draft));
 
         grid.append(XS.el('div', { class: 'gh' }, [
             XS.el('h2', { text: 'Points' }),
@@ -103,7 +106,7 @@
 
         const add = XS.el('div', { class: 'cards', style: 'margin-bottom:16px' });
 
-        for (const kind of POINT_KINDS) {
+        for (const kind of draft.kind === 'station' ? [STATION_POINT] : POINT_KINDS) {
             add.append(XS.el('button', {
                 class: 'c',
                 onclick: () => XS.post('placePoint', { kind: kind.kind }),
@@ -119,7 +122,7 @@
         const list = XS.el('div', { class: 'pointlist' });
 
         for (const point of draft.points || []) {
-            const meta = POINT_KINDS.find((k) => k.kind === point.kind);
+            const meta = [...POINT_KINDS, STATION_POINT].find((k) => k.kind === point.kind);
 
             list.append(XS.el('div', { class: 'point' }, [
                 XS.el('span', { class: 'kind' }),
@@ -162,6 +165,72 @@
     // Without a boundary the tablet connects to a car anywhere on the map. The
     // shape drawn here is what "at the shop" means, and it is checked on the
     // server as well as in the panel.
+    // A service station: who can drive in, and what it does for them.
+    const STATION_POINT = { kind: 'station', label: 'Service bay', note: 'Drive in and set the car up' };
+
+    const OFFERS = [
+        ['repair', 'Repair'], ['wash', 'Wash'], ['paint', 'Paint'], ['parts', 'Body parts'],
+        ['wheels', 'Wheels'], ['performance', 'Performance'], ['stance', 'Stance'],
+    ];
+
+    function stationFields(draft, set) {
+        const wrap = XS.el('div');
+        const jobs = draft.jobs || [];
+        const chosen = draft.stationJobs || [];
+
+        const toggle = (name) => set('stationJobs',
+            chosen.includes(name) ? chosen.filter((j) => j !== name) : [...chosen, name]);
+
+        const picker = XS.el('div', { class: 'chips' });
+
+        for (const job of jobs) {
+            picker.append(XS.el('button', {
+                class: `tn ${chosen.includes(job.name) ? 'on' : ''}`,
+                onclick: () => toggle(job.name),
+            }, [XS.el('span', { class: 'n', text: job.label })]));
+        }
+
+        // Saved against a job the framework no longer has: still shown, still removable.
+        for (const name of chosen) {
+            if (!jobs.some((j) => j.name === name)) {
+                picker.append(XS.el('button', { class: 'tn on', onclick: () => toggle(name) }, [
+                    XS.el('span', { class: 'n', text: name }),
+                ]));
+            }
+        }
+
+        wrap.append(XS.el('div', { class: 'field' }, [
+            XS.el('label', { text: 'Jobs that can use it' }),
+            jobs.length
+                ? picker
+                : XS.el('input', {
+                    type: 'text', value: chosen.join(', '), placeholder: 'police, ambulance',
+                    onchange: (ev) => set('stationJobs', ev.target.value.split(',').map((j) => j.trim()).filter(Boolean)),
+                }),
+            XS.el('div', { class: 'hint', text: 'Anyone with one of these jobs can drive onto a service bay and use it.' }),
+        ]));
+
+        const offers = draft.offers || {};
+        const does = XS.el('div', { class: 'chips' });
+
+        for (const [key, label] of OFFERS) {
+            const on = offers[key] !== false;
+
+            does.append(XS.el('button', {
+                class: `tn ${on ? 'on' : ''}`,
+                onclick: () => set('offers', Object.assign({}, offers, { [key]: !on })),
+            }, [XS.el('span', { class: 'n', text: label })]));
+        }
+
+        wrap.append(XS.el('div', { class: 'field' }, [
+            XS.el('label', { text: 'What it does' }),
+            does,
+            XS.el('div', { class: 'hint', text: 'Free. Nothing is charged and nothing goes on a work order.' }),
+        ]));
+
+        return wrap;
+    }
+
     function boundary(draft) {
         const corners = draft.area?.points || [];
         const wrap = XS.el('div', { style: 'margin-bottom:22px' });

@@ -102,6 +102,19 @@ local function stateFor(src, mode, shopId)
 
     if not shop then return state end
 
+    -- A service station has no books, staff or prices — just what it offers.
+    if mode == 'station' then
+        state.shop = { id = shop.id, name = shop.name, kind = shop.kind }
+        state.offers = shop.offers or {}
+        state.categories = shop.categories
+        state.prices = {}
+
+        -- Sent as false, not left out: the panel merges state between opens, and a
+        -- mechanic's shelf from an earlier session would show up here as stock.
+        state.stock = false
+        return state
+    end
+
     state.shop = { id = shop.id, name = shop.name, kind = shop.kind, job = shop.job }
     state.commission = shop.commission
     state.categories = shop.categories
@@ -162,6 +175,12 @@ lib.callback.register('XS-Mechanic:bootstrap', function(src, data)
         return { ok = true, state = Util.Plain(stateFor(src, mode)) }
     end
 
+    if mode == 'station' then
+        local shop = Store.Get(data and data.shop)
+        if not Stations.Allowed(src, shop) then return { ok = false, error = 'This station is not for your job.' } end
+        return { ok = true, state = Util.Plain(stateFor(src, mode, shop.id)) }
+    end
+
     if mode == 'tablet' or mode == 'desk' then
         if Config.Tablet.item ~= '' and not Inventory.Has(src, Config.Tablet.item, 1) then
             return { ok = false, error = 'You need a mechanic tablet.' }
@@ -218,10 +237,14 @@ lib.callback.register('XS-Mechanic:saveShop', function(src, data)
     if draft.name == '' then return { ok = false, error = 'Give it a name.' } end
 
     draft.job = Util.Trim(tostring(draft.job or '')):sub(1, 64)
-    draft.kind = draft.kind == 'self' and 'self' or 'owned'
+    draft.kind = (draft.kind == 'self' or draft.kind == 'station') and draft.kind or 'owned'
 
     if draft.kind == 'owned' and draft.job == '' then
         return { ok = false, error = 'An owned shop needs a job name.' }
+    end
+
+    if draft.kind == 'station' and not Stations.Sanitise(draft) then
+        return { ok = false, error = 'Pick at least one job that can use this station.' }
     end
 
     local id = draft.id
@@ -238,7 +261,8 @@ lib.callback.register('XS-Mechanic:saveShop', function(src, data)
     Discord.Send('admin', draft.id and 'Shop edited' or 'Shop created',
         ('**%s** %s **%s** (job `%s`)'):format(
             Framework.GetName(src), draft.id and 'edited' or 'created', draft.name,
-            draft.job ~= '' and draft.job or 'self service'),
+            draft.kind == 'station' and ('station for ' .. table.concat(draft.stationJobs, ', '))
+                or (draft.job ~= '' and draft.job or 'self service')),
         Discord.Colour.info)
 
     return { ok = true, id = id }
@@ -653,7 +677,10 @@ lib.callback.register('XS-Mechanic:saveStance', function(src, data)
 
     local shop = Store.Get(data.shop)
 
-    if shop and not onBay(src, shop, data.netId) then
+    if shop and shop.kind == 'station' then
+        local ok, err = Stations.Check(src, shop, 'stance', data.netId)
+        if not ok then return { ok = false, error = err } end
+    elseif shop and not onBay(src, shop, data.netId) then
         return { ok = false, error = 'Put the car on a tuning bay and stand at it.' }
     end
 

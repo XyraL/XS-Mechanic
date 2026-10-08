@@ -13,6 +13,7 @@ local KIND_COLOUR = {
     bench   = { 255, 213, 79 },
     duty    = { 47, 224, 189 },
     dyno    = { 109, 224, 255 },
+    station = { 96, 165, 250 },
 }
 
 Zones.Colour = KIND_COLOUR
@@ -264,7 +265,10 @@ function Zones.Rebuild()
     local hidden = {}
 
     for _, shop in ipairs(XSM.shops or {}) do
-        if shop.blip and shop.blip.enabled and shop.bounds then
+        -- A service station is on the map for the jobs that use it and nobody else.
+        local listed = shop.kind ~= 'station' or Stations.CanUse(shop)
+
+        if listed and shop.blip and shop.blip.enabled and shop.bounds then
             local blip = AddBlipForCoord(shop.bounds.x, shop.bounds.y, shop.bounds.z)
             SetBlipSprite(blip, shop.blip.sprite or 446)
             SetBlipColour(blip, shop.blip.colour or 47)

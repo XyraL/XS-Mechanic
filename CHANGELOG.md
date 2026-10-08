@@ -1,7 +1,9 @@
 # Changelog
 
-## 1.0.6
+## 1.1.0
 
+- Service stations: free drive-in bays for police, EMS or any job you pick. Repair, wash, paint, parts, wheels, performance and stance, each one switched on or off in the builder
+- You can stand anywhere around the car to install a part now
 - Fixed mechanics who are not the boss being unable to open the tablet in 1.0.5
 
 ## 1.0.5

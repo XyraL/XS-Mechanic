@@ -5,10 +5,16 @@
         const car = XS.state.vehicle;
         const staff = XS.mode !== 'bay';
 
+        // A service station: free, and only what it was set up to do.
+        const station = XS.mode === 'station';
+        const offers = XS.state.offers || {};
+        const canRepair = !station || offers.repair;
+        const canWash = !station || offers.wash;
+
         host.append(XS.el('aside', { class: 'tree' }, [
             XS.el('div', { class: 'grp', text: 'Work' }),
             XS.el('button', { class: 'tn on' }, [XS.el('span', { class: 'n', text: 'Repairs' })]),
-            staff
+            staff && canWash
                 ? XS.el('button', { class: 'tn', onclick: () => XS.post('openWash') }, [
                     XS.el('span', { class: 'n', text: 'Wash' }),
                 ])
@@ -83,12 +89,16 @@
         }
 
         grid.append(XS.el('div', { style: 'display:flex;gap:9px;margin-top:24px' }, [
-            XS.el('button', {
+            canRepair ? XS.el('button', {
                 class: 'mini hot',
-                text: clean ? 'Nothing to repair' : `Repair it · ${XS.money(price)}`,
+                text: clean ? 'Nothing to repair' : station ? 'Repair it' : `Repair it · ${XS.money(price)}`,
                 disabled: clean,
                 onclick: () => XS.post('repair', { how: 'bay' }),
-            }),
+            }) : null,
+            station && canWash ? XS.el('button', {
+                class: 'mini', text: 'Wash it',
+                onclick: () => XS.post('openWash'),
+            }) : null,
         ]));
 
         host.append(grid);

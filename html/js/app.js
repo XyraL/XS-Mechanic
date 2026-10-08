@@ -40,7 +40,19 @@
             { id: 'builder', label: 'Shops' },
             { id: 'settings', label: 'Settings' },
         ],
+        // A service station: only what the station was set up to do.
+        station: [
+            { id: 'apps', label: 'Home' },
+            { id: 'tuning', label: 'Tuning', when: () => !!(offers().paint || offers().parts || offers().wheels) },
+            { id: 'performance', label: 'Performance', when: () => !!offers().performance },
+            { id: 'stance', label: 'Stance', when: () => !!offers().stance },
+            { id: 'repairs', label: 'Repair', when: () => !!(offers().repair || offers().wash) },
+        ],
     };
+
+    function offers() {
+        return XS.state.offers || {};
+    }
 
     // The tabs this player can actually reach, in this mode, right now. The nav
     // bar and the home screen both need the same list.
