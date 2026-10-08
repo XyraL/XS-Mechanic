@@ -86,6 +86,13 @@ function Stations.Apply()
     XSM.Toast('Done. It is on the car.', 'good')
 end
 
+-- Read with defaults each time: a server that kept its own config.lua when it
+-- updated has no Config.Stations block at all.
+local function timings()
+    local block = Config.Stations or {}
+    return tonumber(block.repairSeconds) or 6, tonumber(block.washSeconds) or 4
+end
+
 local function work(seconds, label)
     return lib.progressCircle({
         duration = math.floor((tonumber(seconds) or 0) * 1000),
@@ -111,7 +118,7 @@ function Stations.Repair()
 
     XSM.Hide()
 
-    if work(Config.Stations.repairSeconds, 'Repairing') then
+    if work((timings()), 'Repairing') then
         Repair.Apply(vehicle, 100, 100)
         XSM.Notify('Repaired.', 'success')
     end
@@ -135,7 +142,7 @@ function Stations.Wash()
 
     XSM.Hide()
 
-    if work(Config.Stations.washSeconds, 'Washing') then
+    if work(select(2, timings()), 'Washing') then
         SetVehicleDirtLevel(vehicle, 0.0)
         XSM.Notify('Washed.', 'success')
     end
