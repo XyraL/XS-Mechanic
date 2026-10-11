@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.1.1
+
+- Fixed shop storage not opening on qb-inventory
+- Fixed the stance sliders only moving by clicking. They drag again
+- Fixed the builder's location dots staying on the map after the builder was closed
+
 ## 1.1.0
 
 - Service stations: free drive-in bays for police, EMS or any job you pick. Repair, wash, paint, parts, wheels, performance and stance, each one switched on or off in the builder
