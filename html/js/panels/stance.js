@@ -32,27 +32,29 @@
             XS.el('div', { class: 'cap', text: 'live on the vehicle' }),
         ]));
 
+        const enabled = XS.el('input', {
+            type: 'checkbox', checked: on,
+            onchange: (ev) => {
+                if (ev.target.checked) {
+                    draft.height = -0.06;
+                } else {
+                    XS.state.stanceDraft = blank();
+                }
+
+                XS.post('previewStance', { stance: XS.state.stanceDraft });
+                XS.rerender('stance');
+            },
+        });
+
         const push = () => {
             XS.post('previewStance', { stance: draft });
-            XS.rerender('stance');
+            enabled.checked = touched(draft);
         };
 
         // Off is the factory setup, and turning it off puts the car back rather
         // than leaving it where the sliders happened to be.
         grid.append(XS.el('label', { class: 'toggle' }, [
-            XS.el('input', {
-                type: 'checkbox', checked: on,
-                onchange: (ev) => {
-                    if (ev.target.checked) {
-                        draft.height = -0.06;
-                    } else {
-                        XS.state.stanceDraft = blank();
-                    }
-
-                    XS.post('previewStance', { stance: XS.state.stanceDraft });
-                    XS.rerender('stance');
-                },
-            }),
+            enabled,
             XS.el('span', { class: 'sw' }),
             XS.el('span', { class: 'lb', text: 'Enable stancing' }),
             XS.mode === 'station' ? null : XS.el('span', { class: 'pr', text: XS.money((XS.state.prices || {}).stance || 0) }),

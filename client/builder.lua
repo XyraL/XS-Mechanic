@@ -29,6 +29,7 @@ end
 
 local function drawPreview()
     clearPreview()
+    if not (XSM.open and XSM.mode == 'builder') then return end
 
     for _, point in ipairs(Builder.draft and Builder.draft.points or {}) do
         local blip = AddBlipForCoord(point.coords.x, point.coords.y, point.coords.z)
@@ -101,6 +102,7 @@ local function push()
 end
 
 Builder.Push = push
+Builder.HidePreview = clearPreview
 
 local function touch()
     Builder.dirty = true

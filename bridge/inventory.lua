@@ -94,24 +94,45 @@ if IsDuplicityVersion() then
          client called RegisterStash itself with the wrong arguments, so
          Storage never opened. Only a storage point of a shop whose job this
          player holds gets registered. ]]
-    if Inventory.name == 'qs-inventory' then
-        lib.callback.register('XS-Mechanic:qsStash', function(src, id, slots, weight)
-            local job = Framework.GetJob(src)
+    local function storageShop(src, id)
+        local job = Framework.GetJob(src)
 
-            for _, shop in ipairs(Store.All()) do
-                for _, point in ipairs(shop.points or {}) do
-                    if point.kind == 'storage' and ('xsmech_%s_%s'):format(shop.id, point.id) == id then
-                        if shop.job == '' or shop.job ~= job then return false end
-
-                        local ok = pcall(function()
-                            exports['qs-inventory']:RegisterStash(src, id, tonumber(slots) or 60, tonumber(weight) or 200000)
-                        end)
-                        return ok
-                    end
+        for _, shop in ipairs(Store.All()) do
+            for _, point in ipairs(shop.points or {}) do
+                if point.kind == 'storage' and ('xsmech_%s_%s'):format(shop.id, point.id) == id then
+                    if shop.job == '' or shop.job ~= job then return nil end
+                    return shop
                 end
             end
+        end
 
-            return false
+        return nil
+    end
+
+    if Inventory.name == 'qs-inventory' then
+        lib.callback.register('XS-Mechanic:qsStash', function(src, id, slots, weight)
+            if not storageShop(src, id) then return false end
+
+            local ok = pcall(function()
+                exports['qs-inventory']:RegisterStash(src, id, tonumber(slots) or 60, tonumber(weight) or 200000)
+            end)
+            return ok
+        end)
+    end
+
+    if Inventory.name == 'qb-inventory' then
+        lib.callback.register('XS-Mechanic:qbStash', function(src, id, label, slots, weight)
+            local shop = storageShop(src, id)
+            if not shop then return false end
+
+            local ok = pcall(function()
+                exports['qb-inventory']:OpenInventory(src, id, {
+                    label = label or (shop.name .. ' storage'),
+                    maxweight = tonumber(weight) or 200000,
+                    slots = tonumber(slots) or 60,
+                })
+            end)
+            return ok and 'open' or 'old'
         end)
     end
 
@@ -188,6 +209,11 @@ else
             TriggerServerEvent('inventory:server:OpenInventory', 'stash', id, { maxweight = weight or 100000, slots = slots or 50 })
             TriggerEvent('inventory:client:SetCurrentStash', id)
             return
+        end
+
+        if Inventory.name == 'qb-inventory' then
+            local opened = lib.callback.await('XS-Mechanic:qbStash', false, id, label, slots or 60, weight or 200000)
+            if opened ~= 'old' then return end
         end
 
         TriggerServerEvent('inventory:server:OpenInventory', 'stash', id, { maxweight = weight or 100000, slots = slots or 50 })

@@ -59,6 +59,7 @@ function XSM.Close()
     SetNuiFocus(false, false)
     XSM.Send('close')
     XSM.StopPreview(true)
+    Builder.HidePreview()
     Anim.Stop()
     Craft.Close()
 end
@@ -333,6 +334,7 @@ end)
 
 RegisterNetEvent('XS-Mechanic:client:builder', function()
     XSM.Open('builder')
+    if XSM.open and XSM.mode == 'builder' and Builder.draft then Builder.Push() end
 end)
 
 --[[ Which of the shop's points you are stood on.
