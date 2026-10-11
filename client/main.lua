@@ -105,6 +105,7 @@ function XSM.Hide()
 
     XSM.Send('close')
     SetNuiFocus(false, false)
+    CarCam.Stop()
     Anim.Stop()
 end
 

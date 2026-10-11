@@ -314,6 +314,7 @@ function XSM.StopPreview(full)
     Preview.Restore()
     XSM.preview = nil
 
+    if full then CarCam.Stop() end
 end
 
 -- One part of the list is paid for and fitted. What is on the car now becomes

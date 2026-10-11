@@ -228,7 +228,72 @@
             XS.el('div', { class: 'hint', text: 'Free. Nothing is charged and nothing goes on a work order.' }),
         ]));
 
+        wrap.append(vehicleField(draft, set));
+
         return wrap;
+    }
+
+    // Which cars the station works on, by spawn name. Without a list a cop can
+    // drive their own car in and get it done up for free.
+    function vehicleField(draft, set) {
+        const list = draft.vehicles || [];
+        const info = draft.vehicleInfo || {};
+
+        const add = (text) => {
+            const next = [...list];
+
+            for (const raw of String(text || '').split(/[\s,]+/)) {
+                const name = raw.toLowerCase().replace(/[^a-z0-9_-]/g, '');
+                if (name && !next.includes(name)) next.push(name);
+            }
+
+            if (next.length !== list.length) set('vehicles', next);
+        };
+
+        const chips = XS.el('div', { class: 'chips' });
+
+        for (const name of list) {
+            const about = info[name] || {};
+
+            chips.append(XS.el('button', {
+                class: 'tn on', title: 'Take it off the list',
+                onclick: () => set('vehicles', list.filter((n) => n !== name)),
+            }, [
+                XS.el('span', { class: 'n', text: name }),
+                about.known === false
+                    ? XS.el('span', { class: 'b warn', text: 'not on this server' })
+                    : about.label ? XS.el('span', { class: 'b', text: about.label }) : null,
+                XS.el('span', { class: 'b', text: '×' }),
+            ]));
+        }
+
+        const input = XS.el('input', {
+            type: 'text', placeholder: 'police, police2, ambulance',
+            onkeydown: (ev) => { if (ev.key === 'Enter') add(ev.target.value); },
+        });
+
+        const seat = draft.inVehicle;
+
+        return XS.el('div', { class: 'field' }, [
+            XS.el('label', { text: 'Vehicles it works on' }),
+            list.length ? chips : null,
+            XS.el('div', { style: 'display:flex;gap:8px' }, [
+                input,
+                XS.el('button', { class: 'mini', text: 'Add', onclick: () => add(input.value) }),
+            ]),
+            seat ? XS.el('button', {
+                class: 'mini', style: 'margin-top:8px',
+                text: list.includes(seat) ? `${seat} is on the list` : `Add the one I'm in — ${seat}`,
+                disabled: list.includes(seat),
+                onclick: () => add(seat),
+            }) : null,
+            XS.el('div', {
+                class: 'hint',
+                text: list.length
+                    ? 'Only these. Any other car on a service bay is turned away.'
+                    : 'Empty means any vehicle, personal cars too. Type spawn names, or sit in one and add it.',
+            }),
+        ]);
     }
 
     function boundary(draft) {

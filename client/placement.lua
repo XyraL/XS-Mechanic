@@ -33,7 +33,7 @@ local function aimPoint(distance)
 
     local _, hit, coords = GetShapeTestResult(ray)
 
-    if hit == 1 then return coords end
+    if hit == true or hit == 1 then return coords end
     return to
 end
 
@@ -42,7 +42,7 @@ local function surfaceUnder(x, y, z)
         x, y, z + 1.0, x, y, z - 6.0, 1 + 16 + 256, cache.ped, 4)
 
     local _, hit, coords = GetShapeTestResult(ray)
-    if hit == 1 then return coords.z end
+    if hit == true or hit == 1 then return coords.z end
     return nil
 end
 

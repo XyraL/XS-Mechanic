@@ -79,6 +79,37 @@ local function bounds(draft)
     return { x = cx, y = cy, z = cz, radius = radius }
 end
 
+-- What each listed model is called in game, and whether this server has it at
+-- all. A misspelt spawn name otherwise looks exactly like one that works.
+local function vehicleInfo(list)
+    local out = {}
+
+    for _, name in ipairs(list or {}) do
+        local hash = GetHashKey(name)
+        local known = IsModelInCdimage(hash) and IsModelAVehicle(hash)
+        local label = known and GetLabelText(GetDisplayNameFromVehicleModel(hash)) or nil
+
+        out[name] = { known = known, label = label ~= 'NULL' and label or nil }
+    end
+
+    return out
+end
+
+-- The spawn name of whatever the admin is sat in, so it can be added in one click.
+local function seatModel()
+    local vehicle = cache.vehicle
+    if not vehicle or not DoesEntityExist(vehicle) then return false end
+
+    local name = GetEntityArchetypeName(vehicle)
+
+    if not name or name == '' then
+        name = GetDisplayNameFromVehicleModel(GetEntityModel(vehicle)) or ''
+    end
+
+    name = name:lower()
+    return name ~= '' and name or false
+end
+
 local function push()
     if not Builder.draft then
         XSM.Send('draft', { draft = false })
@@ -96,6 +127,11 @@ local function push()
     copy.jobMissing = jobMissing
     copy.jobs = Builder.Jobs()
     copy.dirty = Builder.dirty
+
+    if Builder.draft.kind == 'station' then
+        copy.vehicleInfo = vehicleInfo(Builder.draft.vehicles)
+        copy.inVehicle = seatModel()
+    end
 
     XSM.Send('draft', { draft = copy })
     drawPreview()

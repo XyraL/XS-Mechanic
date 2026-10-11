@@ -27,6 +27,7 @@ local function decodeShop(row)
         tuningPrices = data.tuningPrices or {},
         stationJobs = data.stationJobs or {},
         offers = data.offers or {},
+        vehicles = data.vehicles or {},
     }
 end
 
@@ -68,6 +69,7 @@ local function encodeShop(shop)
         tuningPrices = shop.tuningPrices or {},
         stationJobs = shop.stationJobs or {},
         offers = shop.offers or {},
+        vehicles = shop.vehicles or {},
     })
 end
 
@@ -110,6 +112,7 @@ function Store.Public()
                 categories = shop.categories,
                 stationJobs = shop.stationJobs,
                 offers = shop.offers,
+                vehicles = shop.vehicles,
             })
         end
     end

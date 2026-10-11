@@ -184,7 +184,7 @@
         XS.subject.redraw();
 
         XS.rerender(id);
-
+        XS.camera.sync();
     };
 
     XS.redraw = function () {
@@ -240,6 +240,7 @@
         root.classList.remove('open');
         document.body.classList.remove('open');
         XS.closeModal();
+        XS.camera.sync();
         XS.post('close');
     };
 
@@ -279,6 +280,7 @@
                 root.classList.remove('open');
                 document.body.classList.remove('open');
                 XS.closeModal();
+                XS.camera.sync();
                 break;
 
             case 'state':
@@ -292,6 +294,7 @@
                 XS.state.catalogue = data.catalogue || null;
                 if (root.classList.contains('open')) XS.redraw();
                 XS.hud.redraw();
+                XS.camera.sync();
                 break;
 
             case 'hud':

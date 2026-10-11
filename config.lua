@@ -198,6 +198,11 @@ Config.Tuning = {
     -- Vehicles no mechanic may touch at all. Spawn codes, lowercase.
     blockedModels = { 'police', 'police2', 'police3', 'ambulance', 'firetruk' },
 
+    -- A camera that goes round the car on the Tuning and Stance screens: drag
+    -- to turn it, scroll to zoom, or pick Front, Side, Rear or Top. false keeps
+    -- the normal game camera.
+    camera = true,
+
     -- Vehicles this resource should treat as electric. It detects the stock
     -- ones; list any addon EVs here.
     electricModels = { 'dilettante', 'dilettante2', 'khamelion', 'voltic', 'voltic2',

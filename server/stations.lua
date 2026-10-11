@@ -16,6 +16,11 @@ function Stations.OfferFor(category)
     return OFFER_FOR[category]
 end
 
+-- A model the way it is spawned: lowercase, nothing but letters, digits, _ and -.
+local function modelName(value)
+    return (tostring(value or ''):lower():gsub('[^%w_%-]', '')):sub(1, 48)
+end
+
 -- A station's settings, cleaned on the way into the database.
 function Stations.Sanitise(draft)
     local jobs, seen = {}, {}
@@ -36,11 +41,43 @@ function Stations.Sanitise(draft)
         offers[key] = given[key] ~= false
     end
 
+    local vehicles, listed = {}, {}
+
+    for _, name in ipairs(type(draft.vehicles) == 'table' and draft.vehicles or {}) do
+        name = modelName(name)
+
+        if name ~= '' and not listed[name] and #vehicles < 100 then
+            listed[name] = true
+            vehicles[#vehicles + 1] = name
+        end
+    end
+
     draft.stationJobs = jobs
     draft.offers = offers
+    draft.vehicles = vehicles
     draft.job = ''
 
     return #jobs > 0
+end
+
+-- Hashes come back signed from one native and unsigned from another.
+local function unsigned(hash)
+    hash = tonumber(hash) or 0
+    return hash < 0 and hash + 4294967296 or hash
+end
+
+-- Whether the station works on this vehicle. An empty list means any vehicle.
+function Stations.Fits(shop, vehicle)
+    local list = shop and shop.vehicles or {}
+    if #list == 0 then return true end
+
+    local model = unsigned(GetEntityModel(vehicle))
+
+    for _, name in ipairs(list) do
+        if unsigned(GetHashKey(name)) == model then return true end
+    end
+
+    return false
 end
 
 function Stations.Allowed(src, shop)
@@ -60,7 +97,8 @@ local function onStation(shop, coords)
 end
 
 -- Everything a station does for free goes through here: the player holds one of
--- its jobs, the station does this kind of work, and the car is on its bay.
+-- its jobs, the station does this kind of work, the car is one it takes, and
+-- the car is on its bay.
 function Stations.Check(src, shop, offer, netId)
     if not Stations.Allowed(src, shop) then
         return false, 'This station is not for your job.'
@@ -74,6 +112,10 @@ function Stations.Check(src, shop, offer, netId)
 
     if not vehicle or vehicle == 0 or not DoesEntityExist(vehicle) then
         return false, 'No vehicle.'
+    end
+
+    if not Stations.Fits(shop, vehicle) then
+        return false, 'This station only works on its own vehicles.'
     end
 
     if not onStation(shop, GetEntityCoords(vehicle)) then

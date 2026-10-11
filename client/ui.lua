@@ -489,6 +489,28 @@ RegisterNUICallback('submitOrder', function(_, cb)
     cb({ ok = true })
 end)
 
+-- The page says where its panel ends and the camera frames the car beside it.
+RegisterNUICallback('carCam', function(data, cb)
+    if data and data.on then
+        cb({ ok = CarCam.Start(XSM.Vehicle(), data) })
+        return
+    end
 
--- The page measures where its transparent window is and posts it; the camera
--- frames the real vehicle into that rectangle.
+    CarCam.Stop()
+    cb({ ok = true })
+end)
+
+RegisterNUICallback('camOrbit', function(data, cb)
+    CarCam.Orbit(data and data.dx, data and data.dy)
+    cb({ ok = true })
+end)
+
+RegisterNUICallback('camZoom', function(data, cb)
+    CarCam.Zoom(data and data.step)
+    cb({ ok = true })
+end)
+
+RegisterNUICallback('camView', function(data, cb)
+    CarCam.View(data and data.view)
+    cb({ ok = true })
+end)

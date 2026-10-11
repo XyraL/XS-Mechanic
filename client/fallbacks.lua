@@ -38,6 +38,7 @@ optional('Lighting', 'client/extras.lua', { Open = function() end, Set = functio
 optional('Anim', 'client/anim.lua', { holding = false, Start = function() end, Stop = function() end, Work = function() return true end })
 optional('Catalogue', 'client/catalogue.lua', { Build = function() return nil end, SupportsChameleon = function() return false end, IsElectric = function() return false end })
 optional('Install', 'client/install.lua', { Use = function() end, ByHand = function() end, Pick = function() end })
+optional('CarCam', 'client/carcam.lua', { active = false, Start = function() return false end, Stop = function() end, Orbit = function() end, Zoom = function() end, View = function() end })
 
 -- Shared, not client, but the client is where a missing one is felt: without
 -- it every part item registers an export that cannot resolve its own name.

@@ -119,6 +119,11 @@ rules as any other work: mechanic, at the shop, out of the car, on a bay.
 **Work happens on a bay.** Fitting anything needs the mechanic stood on a tuning
 bay with the car on it. Reading an invoice or a work order does not.
 
+**The camera.** On Tuning and Stance the camera goes round the car. Drag the
+open part of the screen to turn it, scroll to zoom, or pick Front, Side, Rear or
+Top. It only moves when you move it. `Config.Tuning.camera = false` keeps the
+normal game camera.
+
 **The bench.** Place one in the builder and the shop makes its own parts out of
 scrap, steel, rubber and glass. Everything it fits, it can build: body panels,
 wheels, paint and lights, the engine and brake and suspension upgrades, and
@@ -135,6 +140,14 @@ you just cannot decide what any of it is worth.
 **Self service.** A shop can be open to anyone, or an owned shop can fall back
 to self service while none of its staff are online. Self service pays from the
 customer's own account and writes no invoice.
+
+**Service stations.** Free drive-in bays for police, EMS or any job you pick.
+Drive onto a bay and press E without getting out. Repair, wash, paint, parts,
+wheels, performance and stance are each switched on or off in the builder.
+
+List the station's own vehicles in the builder and it works on nothing else, so
+nobody brings their personal car in for free upgrades. Type the spawn names, or
+sit in one and add it. An empty list takes any vehicle.
 
 **Repairs.** The job, not a menu option: a customer sees exactly what is wrong
 with their car and puts a repair on the same order, and the shop does the work.

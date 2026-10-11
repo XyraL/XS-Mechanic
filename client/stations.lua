@@ -1,6 +1,6 @@
 Stations = {}
 
-local prompt = false
+local prompt = nil
 
 local function allowed(shop)
     local job = Framework.GetJob()
@@ -33,10 +33,38 @@ end
 Stations.BayUnder = bayUnder
 Stations.CanUse = allowed
 
+local function unsigned(hash)
+    hash = tonumber(hash) or 0
+    return hash < 0 and hash + 4294967296 or hash
+end
+
+-- Whether the station takes this vehicle. An empty list means any vehicle.
+local function fits(shop, vehicle)
+    local list = shop.vehicles or {}
+    if #list == 0 then return true end
+
+    local model = unsigned(GetEntityModel(vehicle))
+
+    for _, name in ipairs(list) do
+        if unsigned(GetHashKey(name)) == model then return true end
+    end
+
+    return false
+end
+
+Stations.Fits = fits
+
+local function showPrompt(text)
+    if prompt == text then return end
+
+    lib.showTextUI(text, { position = 'left-center' })
+    prompt = text
+end
+
 local function hidePrompt()
     if prompt then
         lib.hideTextUI()
-        prompt = false
+        prompt = nil
     end
 end
 
@@ -165,16 +193,16 @@ CreateThread(function()
                 hidePrompt()
                 if not shop or (XSM.shop and shop.id ~= XSM.shop.id) then XSM.Close() end
             elseif shop and not XSM.open then
-                wait = 0
+                if fits(shop, vehicle) then
+                    wait = 0
+                    showPrompt(('[E] Service vehicle — %s'):format(shop.name))
 
-                if not prompt then
-                    lib.showTextUI(('[E] Service vehicle — %s'):format(shop.name), { position = 'left-center' })
-                    prompt = true
-                end
-
-                if IsControlJustPressed(0, 38) then
-                    hidePrompt()
-                    Stations.Open(shop, vehicle)
+                    if IsControlJustPressed(0, 38) then
+                        hidePrompt()
+                        Stations.Open(shop, vehicle)
+                    end
+                else
+                    showPrompt(('Station vehicles only — %s'):format(shop.name))
                 end
             else
                 hidePrompt()
