@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.2.1
+
+- Fixed there being no way to tint windows. It is under Cosmetics as Window Tint, and works on work orders and service stations like any other part
+
 ## 1.2.0
 
 - Camera on the Tuning and Stance screens: drag to turn it round the car, scroll to zoom, or pick Front, Side, Rear or Top
