@@ -119,10 +119,11 @@ Mods.NeonSides = {
 Mods.WindowTints = {
     { id = 0, label = 'None' },
     { id = 1, label = 'Pure Black' },
-    { id = 2, label = 'Darksmoke' },
-    { id = 3, label = 'Lightsmoke' },
-    { id = 4, label = 'Limo' },
-    { id = 5, label = 'Green' },
+    { id = 2, label = 'Dark Smoke' },
+    { id = 3, label = 'Light Smoke' },
+    { id = 4, label = 'Stock' },
+    { id = 5, label = 'Limo' },
+    { id = 6, label = 'Green' },
 }
 
 Mods.XenonColours = {

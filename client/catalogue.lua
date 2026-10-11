@@ -164,6 +164,28 @@ local function readPlates(vehicle)
     }
 end
 
+-- Window tint is the game's own short list rather than a mod slot, so every car
+-- with windows can take it. It is fitted and priced as cosmetics.
+local function readTint(vehicle, spawnCode)
+    if Mods.SlotBlocked('tint', spawnCode) then return nil end
+
+    local class = GetVehicleClass(vehicle)
+    if class == 8 or class == 13 then return nil end
+
+    local options = {}
+    for _, tint in ipairs(Mods.WindowTints) do
+        options[#options + 1] = { index = tint.id, label = tint.label }
+    end
+
+    return {
+        id = 'tint',
+        label = 'Window Tint',
+        category = 'cosmetics',
+        current = GetVehicleWindowTint(vehicle),
+        options = options,
+    }
+end
+
 local function readNeon(vehicle)
     local r, g, b = GetVehicleNeonLightsColour(vehicle)
     local sides = {}
@@ -218,6 +240,9 @@ function Catalogue.Build(vehicle)
             if read then slots[#slots + 1] = read end
         end
     end
+
+    local tint = readTint(vehicle, spawnCode)
+    if tint then slots[#slots + 1] = tint end
 
     local class = GetVehicleClass(vehicle)
 

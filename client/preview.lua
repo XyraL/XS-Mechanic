@@ -236,6 +236,8 @@ function Preview.Show(data)
         if GetVehicleClass(vehicle) == 8 then SetVehicleMod(vehicle, 24, index, false) end
     elseif data.slotId == 'plate' then
         SetVehicleNumberPlateTextIndex(vehicle, index)
+    elseif data.slotId == 'tint' then
+        SetVehicleWindowTint(vehicle, index)
     elseif data.legacy then
         SetVehicleLivery(vehicle, index)
     elseif slot then

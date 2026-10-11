@@ -188,7 +188,7 @@ Config.Pricing = {
 -- These settings only take things AWAY.
 Config.Tuning = {
     -- Hide these everywhere. Use the ids from shared/mods.lua, for example
-    -- 'armour', 'hydraulics', 'turbo'.
+    -- 'armour', 'hydraulics', 'turbo', or 'tint' for window tint.
     blockedSlots = {},
 
     -- Hide slots for particular models. Spawn code, lowercase.
