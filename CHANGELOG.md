@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.2.0
+
+- Camera on the Tuning and Stance screens: drag to turn it round the car, scroll to zoom, or pick Front, Side, Rear or Top
+- Service stations can be limited to their own vehicles. Pick them in the builder and personal cars get turned away
+- Fixed the builder's placement marker not sitting on the surface you aim at
+
 ## 1.1.1
 
 - Fixed shop storage not opening on qb-inventory
