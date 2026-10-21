@@ -58,6 +58,7 @@ local function readSlot(vehicle, entry, spawnCode)
         slot = entry.slot,
         label = entry.label,
         category = entry.category,
+        flat = entry.flatPrice or nil,
         current = current,
         options = options,
     }
@@ -112,7 +113,8 @@ local function readExtras(vehicle)
 
     for id = 0, 20 do
         if DoesExtraExist(vehicle, id) then
-            extras[#extras + 1] = { id = id, on = IsVehicleExtraTurnedOn(vehicle, id) == 1 }
+            local on = IsVehicleExtraTurnedOn(vehicle, id)
+            extras[#extras + 1] = { id = id, on = on == true or on == 1 }
         end
     end
 

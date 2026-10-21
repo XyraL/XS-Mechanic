@@ -71,7 +71,7 @@ local function priceOf(shop, pick, model, class)
     local category = tostring(pick.category or '')
     if not Pricing.CategoryEnabled(shop, category) then return nil end
 
-    return Pricing.For(shop, category, model, class, pick.index) or 0
+    return Pricing.For(shop, category, model, class, Mods.PriceLevel(pick.slotId, pick.index)) or 0
 end
 
 -- Everything a pick carries. Widened deliberately: the old version rebuilt a
@@ -734,20 +734,16 @@ function Orders.FitFree(src, shop, data)
     end
 
     local slotId = tostring(data.slotId or '')
-    local entry
-
-    for _, candidate in ipairs(Mods.Slots) do
-        if candidate.id == slotId then entry = candidate break end
-    end
+    local entry = Mods.ById[slotId] or Mods.Special[slotId]
 
     if not entry then return { ok = false, error = 'That is not a part of the car.' } end
 
     local index = tonumber(data.index)
-    if not index or index < -1 or index > 60 then
+    if not index or index < (entry.min or -1) or index > (entry.max or 60) then
         return { ok = false, error = 'That is not a part.' }
     end
 
-    if model ~= '' and Mods.SlotBlocked(entry.slot, model) then
+    if model ~= '' and Mods.SlotBlocked(entry.slot or entry.id, model) then
         return { ok = false, error = 'That does not go on this car.' }
     end
 

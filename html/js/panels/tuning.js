@@ -117,7 +117,7 @@
             items = group.slots.map((slot) => ({
                 id: slot.id,
                 label: slot.label,
-                picked: picked((p) => p.slotId === slot.id),
+                picked: picked((p) => (slot.toggles ? p.extra != null : p.slotId === slot.id)),
             }));
             active = slotOf(group)?.id;
             choose = (id) => { (XS.state.tuneTabs ||= {})[group.id] = id; };
@@ -223,8 +223,12 @@
             }
 
             if (id === 'extras') {
-                if (!cat.extras?.length) continue;
-                out.push({ id, label, section, extras: cat.extras, count: cat.extras.length });
+                const extras = cat.extras || [];
+                const slots = bucket.extras || [];
+                if (!extras.length && !slots.length) continue;
+
+                const tabs = extras.length ? [{ id: 'extras', label: 'Extras', toggles: true }, ...slots] : slots;
+                out.push({ id, label, section, extras, slots: tabs, count: extras.length + slots.length });
                 continue;
             }
 
@@ -283,7 +287,7 @@
 
         if (group.id === 'respray') return renderRespray(gridFor('respray', XS.state.paintChannel, XS.state.paintFamily), group, prices);
         if (group.id === 'wheels') return renderWheels(gridFor('wheels', wheelTypeOf(group)?.type), group, prices);
-        if (group.id === 'extras') return renderExtras(gridFor('extras'), group, prices);
+        if (group.id === 'extras' && slotOf(group)?.toggles) return renderExtras(gridFor('extras'), group, prices);
 
         const slot = slotOf(group);
         const grid = gridFor(group.id, slot?.id);
@@ -309,7 +313,7 @@
 
         for (const option of slot.options) {
             const fitted = slot.current === option.index;
-            const price = option.index === -1 ? null : priceFor(prices, group.id, option.index);
+            const price = option.index === -1 ? null : priceFor(prices, group.id, slot.flat ? 0 : option.index);
 
             cards.append(XS.el('button', {
                 class: `c ${XS.isPreviewing(slot.id, option.index) ? 'on' : ''} ${dry && option.index !== -1 ? 'dry' : ''}`,

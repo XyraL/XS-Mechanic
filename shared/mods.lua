@@ -59,6 +59,18 @@ for _, entry in ipairs(Mods.Slots) do
     Mods.ById[entry.id] = entry
 end
 
+Mods.Special = {
+    tint   = { id = 'tint',   label = 'Window Tint', category = 'cosmetics', min = 0,  max = 6 },
+    plate  = { id = 'plate',  label = 'Plate',       category = 'plate',     min = 0,  max = 31 },
+    wheels = { id = 'wheels', label = 'Wheels',      category = 'wheels',    min = -1, max = 255, slot = 23 },
+}
+
+function Mods.PriceLevel(slotId, index)
+    local entry = Mods.ById[tostring(slotId or '')]
+    if entry and entry.flatPrice then return 0 end
+    return index
+end
+
 -- Categories a shop can switch on or off, and a bay can be limited to. Order
 -- here is the order they appear in the panel.
 Mods.Categories = {

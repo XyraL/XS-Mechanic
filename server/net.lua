@@ -24,6 +24,8 @@ local function atShop(src, shop)
     return Util.InsideArea(GetEntityCoords(ped), shop.area)
 end
 
+local AT_CAR = 7.0
+
 --[[ On a bay, with the car on it.
 
      Work happens on a bay. Reading an invoice does not, so this is only asked
@@ -43,7 +45,8 @@ local function onBay(src, shop, netId)
     local ped = GetPlayerPed(src)
     if not ped or ped == 0 then return false end
 
-    if not Store.PointNear(shop, 'tuning', GetEntityCoords(ped)) then return false end
+    local at = GetEntityCoords(ped)
+    local standing = Store.PointNear(shop, 'tuning', at) ~= nil
 
     -- And the car, when we know which one it is.
     netId = tonumber(netId)
@@ -52,11 +55,14 @@ local function onBay(src, shop, netId)
         local vehicle = NetworkGetEntityFromNetworkId(netId)
 
         if vehicle and vehicle ~= 0 and DoesEntityExist(vehicle) then
-            if not Store.PointNear(shop, 'tuning', GetEntityCoords(vehicle)) then return false end
+            local car = GetEntityCoords(vehicle)
+            if not Store.PointNear(shop, 'tuning', car) then return false end
+
+            return standing or #(at - car) <= AT_CAR
         end
     end
 
-    return true
+    return standing
 end
 
 local function settings(src)
@@ -765,7 +771,7 @@ lib.callback.register('XS-Mechanic:pricePick', function(src, data)
 
     return {
         label = Mods.CategoryLabel[category] or category,
-        price = shop and Pricing.For(shop, category, data.model, data.class, data.index) or 0,
+        price = shop and Pricing.For(shop, category, data.model, data.class, Mods.PriceLevel(data.slotId, data.index)) or 0,
     }
 end)
 

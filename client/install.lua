@@ -287,6 +287,24 @@ local function serviceForItem(item)
     return nil
 end
 
+local function unfitted(options, fitted)
+    local out = {}
+
+    for _, option in ipairs(options or {}) do
+        if not fitted(option) then out[#out + 1] = option end
+    end
+
+    return out
+end
+
+local function bookingKey(wheelType, index)
+    if wheelType then
+        return ('%d:%d'):format(math.floor(tonumber(wheelType) or 0), math.floor(tonumber(index) or 0))
+    end
+
+    return tostring(index)
+end
+
 local function slotsForItem(item)
     local cat = XSM.catalogue
     if not cat or not item then return {} end
@@ -297,14 +315,43 @@ local function slotsForItem(item)
         if Parts.ItemFor(slot.category, slot.id) == item then
             -- Only what is not already on the car. Offering the bumper that is
             -- already fitted is an option that charges a part for nothing.
-            local choices = {}
-
-            for _, option in ipairs(slot.options or {}) do
-                if option.index ~= slot.current then choices[#choices + 1] = option end
-            end
+            local choices = unfitted(slot.options, function(option) return option.index == slot.current end)
 
             if #choices > 0 then
                 out[#out + 1] = { slot = slot, choices = choices }
+            end
+        end
+    end
+
+    local plates = cat.plates
+
+    if plates and Parts.ItemFor(plates.category, plates.id) == item then
+        local choices = unfitted(plates.options, function(option) return option.index == plates.current end)
+
+        if #choices > 0 then
+            out[#out + 1] = { slot = plates, choices = choices }
+        end
+    end
+
+    local wheels = cat.wheels
+
+    if wheels and Parts.ItemFor(wheels.category, wheels.id) == item then
+        for _, kind in ipairs(wheels.types or {}) do
+            local choices = unfitted(kind.options, function(option)
+                return kind.type == wheels.currentType and option.index == wheels.current
+            end)
+
+            if #choices > 0 then
+                out[#out + 1] = {
+                    slot = {
+                        id = wheels.id,
+                        slot = 23,
+                        label = ('%s Wheels'):format(kind.label),
+                        category = wheels.category,
+                        wheelType = kind.type,
+                    },
+                    choices = choices,
+                }
             end
         end
     end
@@ -337,6 +384,7 @@ local function fitFree(vehicle, slot, option, item)
             slot = slot.slot,
             index = option.index,
             label = option.label,
+            wheelType = slot.wheelType,
         }
 
         if not Preview.Show(line) then
@@ -415,7 +463,7 @@ function Install.Free(vehicle, item)
     for _, line in ipairs(booked and booked.lines or {}) do
         if line.slotId and not line.fitted then
             ordered[line.slotId] = ordered[line.slotId] or {}
-            ordered[line.slotId][tostring(line.index)] = line.label or true
+            ordered[line.slotId][bookingKey(line.wheelType, line.index)] = line.label or true
         end
     end
 
@@ -457,7 +505,7 @@ function Install.Options(vehicle, group, item, ordered)
         -- With this slot on the work order, only what was ordered can be
         -- fitted. The rest stay on the list, greyed, so it is obvious the
         -- choice was made by the customer and not taken away by the menu.
-        local wanted = not booking or booking[tostring(choice.index)] ~= nil
+        local wanted = not booking or booking[bookingKey(group.slot.wheelType, choice.index)] ~= nil
 
         options[#options + 1] = {
             title = choice.label,

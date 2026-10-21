@@ -328,6 +328,7 @@ RegisterNUICallback('pickPart', function(data, cb)
         model = XSM.catalogue and XSM.catalogue.model,
         class = XSM.catalogue and XSM.catalogue.class,
         category = data.category,
+        slotId = data.slotId,
         index = data.index,
         tuning = data.tuning,
     })
