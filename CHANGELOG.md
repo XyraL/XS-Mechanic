@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.2.2
+
+- Fixed there being no way to change the horn. It is under Extras as Horn
+- Fixed plates and wheels saying they don't fit the car when fitted without a work order
+- Fixed window tint not saving when fitted without a work order
+- Fixed fitting a part from the far side of the car saying to put the car on a tuning bay
+- Fixed vehicle extras always showing as off, so you could not switch one off
+
 ## 1.2.1
 
 - Fixed there being no way to tint windows. It is under Cosmetics as Window Tint, and works on work orders and service stations like any other part
