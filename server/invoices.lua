@@ -557,5 +557,9 @@ function Invoices.Counts(shopId)
 end
 
 AddEventHandler('playerDropped', function()
-    drafts[source] = nil
+    Invoices.Clear(source)
+end)
+
+AddEventHandler('QBCore:Server:OnPlayerUnload', function(src)
+    Invoices.Clear(tonumber(src) or source)
 end)

@@ -441,7 +441,9 @@ lib.callback.register('XS-Mechanic:fitLine', function(src, data)
         return { ok = false, error = 'Put the car on a tuning bay and stand at it.' }
     end
 
-    return Orders.Fit(src, data)
+    local result = Orders.Fit(src, data)
+    if result and result.ok then Vehicles.AllowModSave(src, data.netId) end
+    return result
 end)
 
 --[[ Fitting a part with no order behind it.
@@ -473,7 +475,9 @@ lib.callback.register('XS-Mechanic:fitFree', function(src, data)
         return { ok = false, error = 'Put the car on a tuning bay and stand at it.' }
     end
 
-    return Orders.FitFree(src, shop, data)
+    local result = Orders.FitFree(src, shop, data)
+    if result and result.ok then Vehicles.AllowModSave(src, data.netId) end
+    return result
 end)
 
 lib.callback.register('XS-Mechanic:craft', function(src, data)
@@ -637,6 +641,8 @@ end)
 -- fitted mods back off it. Written to the framework's own column.
 RegisterNetEvent('XS-Mechanic:server:saveMods', function(netId)
     local src = source
+    if not Vehicles.TakeModSave(src, netId) then return end
+
     local entity = NetworkGetEntityFromNetworkId(netId)
     if not entity or entity == 0 or not DoesEntityExist(entity) then return end
 
@@ -646,14 +652,25 @@ RegisterNetEvent('XS-Mechanic:server:saveMods', function(netId)
     local owned = MySQL.scalar.await('SELECT 1 FROM player_vehicles WHERE plate = ? LIMIT 1', { plate })
     if not owned then return end
 
+    Vehicles.ExpectMods(src, plate)
     TriggerClientEvent('XS-Mechanic:client:readMods', src, netId)
 end)
 
 RegisterNetEvent('XS-Mechanic:server:storeMods', function(plate, props)
+    local src = source
     plate = Util.Trim(plate or '')
     if plate == '' or type(props) ~= 'table' then return end
+    if not Vehicles.ModsExpected(src, plate) then return end
 
     MySQL.update.await('UPDATE player_vehicles SET mods = ? WHERE plate = ?', { json.encode(props), plate })
+end)
+
+AddEventHandler('playerDropped', function()
+    Vehicles.ForgetModSaves(source)
+end)
+
+AddEventHandler('QBCore:Server:OnPlayerUnload', function(src)
+    Vehicles.ForgetModSaves(tonumber(src) or source)
 end)
 
 lib.callback.register('XS-Mechanic:serviceCheck', function(src, data)

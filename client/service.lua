@@ -97,8 +97,9 @@ function ServiceUI.Replace(partId)
 
     XSM.Close()
 
-    lib.requestAnimDict('mini@repair', 3000)
-    TaskPlayAnim(cache.ped, 'mini@repair', 'fixing_a_ped', 8.0, -8.0, -1, 1, 0.0, false, false, false)
+    if pcall(lib.requestAnimDict, 'mini@repair', 3000) and HasAnimDictLoaded('mini@repair') then
+        TaskPlayAnim(cache.ped, 'mini@repair', 'fixing_a_ped', 8.0, -8.0, -1, 1, 0.0, false, false, false)
+    end
 
     local done = lib.progressCircle({
         duration = (Config.Service.replaceSeconds or 10) * 1000,

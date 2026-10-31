@@ -8,8 +8,9 @@ local function animate(seconds, label, atEngine)
         SetVehicleDoorOpen(vehicle, 4, false, false)
     end
 
-    lib.requestAnimDict('mini@repair', 3000)
-    TaskPlayAnim(ped, 'mini@repair', 'fixing_a_ped', 8.0, -8.0, -1, 1, 0.0, false, false, false)
+    if pcall(lib.requestAnimDict, 'mini@repair', 3000) and HasAnimDictLoaded('mini@repair') then
+        TaskPlayAnim(ped, 'mini@repair', 'fixing_a_ped', 8.0, -8.0, -1, 1, 0.0, false, false, false)
+    end
 
     local ok = lib.progressCircle({
         duration = seconds * 1000,

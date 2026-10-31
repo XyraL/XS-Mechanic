@@ -142,5 +142,6 @@ lib.callback.register('XS-Mechanic:stationCheck', function(src, data)
         end
     end
 
+    Vehicles.AllowModSave(src, data.netId)
     return { ok = true }
 end)

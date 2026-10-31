@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.2.3
+
+- Fixed players being able to change the saved mods on cars that are not theirs
+- Switching character closes the tablet, stops the dyno and clears your basket and invoice drafts
+- A repair animation that will not load no longer stops the repair
+
+Replace everything except your config.lua. No SQL to run.
+
 ## 1.2.2
 
 - Fixed there being no way to change the horn. It is under Extras as Horn

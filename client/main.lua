@@ -324,6 +324,18 @@ AddEventHandler('onResourceStop', function(resource)
     XSM.StopPreview(true)
 end)
 
+RegisterNetEvent('QBCore:Client:OnPlayerUnload', function()
+    Placement.Abort()
+    Dyno.Stop()
+    if lib.progressActive() then lib.cancelProgress() end
+    XSM.Close()
+    XSM.Disconnect()
+    XSM.basket = {}
+    XSM.PushBasket()
+    XSM.shop = nil
+    XSM.state = {}
+end)
+
 CreateThread(function()
     while not Framework.name do Wait(500) end
     Wait(1200)

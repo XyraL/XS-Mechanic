@@ -184,3 +184,31 @@ function Vehicles.OwnerOf(plate)
     local row = MySQL.single.await('SELECT citizenid FROM player_vehicles WHERE plate = ? LIMIT 1', { plate })
     return row and row.citizenid or nil
 end
+
+-- Saving fitted mods takes a pass from the step that fitted them, and the
+-- client can only store the plate the server asked it to read.
+local modSaves, modReads = {}, {}
+
+function Vehicles.AllowModSave(src, netId)
+    netId = tonumber(netId)
+    if netId then modSaves[src] = { netId = netId, expires = os.time() + 60 } end
+end
+
+function Vehicles.TakeModSave(src, netId)
+    local pass = modSaves[src]
+    modSaves[src] = nil
+    return pass ~= nil and pass.netId == tonumber(netId) and os.time() <= pass.expires
+end
+
+function Vehicles.ExpectMods(src, plate)
+    modReads[src] = { plate = plate, expires = os.time() + 20 }
+end
+
+function Vehicles.ModsExpected(src, plate)
+    local read = modReads[src]
+    return read ~= nil and read.plate == plate and os.time() <= read.expires
+end
+
+function Vehicles.ForgetModSaves(src)
+    modSaves[src], modReads[src] = nil, nil
+end
