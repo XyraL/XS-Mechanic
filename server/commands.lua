@@ -148,7 +148,7 @@ RegisterCommand('mechanicdebug', function(source)
     line(('XS-Mechanic %s'):format(GetResourceMetadata(GetCurrentResourceName(), 'version', 0) or '?'))
     line(('  framework   %s'):format(Framework.name or 'NONE — nothing will work'))
     line(('  inventory   %s'):format(Inventory.name or 'none detected'))
-    line(('  banking     %s'):format(Banking.name or 'own ledger'))
+    line(('  banking     %s'):format(Banking.Ready() and Banking.name or 'own ledger'))
     line(('  phone       %s'):format(Phone.name or 'none detected'))
     line(('  database    %s'):format(DB.ready and 'ready' or 'NOT READY — nothing will save'))
 

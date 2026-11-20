@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.2.4
+
+- Business accounts now work if your bank starts later
+- Fixed colours that did not show in game
+
+Replace everything except your config.lua. No SQL to run.
+
 ## 1.2.3
 
 - Fixed players being able to change the saved mods on cars that are not theirs

@@ -8,25 +8,54 @@ if not IsDuplicityVersion() then return end
      there. Every call failed inside a pcall: the balance read 0 so the shop
      could never spend, and deposits went nowhere. With nothing to bank with,
      the shop keeps its own ledger, which is what that case is for. ]]
-local function detect()
-    local forced = Config.Bridges.banking
-    if forced ~= 'auto' and forced ~= 'qbx' then return forced ~= 'none' and forced or nil end
+local SUPPORTED = { 'Renewed-Banking', 'okokBanking', 'qb-banking', 'qb-management' }
 
-    if GetResourceState('Renewed-Banking') == 'started' then return 'Renewed-Banking' end
-    if GetResourceState('okokBanking') == 'started' then return 'okokBanking' end
-    if GetResourceState('qb-banking') == 'started' then return 'qb-banking' end
-    if GetResourceState('qb-management') == 'started' then return 'qb-management' end
-
-    return nil
+local function setting()
+    return Config.Bridges and Config.Bridges.banking or 'auto'
 end
 
-Banking.name = detect()
+function Banking.Detect()
+    local forced = setting()
+    if forced == 'none' then
+        Banking.name = nil
+    elseif forced ~= 'auto' and forced ~= 'qbx' then
+        Banking.name = forced
+    else
+        Banking.name = nil
+        for _, resource in ipairs(SUPPORTED) do
+            if GetResourceState(resource) == 'started' then Banking.name = resource break end
+        end
+    end
+    return Banking.name
+end
+
+function Banking.Ready()
+    if not Banking.name then Banking.Detect() end
+    return Banking.name ~= nil
+end
+
+Banking.Detect()
+
+AddEventHandler('onResourceStart', function(resource)
+    if Banking.name then return end
+    for _, name in ipairs(SUPPORTED) do
+        if name == resource then
+            Banking.Detect()
+            if Banking.name then print(('^2[XS-Mechanic]^0 banking found: %s.'):format(Banking.name)) end
+            return
+        end
+    end
+end)
+
+AddEventHandler('onResourceStop', function(resource)
+    if resource == Banking.name and setting() ~= Banking.name then Banking.name = nil end
+end)
 
 -- With no banking resource the shop keeps its own ledger in
 -- xs_mechanic_ledger and the boss moves money from the tablet. The panel is
 -- told which of the two it is looking at so it can show the right controls.
 function Banking.LedgerOnly()
-    return Banking.name == nil
+    return not Banking.Ready()
 end
 
 local function account(shop)
